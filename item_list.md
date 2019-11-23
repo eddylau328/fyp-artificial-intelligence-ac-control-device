@@ -32,7 +32,7 @@
     - 2000 mah
     - [li battery taobao link](https://detail.tmall.com/item.htm?spm=a1z0d.6639537.1997196601.82.199b74845QygUJ&id=605011214807)
 6. 3.3V DC-DC regulator
-    - [regulator link](https://detail.tmall.com/item.htm?spm=a1z0d.6639537.1997196601.97.199b74845QygUJ&id=600179696371)
+    - [regulator link](https://item.taobao.com/item.htm?spm=a1z09.2.0.0.74a22e8df6DqSQ&id=558518174418&_u=n2v57gsh9e70)
 
 ### Hardware components
 1. wristband x1
