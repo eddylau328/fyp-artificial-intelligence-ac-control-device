@@ -1,13 +1,13 @@
 # Item Lists
-## Remote Device Part
+## AC Remote Device
 ### Electronic components
-1. Arduino Mega 2560 x1 
+1. Arduino Mega 2560 x1
 2. NodeMCU x1
     - [NodeMCU taobao link](https://detail.tmall.com/item.htm?id=524942473974&spm=a1z09.2.0.0.40b42e8dqUuZrI&_u=p2v57gsh5d21)
 3. ir receiver x1
     - VS1838B , 38kHz
     - [VS1838B taobao link](https://item.taobao.com/item.htm?spm=a1z09.2.0.0.40b42e8dqUuZrI&id=178521861&_u=p2v57gshd1d6)
-4. IR transmitter x1    
+4. IR transmitter x1
     - IR LED
     - [IR LED taobao link](https://item.taobao.com/item.htm?spm=a1z09.2.0.0.40b42e8dqUuZrI&id=43647329043&_u=p2v57gshd036)
 5. temperature & humidity sensor x1
@@ -20,7 +20,7 @@
     - BMP180
     - [BMP180 taobao link](https://detail.tmall.com/item.htm?id=521331189285&spm=a1z09.2.0.0.40b42e8dqUuZrI&_u=p2v57gsh1a64)
 
-## Smartwatch Device Part
+## Smartwatch Device
 ### Electronic components
 1. Heart rate sensor x1
     - MAX30102
@@ -44,7 +44,7 @@
 1. wristband x1
     - [taobao link](https://detail.tmall.com/item.htm?spm=a1z0d.6639537.1997196601.14.bf1e7484fpfouG&id=585651198278)
 
-## Power Meter Part
+## Power Meter
 ### Electronic components
 1. Plug-in Power meter x1
     - [taobao link](https://detail.tmall.com/item.htm?spm=a1z0d.6639537.1997196601.119.199b74845QygUJ&id=590305202754)
