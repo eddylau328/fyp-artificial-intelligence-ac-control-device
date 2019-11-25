@@ -1,0 +1,3 @@
+# Power Meter Device
+
+This device will be monitoring how much energy is used by the air conditioner. By monitoring how much voltage and current is passing through the air conditioner, it can calculate the air conditioner power, energy and power factor. The instaneous power is sent to the online database server, and the reinforcement learning agent could use the power to help determine the right action. As one of the target of this project is to minimize the energy consumption, one of the reward for the reinforcement learning agent could be calculated from the energy consumption. Therefore, the power that the air conditioner is consuming is important in this reinforcement learing program.
