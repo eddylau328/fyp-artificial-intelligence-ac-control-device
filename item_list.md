@@ -3,16 +3,22 @@
 ### Electronic components
 1. Arduino Mega 2560 x1 
 2. NodeMCU x1
+    - [NodeMCU taobao link](https://detail.tmall.com/item.htm?id=524942473974&spm=a1z09.2.0.0.40b42e8dqUuZrI&_u=p2v57gsh5d21)
 3. ir receiver x1
     - VS1838B , 38kHz
+    - [VS1838B taobao link](https://item.taobao.com/item.htm?spm=a1z09.2.0.0.40b42e8dqUuZrI&id=178521861&_u=p2v57gshd1d6)
 4. IR transmitter x1    
     - IR LED
+    - [IR LED taobao link](https://item.taobao.com/item.htm?spm=a1z09.2.0.0.40b42e8dqUuZrI&id=43647329043&_u=p2v57gshd036)
 5. temperature & humidity sensor x1
     - HTU21D
+    - [HTU21D taobao link](https://detail.tmall.com/item.htm?id=521686770579&spm=a1z09.2.0.0.40b42e8dqUuZrI&_u=p2v57gshe34b)
 6. light sensor x1
     - BH1750
+    - [BH1750 taobao link](https://detail.tmall.com/item.htm?id=521238059334&spm=a1z09.2.0.0.40b42e8dqUuZrI&_u=p2v57gshe0f9)
 7. Barometric Pressor Sensor x1
     - BMP180
+    - [BMP180 taobao link](https://detail.tmall.com/item.htm?id=521331189285&spm=a1z09.2.0.0.40b42e8dqUuZrI&_u=p2v57gsh1a64)
 
 ## Smartwatch Device Part
 ### Electronic components
