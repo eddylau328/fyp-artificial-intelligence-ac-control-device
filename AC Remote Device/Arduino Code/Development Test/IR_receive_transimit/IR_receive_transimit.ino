@@ -7,15 +7,22 @@
 
 // Define the switch pin
 const int switchPin = 7;
+const int modePin = 3;
 // Button state
 int buttonstate = 0;
- 
+int modeButtonState = 0;
+int currentMode = 0;
+
 // Define the IR send Object
 IRsend irsend;
 int fanstate = 0;
+unsigned int speed1[101] = {3500,3350,950,750,900,800,950,750,950,750,950,2500,950,2450,1000,700,950,2500,950,750,950,750,900,800,950,750,950,2500,950,2450,950,800,950,2450,900,800,1000,2450,900,2500,950,750,950,2500,950,2450,1000,700,950,750,950,800,900,2500,950,2500,950,750,950,2450,950,2500,900,800,950,750,3500,3350,950,750,950,750,950,750,950,800,900,2500,950,2450,1000,750,950,2450,950,750,950,750,950,800,950,750,900,2500,950,2500,950,750,950,2450};
+unsigned int speed2[101] = {3550,3300,950,2450,1000,700,1000,700,1050,2400,950,750,1000,700,950,2500,950,750,950,2450,1000,700,1000,750,950,2450,950,750,1000,700,1050,2400,950,750,1000,700,950,2500,950,750,1000,2400,1000,700,1000,750,950,750,950,750,950,750,1000,2450,1000,700,950,2450,950,750,1000,700,1000,750,950,750,3550,3300,950,2450,1000,700,1000,750,950,2450,1000,700,950,750,950,2500,950,750,1000,2400,1000,750,1000,700,950,2450,1000,700,1000,750,1000,2400,950,750};
+unsigned int speed3[101] = {3550,3300,1000,2450,950,750,1000,700,950,2500,950,750,950,2450,1000,2450,950,750,950,2450,1000,750,900,800,950,2450,1000,700,950,2500,950,2450,1000,700,1000,750,950,2450,950,750,950,2500,900,800,950,750,1000,700,950,750,1000,700,950,2500,950,750,950,2450,1000,750,950,750,950,750,1000,700,3550,3300,1000,2450,950,750,950,750,950,2450,1000,750,950,2450,950,2450,1000,750,950,2450,950,750,1000,700,950,2500,950,750,950,2450,950,2500,950,750};
 unsigned int switchFanSpeed[52] = {3350,3250,850,2450,900,2450,850,800,850,2450,850,2450,850,2450,850,2500,850,2450,850,2450,850,2450,850,2450,900,750,900,800,850,800,850,2450,850,800,850,800,900,750,900,750,850,800,850,800,900,800,850,800,850,2450,850};
 unsigned int onoffFan[52] = {3400,3250,850,2450,900,2400,900,750,900,2400,900,2450,900,2400,900,750,950,700,900,750,900,750,950,700,900,2400,950,750,900,750,900,2400,900,750,900,750,900,750,950,2350,950,2400,900,2400,900,2400,900,2400,950,700,950};
-int signal_len = 52;
+int signal_len = 101;
+unsigned int modeList[3][101];
 
 // Define the IR sensor pin
 const int RECV_PIN = 4;
@@ -40,8 +47,15 @@ void setup() {
   
   // Set the switchPin as input
   pinMode(switchPin, INPUT);
+  pinMode(modePin, INPUT);
 
   delay(500);
+  for (int i=0; i<signal_len; i++){
+    modeList[0][i] = speed1[i];
+    modeList[1][i] = speed2[i];
+    modeList[2][i] = speed3[i];
+  }
+  currentMode = 0;
 }
 
 float temperature,pressure,humidity,light_intensity;
@@ -174,11 +188,26 @@ void automatic_control(){
   }
 }
 
+void switchIRSignal(){
+  // Set modeButtonState depending upon switch position
+  modeButtonState = digitalRead(modePin);
+  // If the button is pressed, send ir signals
+  if (modeButtonState == HIGH){
+    currentMode = currentMode + 1;
+    if (currentMode >= 3){
+      currentMode = 0;
+    }
+    Serial.print("switch to ");
+    Serial.println(currentMode);
+  }
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
   readEnvironment(1);
   decodeIR();
-  sendIRByButton(switchFanSpeed,signal_len);
-  automatic_control();
+  sendIRByButton(modeList[currentMode],signal_len);
+  switchIRSignal();
+  //automatic_control();
   delay(500);
 }
