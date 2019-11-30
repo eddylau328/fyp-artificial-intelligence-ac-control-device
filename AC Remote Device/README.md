@@ -22,7 +22,13 @@ Below is the test of reading the indoor environment.
 To control the air conditioner, this device used an infrared transmitter and an infrared receiver to send and receive signals. The infrared receiver, VS1838B, is specified for the frequency of 38kHz, which is a typical frequency for home appliances. The usage of the infrared receiver is to record the signals of the air conditioner remote, by recording the temperature settings signals, this device can replace the original remote, as an IR LED which is the infrared transmitter is added to this device. It is able for this device to record the infrared signals and send the recorded signals.
 
 Below is the connection between the infrared module and the Arduino Mega 2560.
-![IR Communication Connection](../Project Record/AC remote DEV/IR communication/pic_ir_communication_connection.jpg "IR Communication Connection")
+![IR Communication Connection img](../Project Record/AC remote DEV/IR communication/pic_ir_communication_connection.jpg "IR Communication Connection")
 
 Below is the test of sending infrared signals to a television. The infrared signal from the television remote is recorded before the test by the infrared receiver.
-![IR Communication Test](../Project Record/AC remote DEV/IR communication/vid_ir_communication_test.mp4 "IR Communication Test")
+![IR Communication Test vid](../Project Record/AC remote DEV/IR communication/vid_ir_communication_test.mp4 "IR Communication Test")
+
+#### Online Database Communication
+To record and process the data, this device will send and save the environment data to the online database. As Arduino Mega 2560 does not provide network connection, NodeMCU is used as a module for networking. The Arduino Mega 2560 will transfer the data to the NodeMCU, and the NodeMCU will send the data as a json type file to the online database directly. For the online database, this project used the Google Firebase as a online server. The online server provided a online real-time database for saving the data which is commonly used as an IoT database.
+
+Below is the test of sending the data to Google Firebase.
+![Online Database Communication vid](../Project Record/AC remote DEV/Online database communication/vid_send_data_to_firebase.mp4 "Online Database Connection")
