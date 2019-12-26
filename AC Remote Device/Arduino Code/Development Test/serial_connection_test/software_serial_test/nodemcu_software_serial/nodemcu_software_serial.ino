@@ -11,5 +11,4 @@ void loop() {
   {
     Serial.write(s.read());
   }
- 
 }

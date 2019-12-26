@@ -39,5 +39,6 @@ void loop() {
   root["light"] = light_intensity;
   root["press"] = pressure;
   root.prettyPrintTo(s);
-  delay(5000);
+  root.prettyPrintTo(Serial);
+  delay(1000);
 }

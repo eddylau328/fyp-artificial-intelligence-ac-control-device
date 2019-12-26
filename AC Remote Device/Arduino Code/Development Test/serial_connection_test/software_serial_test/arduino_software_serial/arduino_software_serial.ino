@@ -3,7 +3,7 @@
 SoftwareSerial s(5,6);
  
 void setup() {
-s.begin(9600);
+  s.begin(9600);
 }
  
 void loop() {
