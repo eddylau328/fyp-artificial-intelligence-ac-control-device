@@ -43,7 +43,7 @@ graph TD;
 ### Sub Problems of AI control algorithm
 ```mermaid
 graph TD;
-    c2["AI learning algorithm"]-->d4["learn user habitat"];
+    c2["AI learning algorithm"]-->d4["learn user habit"];
     c2-->d5["learn control policy"];
 ```
 ### Sub Problems of Control device
