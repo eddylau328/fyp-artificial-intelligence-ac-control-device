@@ -33,11 +33,12 @@ graph TD;
     d1-->e2["humidity"]
     d1-->e3["pressure"]
     d1-->e4["light intensity"]
-    d1-->e5["time"]
+    d1-->e5["power"]
+    d1-->e6["time"]
     
-    d2-->e6["User input about Comfortable/Hot/Cold"]
+    d2-->e7["User input about Comfortable/Hot/Cold"]
     
-    d3-->e7["Online Database allow upload and access"]
+    d3-->e8["Online Database allow upload and access"]
 ```
 ### Sub Problems of AI control algorithm
 ```mermaid
