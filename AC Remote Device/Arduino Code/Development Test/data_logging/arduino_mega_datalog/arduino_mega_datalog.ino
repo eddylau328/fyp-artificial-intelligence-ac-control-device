@@ -3,8 +3,6 @@
 #include <Adafruit_HTU21DF.h>
 #include <BH1750.h>
 #include <ArduinoJson.h>
-#include <SoftwareSerial.h>
-SoftwareSerial s(5,6);
 
 Adafruit_BMP085 bmp;
 Adafruit_HTU21DF htu;
@@ -13,7 +11,7 @@ BH1750 bh;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  s.begin(9600);
+  Serial3.begin(9600);
   bmp.begin();
   htu.begin();
   bh.begin();
@@ -39,6 +37,6 @@ void loop() {
   root["light"] = light_intensity;
   root["press"] = pressure;
   root.prettyPrintTo(s);
-  root.prettyPrintTo(Serial);
+  root.prettyPrintTo(Serial3);
   delay(1000);
 }

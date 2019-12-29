@@ -9,7 +9,7 @@
 #define WIFI_SSID "Lau Family"
 #define WIFI_PASSWORD "27050880"  // hidden for credentials problem
 
-SoftwareSerial s(D6,D5);
+SoftwareSerial s(D7,D8);
 
 void setup() {
   Serial.begin(9600);

@@ -1,11 +1,11 @@
 //Arduino code
 #include <SoftwareSerial.h>
-SoftwareSerial s(5,6);
- 
+
 void setup() {
-  s.begin(9600);
+  Serial3.begin(9600);
 }
  
 void loop() {
- s.println("Hello");
+ Serial3.println("Hello");
+ delay(1000);
 }
