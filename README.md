@@ -17,7 +17,7 @@ graph TD;
     a-->b2["Control device"];
     
     b1-->c1["Input for AI"];
-    b1-->c2["AI_learning_algorithm"];
+    b1-->c2["AI learning algorithm"];
     b2-->c3["Replace air conditioner remote"];
     b2-->c4["Update AI algorithm of the device"];
 
@@ -42,7 +42,7 @@ graph TD;
 ### Sub Problems of AI control algorithm
 ```mermaid
 graph TD;
-    c2["AI_learning_algorithm"]-->d4["learn user habitat"];
+    c2["AI learning algorithm"]-->d4["learn user habitat"];
     c2-->d5["learn control policy"];
 ```
 ### Sub Problems of Control device
