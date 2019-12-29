@@ -8,3 +8,44 @@ Over the last decades, lots of technologies and products developed and created t
 
 ### Why target Air Conditioner / Heater?
 Since Hong Kong belongs to the subtropical climate, its temperature and humidity are considered as high throughout the year in comparing other places. The hot and humid environment in Hong Kong causes the residents to feel discomfort in Summer, as it is much more difficult to evaporate the sweat and dissipate the body heat. As a result, the demand for cooling is high in Hong Kong. According to the Hong Kong Energy End-use Data 2019 from the Electrical and Mechanical Services Department (EMSD), the electricity consumption of air conditioning in the residential part and in the commercial part occupied 38% and 30% in 2017, both of them own the highest proportion among others. This implies that air conditioning is one of the most important aspects of electricity consumption in Hong Kong.
+
+## Problem Description
+```mermaid
+graph TD;
+    a["Device that can set temperature and saving energy"]-->b1["AI control algorithm"];
+    a-->b2["Control device"];
+    
+    b1-->c1["Input for AI"];
+    b1-->c2["AI_learning_algorithm"];
+    b2-->c3["Replace air conditioner remote"];
+    b2-->c4["Update AI algorithm of the device"];
+    
+    subgraph "Require Hardware"
+    c1-->d1["Collect environment data"];
+    c1-->d2["Collect user habit"];
+        end
+    c1-->d3["Group and collect data"];
+    c2-->d4["learn user habitat"];
+    c2-->d5["learn control policy"];
+    subgraph "Require Hardware"
+    c3-->d6["Find out different IR signals"];
+    c3-->d7["Send out recorded IR signals"];
+    end
+```
+```mermaid
+graph TD;
+    c1["Input for AI"]-->d1["Collect environment data"];
+    c1-->d2["Collect user habit"];
+    c1-->d3["Group and collect data"];
+    
+    d1-->e1["temperature"]
+    d1-->e2["humidity"]
+    d1-->e3["pressure"]
+    d1-->e4["light intensity"]
+    d1-->e5["time"]
+    
+    d2-->e6["User input about Comfortable/Hot/Cold"]
+    
+    d3-->e7["Online Database allow upload and access"]
+    
+```
