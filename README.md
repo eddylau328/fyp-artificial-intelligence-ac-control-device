@@ -51,5 +51,11 @@ graph TD;
 
     c3["Replace air conditioner remote"]-->d6["Find out different IR signals"];
     c3-->d7["Send out recorded IR signals"];
+```
+### Sub Problems of Control device
+```mermaid
+graph TD;
 
+    c4["Update AI algorithm of the device"]-->d8["Update through transmitting wire"];
+    c4-->d9["Update through Internet"];
 ```
