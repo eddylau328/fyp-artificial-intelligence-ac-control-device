@@ -7,7 +7,7 @@
 #define FIREBASE_HOST "datalog-418c9.firebaseio.com"
 #define FIREBASE_AUTH "txdD1XvFjmWd2BTuyEU8ztwa4D5OZESobTSUCARv"
 #define WIFI_SSID "Lau Family"
-#define WIFI_PASSWORD "27050880"  // hidden for credentials problem
+#define WIFI_PASSWORD ""  // hidden for credentials problem
 
 SoftwareSerial s(D7,D8);
 
@@ -46,13 +46,13 @@ void loop()
     Serial.println();
     Serial.println("Received");
     Serial.println();
-    String name = Firebase.push("/sensor/data", data);
+    String name = Firebase.push("/sensor", data);
     if (Firebase.failed()) {
-      Serial.print("Firebase Pushing /sensor/data failed:");
+      Serial.print("Firebase Pushing /sensor failed:");
       Serial.println(Firebase.error()); 
       return;
     }else{
-      Serial.print("Firebase Pushed /sensor/data ");
+      Serial.print("Firebase Pushed /sensor ");
       Serial.println(name);
     }
   }else{

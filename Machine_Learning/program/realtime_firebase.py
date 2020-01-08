@@ -15,7 +15,7 @@ class Realtime_firebase:
     def getLatestData(self):
         ref = db.reference('sensor')
         # forming a list of data
-        data = [detail for _ , detail in ref.get().get('data').items()]
+        data = [detail for _ , detail in ref.get().items()]
         # get the latest data from the list
         return data.pop()
 
