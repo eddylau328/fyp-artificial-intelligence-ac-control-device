@@ -5,5 +5,7 @@ import cloud_firestore as c_fs
 class Database:
 
     def __init__(self):
-        realtime_db = rt_fb.Realtime_firebase()
-        cloud_db = c_fs.Cloud_firestore()
+        self.realtime_db = rt_fb.Realtime_firebase()
+        self.cloud_db = c_fs.Cloud_firestore()
+
+
