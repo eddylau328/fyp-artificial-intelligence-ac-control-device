@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">FYP_AC_Monitor</string>
+    <string name="main_title">FYP AC Monitor</string>
+    <string name="startButton_title">Start</string>
+
+    <string name="loginButton_title">Login</string>
+    <string name="username_input_title">Enter your username</string>
+    <string name="password_input_titile">Enter your assword</string>
 </resources>
