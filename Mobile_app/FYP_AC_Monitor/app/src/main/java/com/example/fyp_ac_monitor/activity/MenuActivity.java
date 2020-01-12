@@ -1,4 +1,4 @@
-package com.example.fyp_ac_monitor;
+package com.example.fyp_ac_monitor.activity;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -8,6 +8,10 @@ import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.example.fyp_ac_monitor.ChartFragment;
+import com.example.fyp_ac_monitor.ControlFragment;
+import com.example.fyp_ac_monitor.HomeFragment;
+import com.example.fyp_ac_monitor.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MenuActivity extends AppCompatActivity {
@@ -43,6 +47,6 @@ public class MenuActivity extends AppCompatActivity {
         });
 
         getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
-        
+
     }
 }

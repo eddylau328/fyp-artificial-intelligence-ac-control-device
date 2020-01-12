@@ -1,4 +1,4 @@
-package com.example.fyp_ac_monitor;
+package com.example.fyp_ac_monitor.activity;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,6 +11,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.example.fyp_ac_monitor.R;
+import com.example.fyp_ac_monitor.utils.PreferenceUtils;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
@@ -31,6 +33,7 @@ public class LoginActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
@@ -38,35 +41,52 @@ public class LoginActivity extends AppCompatActivity {
         _password = findViewById(R.id.password_input);
         _login = findViewById(R.id.login_button);
 
+        _login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Can Add if else case to go to login or by-pass the login
+                validate();
+            }
+        });
+
     }
 
-    public void validate(View v){
+    public void validate(){
         final String input_username = _username.getText().toString();
         final String input_password = _password.getText().toString();
 
+        if ("".equals(input_username) || "".equals(input_password)) {
+
+            if ("".equals(input_username) && "".equals(input_password)){
+                Toast.makeText(LoginActivity.this, "Empty username & password!", Toast.LENGTH_SHORT).show();
+            } else if ("".equals(input_username)){
+                Toast.makeText(LoginActivity.this, "Empty username!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(LoginActivity.this, "Empty password!", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
         // this use to check the firestore where there is a username like the input
         checkUserExist(input_username, new MyCallBack() {
             @Override
             public void onCallback_isUserExist(boolean isUserExist) {
-                if (isUserExist){
+                if (isUserExist) {
                     DocumentReference userRef = db.collection("Users").document(input_username).collection("info").document("personal");
                     userRef.get()
                             .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                                 @Override
                                 public void onSuccess(DocumentSnapshot documentSnapshot) {
                                     // first check whether the user exists
-                                    if (documentSnapshot.exists()){
+                                    if (documentSnapshot.exists()) {
                                         // Toast.makeText(LoginActivity.this, "Username exists!", Toast.LENGTH_SHORT).show();
                                         // Second check whether the password is correct or not
                                         String password = documentSnapshot.getString(KEY_PASSWORD);
-
-                                        if (input_password.equals(password)){
+                                        if (input_password.equals(password)) {
                                             Toast.makeText(LoginActivity.this, "Login success", Toast.LENGTH_SHORT).show();
                                             openMenuActivity();
                                         } else {
                                             Toast.makeText(LoginActivity.this, "Wrong password!", Toast.LENGTH_SHORT).show();
                                         }
-
                                     } else {
                                         Toast.makeText(LoginActivity.this, "Error!", Toast.LENGTH_SHORT).show();
                                     }
@@ -80,11 +100,10 @@ public class LoginActivity extends AppCompatActivity {
                                 }
                             });
                 } else {
-                    Toast.makeText(LoginActivity.this,"Wrong username!",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, "Wrong username!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
-
     }
 
     public void checkUserExist(String username, final MyCallBack myCallBack){

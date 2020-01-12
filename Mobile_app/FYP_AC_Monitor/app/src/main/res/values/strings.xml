@@ -5,7 +5,7 @@
 
     <string name="loginButton_title">Login</string>
     <string name="username_input_title">Enter your username</string>
-    <string name="password_input_titile">Enter your assword</string>
+    <string name="password_input_titile">Enter your password</string>
 
     <string name="register_button">Register</string>
 
