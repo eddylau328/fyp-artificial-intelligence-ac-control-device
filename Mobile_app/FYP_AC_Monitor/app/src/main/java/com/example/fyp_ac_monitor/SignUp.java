@@ -11,6 +11,8 @@ import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
@@ -42,29 +44,68 @@ public class SignUp extends AppCompatActivity {
     }
 
     public void saveUser(View v){
-        String username = _usernameInput.getText().toString();
-        String password = _passwordInput.getText().toString();
-        String email = _emailInput.getText().toString();
+        final String username = _usernameInput.getText().toString();
+        final String password = _passwordInput.getText().toString();
+        final String email = _emailInput.getText().toString();
 
-        Map<String, Object> user = new HashMap<>();
-        user.put(KEY_USERNAME, username);
-        user.put(KEY_PASSWORD, password);
-        user.put(KEY_EMAIL, email);
+        checkUserExist(username, new MyCallBack() {
+            @Override
+            public void onCallback_isUserExist(boolean isUserExist) {
+                if ( !isUserExist ){
 
-        db.collection("Users").document(username).set(user)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    Map<String, Object> user = new HashMap<>();
+                    user.put(KEY_USERNAME, username);
+                    user.put(KEY_PASSWORD, password);
+                    user.put(KEY_EMAIL, email);
+
+                    db.collection("Users").document(username).collection("info").document("personal").set(user)
+                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+                                    Toast.makeText(SignUp.this, "User created!", Toast.LENGTH_SHORT).show();
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Toast.makeText(SignUp.this, "Error!", Toast.LENGTH_SHORT).show();
+                                    Log.d(TAG, e.toString());
+                                }
+                            });
+                }
+            }
+        });
+
+    }
+
+    public void checkUserExist(String username, final MyCallBack myCallBack){
+        // Access the user's username
+        DocumentReference userRef = db.collection("Users").document(username);
+        userRef.get()
+                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                     @Override
-                    public void onSuccess(Void aVoid) {
-                        Toast.makeText(SignUp.this, "User created!", Toast.LENGTH_SHORT).show();
+                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                        // first check whether the user exists
+                        if (documentSnapshot.exists()){
+                            Toast.makeText(SignUp.this, "Username exists!", Toast.LENGTH_SHORT).show();
+                            myCallBack.onCallback_isUserExist(true);
+                        } else {
+                            myCallBack.onCallback_isUserExist(false);
+                        }
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         Toast.makeText(SignUp.this, "Error!", Toast.LENGTH_SHORT).show();
+                        myCallBack.onCallback_isUserExist(true);
                         Log.d(TAG, e.toString());
                     }
                 });
-
     }
+
+    public interface MyCallBack {
+        void onCallback_isUserExist(boolean isUserExist);
+    }
+
 }
