@@ -49,6 +49,11 @@ public class SignUp extends AppCompatActivity {
         final String password = _passwordInput.getText().toString();
         final String email = _emailInput.getText().toString();
 
+        if ("".equals(username) || "".equals(password) || "".equals(email)){
+            Toast.makeText(SignUp.this, "Empty input!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         checkUserExist(username, new MyCallBack() {
             @Override
             public void onCallback_isUserExist(boolean isUserExist) {
