@@ -8,4 +8,9 @@
     <string name="password_input_titile">Enter your assword</string>
 
     <string name="register_button">Register</string>
+
+    <string name="nav_home_titile">Home</string>
+    <string name="nav_chart_title">Analysis</string>
+    <string name="nav_control_title">Control</string>
+
 </resources>

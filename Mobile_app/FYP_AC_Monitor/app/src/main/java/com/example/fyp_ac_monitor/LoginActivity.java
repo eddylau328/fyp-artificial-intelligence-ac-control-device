@@ -3,6 +3,7 @@ package com.example.fyp_ac_monitor;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -61,6 +62,7 @@ public class LoginActivity extends AppCompatActivity {
 
                                         if (input_password.equals(password)){
                                             Toast.makeText(LoginActivity.this, "Login success", Toast.LENGTH_SHORT).show();
+                                            openMenuActivity();
                                         } else {
                                             Toast.makeText(LoginActivity.this, "Wrong password!", Toast.LENGTH_SHORT).show();
                                         }
@@ -112,6 +114,11 @@ public class LoginActivity extends AppCompatActivity {
 
     public interface MyCallBack {
         void onCallback_isUserExist(boolean isUserExist);
+    }
+
+    public void openMenuActivity() {
+        Intent intent = new Intent(this, MenuActivity.class);
+        startActivity(intent);
     }
 
 }
