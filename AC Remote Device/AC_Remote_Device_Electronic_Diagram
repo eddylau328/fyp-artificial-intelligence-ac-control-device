@@ -1,6 +1,6 @@
-<mxfile host="www.draw.io" modified="2019-12-27T03:10:14.769Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36" etag="YJa427VVEB22YD0RNV0Y" version="12.4.3" type="gitlab" pages="1">
+<mxfile host="www.draw.io" modified="2020-01-13T07:25:43.820Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36" etag="WOtBLovXORhzCUMxdRu-" version="12.5.1" type="gitlab">
   <diagram id="FjoUxcbUuBRz930z4Aif" name="Page-1">
-    <mxGraphModel dx="813" dy="457" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="872" dy="514" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
@@ -462,12 +462,76 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="UHihL5wwPsNWAc0HzZon-1" value="" style="endArrow=none;html=1;entryX=0.175;entryY=-0.004;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" target="VLfBFaEwi8UlOkuxYwPa-1" edge="1">
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-1" value="" style="endArrow=none;html=1;entryX=0.17;entryY=-0.013;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="Djs-RPmmdK3kHdog2s1x-3" target="VLfBFaEwi8UlOkuxYwPa-1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="140" y="1000" as="sourcePoint"/>
+            <mxPoint x="110" y="1040" as="sourcePoint"/>
+            <mxPoint x="100" y="1200" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="80" y="1020"/>
+              <mxPoint x="237" y="1020"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-2" value="3.3 k Ohm" style="rounded=0;whiteSpace=wrap;html=1;rotation=-90;" vertex="1" parent="1">
+          <mxGeometry x="20.5" y="1090" width="60" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-3" value="3.3 k Ohm" style="rounded=0;whiteSpace=wrap;html=1;rotation=-90;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1090" width="60" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-4" value="3.3 k Ohm" style="rounded=0;whiteSpace=wrap;html=1;rotation=-90;" vertex="1" parent="1">
+          <mxGeometry x="80.5" y="1090" width="60" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-5" value="" style="endArrow=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" target="Djs-RPmmdK3kHdog2s1x-2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="80" y="1170" as="sourcePoint"/>
             <mxPoint x="90" y="1200" as="targetPoint"/>
             <Array as="points">
-              <mxPoint x="240" y="1000"/>
+              <mxPoint x="51" y="1170"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-6" value="" style="endArrow=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" target="Djs-RPmmdK3kHdog2s1x-3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="80" y="1170" as="sourcePoint"/>
+            <mxPoint x="90" y="1200" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-7" value="" style="endArrow=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" target="Djs-RPmmdK3kHdog2s1x-4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="80" y="1170" as="sourcePoint"/>
+            <mxPoint x="90" y="1140" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="111" y="1170"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-8" value="" style="endArrow=none;html=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="40" y="979.2" as="sourcePoint"/>
+            <mxPoint x="80" y="1170" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="40" y="1000"/>
+              <mxPoint x="10" y="1000"/>
+              <mxPoint x="10" y="1190"/>
+              <mxPoint x="80" y="1190"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-9" value="" style="endArrow=none;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="Djs-RPmmdK3kHdog2s1x-2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="20.5" y="1080.8" as="sourcePoint"/>
+            <mxPoint x="80" y="1040" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="50" y="1040"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Djs-RPmmdK3kHdog2s1x-10" value="" style="endArrow=none;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="Djs-RPmmdK3kHdog2s1x-4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="30.5" y="1090.8" as="sourcePoint"/>
+            <mxPoint x="80.5" y="1040.8" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="111" y="1041"/>
             </Array>
           </mxGeometry>
         </mxCell>
