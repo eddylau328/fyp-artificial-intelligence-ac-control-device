@@ -43,6 +43,26 @@ This website talks about the working methods of compressor, thermostat, and some
     - Standard Mode
         - 5 μA
 
+### OTHERS
+#### [LCD1602](./LCD1602_datasheet.pdf)
+- Supply Voltage For Logic VDD-VSS
+    - Min 4.5, Max 5.5 V
+- Supply Voltage For LCD VDD-V0 TYP 3.8V
+- Supply Current 1.2 mA , when V = 5V
+
+### Processors
+#### [NodeMCU](./NodeMCU_datasheet.pdf)
+- Voltage: 3.3V
+- Current consumption: 10uA~170mA
+
+#### [ArduinoMega](https://store.arduino.cc/usa/mega-2560-r3)
+- Operating Voltage	5V
+- Input Voltage (recommended)	7-12V
+- Input Voltage (limit)	6-20V
+- DC Current per I/O Pin	20 mA
+- DC Current for 3.3V Pin	50 mA
+- DC Current Vcc and GND Pins  200.0 mA
+
 ## Other projects
 #### [Smart Sensors Enable Smart Air Conditioning Control](./sensors-14-11179.pdf)
 This project aims to use the smart sensors to control the air conditioner. It is very similar to the device my project is doing. However, it does not use a machine learning program to determine the human motion. Also, it only detect the motion and sleeping rate. But my project aims to detect the activity type and classify it into different metabolic rate.
