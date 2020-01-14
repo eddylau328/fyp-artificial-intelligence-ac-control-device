@@ -12,6 +12,7 @@ public class PreferenceUtils {
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
         editor.putString(Constants.KEY_USERNAME, username);
+        editor.apply();
     }
 
     public static void savePassword(String password, Context context){
@@ -19,6 +20,7 @@ public class PreferenceUtils {
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
         editor.putString(Constants.KEY_PASSWORD, password);
+        editor.apply();
     }
 
     public static void saveIsLogin(Boolean islogin, Context context){
@@ -26,6 +28,7 @@ public class PreferenceUtils {
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
         editor.putBoolean(Constants.KEY_ISLOGIN, islogin);
+        editor.apply();
     }
 
     public static String loadUsername(Context context){

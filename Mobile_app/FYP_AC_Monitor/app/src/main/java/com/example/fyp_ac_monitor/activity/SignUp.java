@@ -15,6 +15,8 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Source;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +43,11 @@ public class SignUp extends AppCompatActivity {
         _usernameInput = findViewById(R.id.register_username_input);
         _passwordInput = findViewById(R.id.register_password_input);
         _emailInput = findViewById(R.id.register_email_input);
+
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(false)
+                .build();
+        db.setFirestoreSettings(settings);
 
     }
 
@@ -87,7 +94,7 @@ public class SignUp extends AppCompatActivity {
     public void checkUserExist(String username, final MyCallBack myCallBack){
         // Access the user's username
         DocumentReference userRef = db.collection("Users").document(username);
-        userRef.get()
+        userRef.get(Source.SERVER)
                 .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                     @Override
                     public void onSuccess(DocumentSnapshot documentSnapshot) {
