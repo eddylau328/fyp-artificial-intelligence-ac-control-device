@@ -19,16 +19,29 @@ This website talks about the working methods of compressor, thermostat, and some
 - VIN max = 3.6V
 - SDA, SCL max = 3.6V
 - SDA, SCL min = 70% * VIn
+- Current consumption
+    - Measuring
+        - Min 300 μA
+        - TYP 450 μA
+        - MAX 500 μA
 
 #### [BH1750](./BH1750 datasheet.pdf)
 - VIN = 3.3V
 - SDA, SCL max = 5V
+- Supply Current
+    - TYP 120 μA
+    - MAX 190 μA
 - [schematics](./BH1750 SCH.pdf)
 
 #### [BMP180](./BMP180_datasheet.pdf)
 - VIN max = 3.6V
 - SDA, SCL max = 3.6V
-
+- Current consumption
+    - Peak current
+        - TYP 650 μA
+        - MAX 1000 μA
+    - Standard Mode
+        - 5 μA
 
 ## Other projects
 #### [Smart Sensors Enable Smart Air Conditioning Control](./sensors-14-11179.pdf)
