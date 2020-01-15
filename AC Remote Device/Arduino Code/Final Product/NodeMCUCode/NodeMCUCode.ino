@@ -54,10 +54,10 @@ void readEnvironment() {
 void loop() 
 {
   readEnvironment();
-  Serial.println(temperature);
-  Serial.println(humidity);
-  Serial.println(pressure);
-  Serial.println();
+  //Serial.println(temperature);
+  //Serial.println(humidity);
+  //Serial.println(pressure);
+  //Serial.println(light_intensity);
   
   if (s.available() > 0){
     StaticJsonBuffer<1000> doc;
@@ -69,17 +69,15 @@ void loop()
     }
 
     light_intensity = root["light"];
-    
-  }else{
-    StaticJsonBuffer<1000> doc;
-    JsonObject& data =doc.createObject();
+    Serial.println(light_intensity);
+    /*JsonObject& data =doc.createObject();
     data["temp"] = temperature;
     data["hum"] = humidity;
     data["light"] = light_intensity;
     data["press"] = pressure;
     data.prettyPrintTo(s);
     data.prettyPrintTo(Serial);
-    
+    */
   }
 
   if (second == dataLogPeriod) {
@@ -105,4 +103,6 @@ void loop()
   if (second >= dataLogPeriod){
     second = 0;
   }
+
+  delay(500);
 }
