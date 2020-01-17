@@ -2,8 +2,6 @@
 #include <FirebaseArduino.h>
 #include <ArduinoJson.h>
 #include <SoftwareSerial.h>
-#include <Adafruit_BMP085.h>
-#include <Adafruit_HTU21DF.h>
 
 // Set these to run example.
 #define FIREBASE_HOST "datalog-418c9.firebaseio.com"
@@ -12,20 +10,10 @@
 #define WIFI_PASSWORD "12345678xd"  // hidden for credentials problem
 
 SoftwareSerial s(D7,D8);
-Adafruit_BMP085 bmp;
-Adafruit_HTU21DF htu;
-
-int second = 0;
-// every 60s, 1 min per data
-int dataLogPeriod = 60;
 
 void setup() {
   Serial.begin(9600);
   s.begin(9600);
-
-  bmp.begin();
-  htu.begin();
-
   
   // connect to wifi.
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -36,58 +24,28 @@ void setup() {
   }
   Serial.println();
   Serial.print("connected: ");
-  s.print("Connected");
   Serial.println(WiFi.localIP());
   
   Firebase.begin(FIREBASE_HOST);
   
 }
 
-float temperature,pressure,humidity,light_intensity;
-
-void readEnvironment() {
-  temperature = htu.readTemperature();
-  pressure = bmp.readPressure();
-  humidity = htu.readHumidity();
-}
-
 void loop() 
 {
-  readEnvironment();
-  //Serial.println(temperature);
-  //Serial.println(humidity);
-  //Serial.println(pressure);
-  //Serial.println(light_intensity);
-  
   if (s.available() > 0){
     StaticJsonBuffer<1000> doc;
     // deserialize the object
-    JsonObject& root = doc.parseObject(s);
-    if (!root.success()) {
+    JsonObject& data = doc.parseObject(s);
+    if (!data.success()) {
        Serial.println("parseObject() failed");
        return;
     }
-
-    light_intensity = root["light"];
-    Serial.println(light_intensity);
-    /*JsonObject& data =doc.createObject();
-    data["temp"] = temperature;
-    data["hum"] = humidity;
-    data["light"] = light_intensity;
-    data["press"] = pressure;
-    data.prettyPrintTo(s);
+    Serial.println();
     data.prettyPrintTo(Serial);
-    */
-  }
-
-  if (second == dataLogPeriod) {
-    StaticJsonBuffer<1000> doc;
-    JsonObject& data =doc.createObject();
-    data["temp"] = temperature;
-    data["hum"] = humidity;
-    data["light"] = light_intensity;
-    data["press"] = pressure;
-    
+    delay(50);
+    Serial.println();
+    Serial.println("Received");
+    Serial.println();
     String name = Firebase.push("/sensor", data);
     if (Firebase.failed()) {
       Serial.print("Firebase Pushing /sensor failed:");
@@ -97,12 +55,8 @@ void loop()
       Serial.print("Firebase Pushed /sensor ");
       Serial.println(name);
     }
+  }else{
+    Serial.print(".");
+    delay(50);
   }
-  
-  second += 1;
-  if (second >= dataLogPeriod){
-    second = 0;
-  }
-
-  delay(500);
 }

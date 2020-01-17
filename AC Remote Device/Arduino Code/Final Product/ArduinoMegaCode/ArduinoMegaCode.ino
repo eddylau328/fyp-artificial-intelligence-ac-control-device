@@ -1,4 +1,6 @@
 #include <Wire.h>
+#include <Adafruit_BMP085.h>
+#include <Adafruit_HTU21DF.h>
 #include <BH1750.h>
 #include <ArduinoJson.h>
 #include <LiquidCrystal.h>
@@ -8,39 +10,40 @@ LiquidCrystal lcd(12,11,37,35,33,31);
 
 // Setup a communication way between arduino mega and nodemcu
 
+Adafruit_BMP085 bmp;
+Adafruit_HTU21DF htu;
+float temperature_offset = -0.92;
 BH1750 bh;
 
-bool isActivate;
+int second = 0;
+// every 60s, 1 min per data
+int dataLogPeriod = 5;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   Serial3.begin(9600);
+  bmp.begin();
+  htu.begin();
   bh.begin();
 
   lcd.begin(16, 2);
-
-  LCDprint("Connecting", 0, 0, false);
-  int i = 0;
-  while (Serial3.available() == 0){
-    if (i > 5){
-      LCDprint("Connecting", 0, 0, true);
-      i = -1;
-    }else{
-      LCDprint(".", i+10, 0, false);
-    }
-    i++;
-    delay(1000);
-  }
-
-  lcd.clear();
-
-  isActivate = true;
   
   delay(50);
 }
 
 float temperature,pressure,humidity,light_intensity;
+
+void readEnvironment() {
+  temperature = htu.readTemperature()+temperature_offset;
+  delay(100);
+  pressure = ceil(bmp.readPressure()/100)/10;
+  delay(100);
+  humidity = htu.readHumidity();
+  delay(100);
+  light_intensity = bh.readLightLevel();
+  delay(100);
+}
 
 // 0 <= x <= 15 (15 can only print one digit)
 // 0 or 1 for y (row 1 and row 2)
@@ -74,33 +77,18 @@ void LCDprint(char ch, int x, int y, bool clearScreen){
 
 void loop() {
   // put your main code here, to run repeatedly:
-/*
-  if (Serial3.available() > 0 || isActivate){
+  readEnvironment();
 
-    if (!isActivate){
-      // deserialize the object
-      JsonObject& data = doc.parseObject(Serial3);
-      if (!data.success()) {
-         Serial.println("parseObject() failed");
-         return;
-      }
-      
-      temperature = data["temp"];
-      humidity = data["hum"];
-      humidity = ceil(humidity/100)/10;
-      pressure = data["press"];
-    }
-
-    isActivate = false;
+  if (second == 0){
+    StaticJsonBuffer<1000> doc;
+    JsonObject& root =doc.createObject();
+    root["temp"] = temperature;
+    root["hum"] = humidity;
+    root["light"] = light_intensity;
+    root["press"] = pressure;
+    root.prettyPrintTo(Serial3);
   }
-  */
-      
-  StaticJsonBuffer<1000> doc;      
-  JsonObject& root =doc.createObject();
-  light_intensity = bh.readLightLevel();
-  root["light"] = light_intensity;
-  root.prettyPrintTo(Serial3);
-    
+  
   LCDprint(temperature, 0, 0, false);
   LCDprint((char)223,6,0,false);
   LCDprint("C",7,0,false);
@@ -113,5 +101,10 @@ void loop() {
   
   LCDprint((int)light_intensity,9,1,false);
   LCDprint("lx",14,1,false);
+  
   delay(1000);
+  second += 1;
+  if (second >= dataLogPeriod){
+    second = 0;
+  }
 }
