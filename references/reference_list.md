@@ -8,6 +8,11 @@ It introduces the monte carlo methods. It explains First-visit Monte Carlo Polic
 #### [Create custom gym environments from scratch — A stock market example](https://towardsdatascience.com/creating-a-custom-openai-gym-environment-for-stock-trading-be532be3910e)
 It shows how to create an environment in gym, which is a python library.
 
+## Arduino
+### Coding
+#### [Timer](https://randomnerdtutorials.com/interrupts-timers-esp8266-arduino-ide-nodemcu/)
+It shows how to use millis() to acheive timer function.
+
 ## Air Conditioner
 ### Power Consumption
 #### [Ideal Air Conditioner temperature for electricity savings](https://www.bijlibachao.com/air-conditioners/ideal-air-conditioner-temperature-for-electricity-saving.html)
