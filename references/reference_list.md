@@ -60,6 +60,29 @@ This website talks about the working methods of compressor, thermostat, and some
     - Standard Mode
         - 5 μA
 
+#### [MPU6050](./MPU6050_datasheet.pdf)
+- VDD POWER SUPPLY
+    - Operating Voltages 2.375 3.46 V
+- Normal Operating Current
+    - Gyroscope + Accelerometer + DMP 3.9 mA
+    - Gyroscope + Accelerometer (DMP disabled) 3.8 mA
+    - Gyroscope + DMP (Accelerometer disabled) 3.7 mA
+    - Gyroscope only (DMP & Accelerometer disabled) 3.6 mA
+    - Accelerometer only (DMP & Gyroscope disabled) 500 µA
+- Accelerometer Low Power Mode Current
+    - 1.25 Hz update rate 10 µA
+    - 5 Hz update rate 20 µA
+    - 20 Hz update rate 70 µA
+    - 40 Hz update rate 140 µA
+- Full-Chip Idle Mode Supply Current 5 µA
+- VLOGIC REFERENCE VOLTAGE MPU-6050 only
+    - Voltage Range VLOGIC must be ≤VDD at all times 1.71 VDD V
+    - Normal Operating Current 100 µA
+- TEMPERATURE RANGE
+    - Specified Temperature Range Performance parameters are not applicable beyond Specified
+    - Temperature Range -40 + 85 °C
+
+
 ### OTHERS
 #### [LCD1602](./LCD1602_datasheet.pdf)
 - Supply Voltage For Logic VDD-VSS
