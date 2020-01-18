@@ -4,16 +4,21 @@
 #include <SoftwareSerial.h>
 
 // Set these to run example.
-#define FIREBASE_HOST "datalog-418c9.firebaseio.com"
-#define FIREBASE_AUTH "txdD1XvFjmWd2BTuyEU8ztwa4D5OZESobTSUCARv"
+#define FIREBASE_HOST "fypacmonitor.firebaseio.com"
+#define FIREBASE_AUTH "jaT833r4mymesl03s37FD9jeV9JnWZzcM1xrnX8d"
 #define WIFI_SSID "Eddy Wifi"
 #define WIFI_PASSWORD "12345678xd"  // hidden for credentials problem
 
-SoftwareSerial s(D7,D8);
+SoftwareSerial s(D7,D8); //D2, D1
+String serial_num = "fyp0001";
+String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
+String firebase_receive_action = String("/Devices/"+serial_num+"/receive_action");
+
+
 
 void setup() {
-  Serial.begin(9600);
-  s.begin(9600);
+  Serial.begin(115200);
+  s.begin(115200);
   
   // connect to wifi.
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -30,9 +35,24 @@ void setup() {
   
 }
 
+int count = 0;
+bool isWorking = false;
+
 void loop() 
 {
+  
+  if (isWorking == false){
+    s.write("a");
+    isWorking = true;
+  }
+  
+  if (Serial.available() > 0){
+    s.write("a");
+  }
+  
   if (s.available() > 0){
+    count = 0;
+    
     StaticJsonBuffer<1000> doc;
     // deserialize the object
     JsonObject& data = doc.parseObject(s);
@@ -42,7 +62,6 @@ void loop()
     }
     Serial.println();
     data.prettyPrintTo(Serial);
-    delay(50);
     Serial.println();
     Serial.println("Received");
     Serial.println();
@@ -55,8 +74,16 @@ void loop()
       Serial.print("Firebase Pushed /sensor ");
       Serial.println(name);
     }
+
+    Serial.println("Need Request");
+    isWorking = true;
   }else{
-    Serial.print(".");
-    delay(50);
+    count ++;
   }
+
+  if (count > 10){
+    isWorking = false;
+    count = 0;
+  }
+  delay(500);
 }

@@ -15,14 +15,10 @@ Adafruit_HTU21DF htu;
 float temperature_offset = -0.92;
 BH1750 bh;
 
-int second = 0;
-// every 60s, 1 min per data
-int dataLogPeriod = 5;
-
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
-  Serial3.begin(9600);
+  Serial.begin(115200);
+  Serial3.begin(115200);
   bmp.begin();
   htu.begin();
   bh.begin();
@@ -78,8 +74,9 @@ void LCDprint(char ch, int x, int y, bool clearScreen){
 void loop() {
   // put your main code here, to run repeatedly:
   readEnvironment();
-
-  if (second == 0){
+  lcd.clear();
+  
+  if (Serial.available() > 0){
     StaticJsonBuffer<1000> doc;
     JsonObject& root =doc.createObject();
     root["temp"] = temperature;
@@ -87,6 +84,12 @@ void loop() {
     root["light"] = light_intensity;
     root["press"] = pressure;
     root.prettyPrintTo(Serial3);
+  }
+  
+  if (Serial3.available() > 0){
+    if (Serial3.read() == 'a'){
+      Serial.println(Serial3.read());
+    }
   }
   
   LCDprint(temperature, 0, 0, false);
@@ -101,10 +104,6 @@ void loop() {
   
   LCDprint((int)light_intensity,9,1,false);
   LCDprint("lx",14,1,false);
-  
-  delay(1000);
-  second += 1;
-  if (second >= dataLogPeriod){
-    second = 0;
-  }
+
+  delay(50);
 }
