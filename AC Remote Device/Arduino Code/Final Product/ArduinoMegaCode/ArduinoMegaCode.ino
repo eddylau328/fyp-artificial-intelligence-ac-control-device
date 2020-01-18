@@ -15,6 +15,9 @@ Adafruit_HTU21DF htu;
 float temperature_offset = -0.92;
 BH1750 bh;
 
+// used to check whether need to send data to nodemcu or not
+bool isSendData = false;
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -24,7 +27,6 @@ void setup() {
   bh.begin();
 
   lcd.begin(16, 2);
-  
   delay(50);
 }
 
@@ -71,27 +73,20 @@ void LCDprint(char ch, int x, int y, bool clearScreen){
   lcd.print(ch);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  readEnvironment();
-  lcd.clear();
-  
-  if (Serial.available() > 0){
-    StaticJsonBuffer<1000> doc;
-    JsonObject& root =doc.createObject();
-    root["temp"] = temperature;
-    root["hum"] = humidity;
-    root["light"] = light_intensity;
-    root["press"] = pressure;
-    root.prettyPrintTo(Serial3);
-  }
-  
-  if (Serial3.available() > 0){
-    if (Serial3.read() == 'a'){
-      Serial.println(Serial3.read());
-    }
-  }
-  
+// send json object to nodemcu
+// json object contain the environment data
+void send_data_2_nodemcu(){
+  StaticJsonBuffer<1000> doc;
+  JsonObject& data =doc.createObject();
+  data["temp"] = temperature;
+  data["hum"] = humidity;
+  data["light"] = light_intensity;
+  data["press"] = pressure;
+  data.prettyPrintTo(Serial3);
+}
+
+// print the environment data on the LCD1602
+void lcd_print_environment_data(){
   LCDprint(temperature, 0, 0, false);
   LCDprint((char)223,6,0,false);
   LCDprint("C",7,0,false);
@@ -104,6 +99,25 @@ void loop() {
   
   LCDprint((int)light_intensity,9,1,false);
   LCDprint("lx",14,1,false);
+}
 
+void loop() {
+  // put your main code here, to run repeatedly:
+  readEnvironment();
+  lcd.clear();
+  
+  if (isSendData == true){
+    send_data_2_nodemcu();
+    // after finish sending the data, isSendData=false
+    isSendData = false;
+  }
+  
+  while(Serial3.available() > 0){
+    if (Serial3.read() == 'a' && isSendData == false){
+      isSendData = true;
+    }
+  }
+
+  lcd_print_environment_data();
   delay(50);
 }

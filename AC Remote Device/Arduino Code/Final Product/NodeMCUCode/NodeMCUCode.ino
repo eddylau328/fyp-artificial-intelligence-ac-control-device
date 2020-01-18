@@ -2,6 +2,7 @@
 #include <FirebaseArduino.h>
 #include <ArduinoJson.h>
 #include <SoftwareSerial.h>
+#include <Timer.h>
 
 // Set these to run example.
 #define FIREBASE_HOST "fypacmonitor.firebaseio.com"
@@ -15,10 +16,19 @@ String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
 String firebase_receive_action = String("/Devices/"+serial_num+"/receive_action");
 
 
+// 60 seconds timer
+Timer firebase_sendtimer;
+long int firebase_sendtimerInterval = 5000;
+
+// check whether the step_num in the machine learning 
+int step_num;
+int action;
+
+float temperature, humidity, light_intensity, pressure;
 
 void setup() {
-  Serial.begin(115200);
-  s.begin(115200);
+  Serial.begin(74880);
+  s.begin(74880);
   
   // connect to wifi.
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -32,40 +42,27 @@ void setup() {
   Serial.println(WiFi.localIP());
   
   Firebase.begin(FIREBASE_HOST);
-  
+
+  instantiateTimers();
+
+  step_num = 0;
 }
 
-int count = 0;
-bool isWorking = false;
+void instantiateTimers(){
+  firebase_sendtimer.settimer(firebase_sendtimerInterval);
+  firebase_sendtimer.starttimer();
+}
 
-void loop() 
-{
-  
-  if (isWorking == false){
-    s.write("a");
-    isWorking = true;
-  }
-  
-  if (Serial.available() > 0){
-    s.write("a");
-  }
-  
-  if (s.available() > 0){
-    count = 0;
-    
+void send_data_2_firebase(){
     StaticJsonBuffer<1000> doc;
-    // deserialize the object
-    JsonObject& data = doc.parseObject(s);
-    if (!data.success()) {
-       Serial.println("parseObject() failed");
-       return;
-    }
-    Serial.println();
-    data.prettyPrintTo(Serial);
-    Serial.println();
-    Serial.println("Received");
-    Serial.println();
-    String name = Firebase.push("/sensor", data);
+    JsonObject& data =doc.createObject();
+    data["temp"] = temperature;
+    data["hum"] = humidity;
+    data["light"] = light_intensity;
+    data["press"] = pressure;
+
+    //firebase send sensor data action
+    String name = Firebase.push(firebase_sensor_address, data);
     if (Firebase.failed()) {
       Serial.print("Firebase Pushing /sensor failed:");
       Serial.println(Firebase.error()); 
@@ -73,17 +70,72 @@ void loop()
     }else{
       Serial.print("Firebase Pushed /sensor ");
       Serial.println(name);
+    }  
+}
+
+void send_request_data(){
+  s.print("a");
+  Serial.println("Request data!");
+}
+
+void loop() 
+{
+  
+  if (firebase_sendtimer.checkfinish()){
+    
+    Serial.println("10 seconds pass");
+    
+    Timer request_data_timer;
+    request_data_timer.settimer(1000);
+    request_data_timer.starttimer();
+    bool isPass = false;
+    while(!isPass){
+      isPass = true;
+      while(s.available() == 0){
+        if (request_data_timer.checkfinish()){
+          send_request_data();
+          request_data_timer.resettimer();
+          request_data_timer.starttimer();
+        }
+      }
+      StaticJsonBuffer<1000> doc;
+      // deserialize the object
+      JsonObject& data = doc.parseObject(s);
+      if (!data.success()) {
+         Serial.println("parseObject() failed");
+         isPass = false;
+      }
+      if(isPass == true){
+        // save the received data
+        temperature = data["temp"];
+        humidity = data["hum"];
+        light_intensity = data["light"];
+        pressure = data["press"];
+        data.prettyPrintTo(Serial);
+      }
+    }
+    //send_data_2_firebase();
+    firebase_sendtimer.resettimer();
+    firebase_sendtimer.starttimer();  
+  }
+
+  // when receiving the data send from the arduino
+  if (s.available() > 0){
+    StaticJsonBuffer<1000> doc;
+    // deserialize the object
+    JsonObject& data = doc.parseObject(s);
+    if (!data.success()) {
+       Serial.println("parseObject() failed");
+       return;
     }
 
-    Serial.println("Need Request");
-    isWorking = true;
-  }else{
-    count ++;
+    // save the received data
+    temperature = data["temp"];
+    humidity = data["hum"];
+    light_intensity = data["light"];
+    pressure = data["press"];
+    
+    data.prettyPrintTo(Serial);
   }
-
-  if (count > 10){
-    isWorking = false;
-    count = 0;
-  }
-  delay(500);
+  
 }
