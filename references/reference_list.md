@@ -8,6 +8,18 @@ It introduces the monte carlo methods. It explains First-visit Monte Carlo Polic
 #### [Create custom gym environments from scratch — A stock market example](https://towardsdatascience.com/creating-a-custom-openai-gym-environment-for-stock-trading-be532be3910e)
 It shows how to create an environment in gym, which is a python library.
 
+#### [Automating Pac-man with Deep Q-learning: An Implementation in Tensorflow](https://towardsdatascience.com/automating-pac-man-with-deep-q-learning-an-implementation-in-tensorflow-ca08e9891d9c)
+Examples of DQL (Pac-man)
+
+#### [Deep Learning Models for Human Activity Recognition](https://machinelearningmastery.com/deep-learning-models-for-human-activity-recognition/)
+Very useful material for my project. It explains different algorithm to tackle the problem of human activity recognition problem.
+
+#### [Convolutional Neural Networks for human activity recognition using mobile sensors](https://ieeexplore.ieee.org/document/7026300)
+This explains the algorithm of using convolution neural network to classify human activity. The current method I will go for.
+
+#### [Deep Q-learning from Demonstrations](https://arxiv.org/abs/1704.03732)
+Maybe useful for speeding the learning process for the agent.
+
 ## Arduino
 ### Coding
 #### [Timer](https://randomnerdtutorials.com/interrupts-timers-esp8266-arduino-ide-nodemcu/)
