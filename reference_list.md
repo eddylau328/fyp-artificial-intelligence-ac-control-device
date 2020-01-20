@@ -2,7 +2,7 @@
 
 ## Machine Learning
 ### Reinforcement Learning
-#### [Monte Carlo Methods](./Monte Carlo Methods.pdf)
+#### [Monte Carlo Methods](./references/Monte Carlo Methods.pdf)
 It introduces the monte carlo methods. It explains First-visit Monte Carlo Policy Evaluation, on-policy Monte Carlo Control and off-policy Monte Carlo Control. It also provides some explaination about the blackjack example.
 
 #### [Create custom gym environments from scratch — A stock market example](https://towardsdatascience.com/creating-a-custom-openai-gym-environment-for-stock-trading-be532be3910e)
@@ -32,7 +32,7 @@ This website talks about the working methods of compressor, thermostat, and some
 
 ## Electronics
 ### Sensors
-#### [HTU21D](./HTU21D_datasheet.pdf)
+#### [HTU21D](./references/HTU21D_datasheet.pdf)
 - VIN max = 3.6V
 - SDA, SCL max = 3.6V
 - SDA, SCL min = 70% * VIn
@@ -42,15 +42,15 @@ This website talks about the working methods of compressor, thermostat, and some
         - TYP 450 μA
         - MAX 500 μA
 
-#### [BH1750](./BH1750 datasheet.pdf)
+#### [BH1750](./references/BH1750 datasheet.pdf)
 - VIN = 3.3V
 - SDA, SCL max = 5V
 - Supply Current
     - TYP 120 μA
     - MAX 190 μA
-- [schematics](./BH1750 SCH.pdf)
+- [schematics](./references/BH1750 SCH.pdf)
 
-#### [BMP180](./BMP180_datasheet.pdf)
+#### [BMP180](./references/BMP180_datasheet.pdf)
 - VIN max = 3.6V
 - SDA, SCL max = 3.6V
 - Current consumption
@@ -60,7 +60,7 @@ This website talks about the working methods of compressor, thermostat, and some
     - Standard Mode
         - 5 μA
 
-#### [MPU6050](./MPU6050_datasheet.pdf)
+#### [MPU6050](./references/MPU6050_datasheet.pdf)
 - VDD POWER SUPPLY
     - Operating Voltages 2.375 3.46 V
 - Normal Operating Current
@@ -84,14 +84,14 @@ This website talks about the working methods of compressor, thermostat, and some
 
 
 ### OTHERS
-#### [LCD1602](./LCD1602_datasheet.pdf)
+#### [LCD1602](./references/LCD1602_datasheet.pdf)
 - Supply Voltage For Logic VDD-VSS
     - Min 4.5, Max 5.5 V
 - Supply Voltage For LCD VDD-V0 TYP 3.8V
 - Supply Current 1.2 mA , when V = 5V
 
 ### Processors
-#### [NodeMCU](./NodeMCU_datasheet.pdf)
+#### [NodeMCU](./references/NodeMCU_datasheet.pdf)
 - Voltage: 3.3V
 - Current consumption: 10uA~170mA
 
