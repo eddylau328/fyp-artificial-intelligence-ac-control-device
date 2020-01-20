@@ -20,8 +20,8 @@ bool isSendData = false;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200);
-  Serial3.begin(115200);
+  Serial.begin(74880);
+  Serial3.begin(74880);
   bmp.begin();
   htu.begin();
   bh.begin();
@@ -110,11 +110,13 @@ void loop() {
     send_data_2_nodemcu();
     // after finish sending the data, isSendData=false
     isSendData = false;
+    Serial.println("sent to NodeMCU");
   }
   
   while(Serial3.available() > 0){
     if (Serial3.read() == 'a' && isSendData == false){
       isSendData = true;
+      Serial.println("receive from NodeMCU");
     }
   }
 
