@@ -107,6 +107,7 @@ void loop() {
   lcd.clear();
   
   if (isSendData == true){
+    Serial3.println("hi");
     send_data_2_nodemcu();
     // after finish sending the data, isSendData=false
     isSendData = false;
