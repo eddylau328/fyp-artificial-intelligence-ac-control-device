@@ -282,6 +282,18 @@ class OLED{
 #define MENU_PAGE 4
 #define TOTAL_PAGE 5
 
+/* ------------------------------------------------------------------------
+
+main_page -> temp_page -> move_page -> main_page
+         Right       Right        Right
+
+main_page <- temp_page <- move_page <- main_page
+         Left         Left         Left
+         
+main_page -> menu_page  |  main_page <- menu_page
+         Enter          |            Back
+
+--------------------------------------------------------------------------- */
 // page is the same base object of different page that the oled will display
 class Page{
   public:
@@ -306,13 +318,13 @@ class InitialPage: public Page{
       delay(2000);
       oled.display_text("Welcome back, Eddy!", 0, 32, false);
       
-      oled.display_text_pic(true);
-      delay(3000);
-      oled.display_text_pic(false);
+      //oled.display_text_pic(true);
+      //delay(3000);
+      //oled.display_text_pic(false);
 
-      oled.display_logo(true);
-      delay(3000);
-      oled.display_logo(false);
+      //oled.display_logo(true);
+      //delay(3000);
+      //oled.display_logo(false);
       
     }
 };
@@ -363,7 +375,6 @@ class PageMonitor{
       for (int i = 0 ; i < TOTAL_PAGE; i++){
         this-> pages[i] = pages[i];
       }
-      current_page = 0;
     }
 
     void show(int page_num){
@@ -372,6 +383,10 @@ class PageMonitor{
       }
       pages[page_num]->show(*oled);
       current_page = page_num;
+    }
+
+    int get_current_page(){
+      return current_page;
     }
 };
 
@@ -412,8 +427,28 @@ class Button{
 
 class EnterButton: public Button{
   public:
-    void call(){
+    // when enter button is called
+    void call(PageMonitor page_monitor){
       Serial.println("press enter button");
+      int current_page = page_monitor.get_current_page();
+      switch(current_page){
+        // when the location is at MENU_PAGE
+        case MAIN_PAGE:
+          page_monitor.show(MENU_PAGE);
+          break;
+        case MENU_PAGE:
+          // check cursor and click
+          break;
+        case TEMP_PAGE:
+          page_monitor.show(MENU_PAGE);
+          break;
+        case MOVE_PAGE;
+          page_monitor.show(MENU_PAGE);
+          break;
+        case INITIAL_PAGE:
+          // nothing needs to be happen
+          break;
+      }
     }
 };
 
@@ -421,6 +456,25 @@ class BackButton: public Button{
   public:
     void call(){
       Serial.println("press back button");
+      int current_page = page_monitor.get_current_page();
+      switch(current_page){
+        // when the location is at MENU_PAGE
+        case MAIN_PAGE:
+          //nothing needs to be happen
+          break;
+        case MENU_PAGE:
+          page_monitor.show(MAIN_PAGE);
+          break;
+        case TEMP_PAGE:
+          page_monitor.show(MAIN_PAGE);
+          break;
+        case MOVE_PAGE;
+          page_monitor.show(MAIN_PAGE);
+          break;
+        case INITIAL_PAGE:
+          //nothing needs to be happen
+          break;
+      }
     }
 };
 
@@ -428,6 +482,25 @@ class LeftButton: public Button{
   public:
     void call(){
       Serial.println("press left button");
+      int current_page = page_monitor.get_current_page();
+      switch(current_page){
+        // when the location is at MENU_PAGE
+        case MAIN_PAGE:
+          page_monitor.show(MOVE_PAGE);
+          break;
+        case MENU_PAGE:
+          // move cursor (up)
+          break;
+        case TEMP_PAGE:
+          page_monitor.show(MAIN_PAGE);
+          break;
+        case MOVE_PAGE;
+          page_monitor.show(TEMP_PAGE);
+          break;
+        case INITIAL_PAGE:
+          //nothing needs to be happen
+          break;
+      }
     }
 };
 
@@ -435,9 +508,29 @@ class RightButton: public Button{
   public:
     void call(){
       Serial.println("press right button");
+      int current_page = page_monitor.get_current_page();
+      switch(current_page){
+        // when the location is at MENU_PAGE
+        case MAIN_PAGE:
+          page_monitor.show(TEMP_PAGE);
+          break;
+        case MENU_PAGE:
+          //move cursor (down)
+          break;
+        case TEMP_PAGE:
+          page_monitor.show(MOVE_PAGE);
+          break;
+        case MOVE_PAGE;
+          page_monitor.show(MAIN_PAGE);
+          break;
+        case INITIAL_PAGE:
+          //nothing needs to be happen
+          break;
+      }
     }
 };
 
+// Button Monitor is used to control different buttons
 class ButtonMonitor{
   public:
     Button *buttons[TOTAL_BUTTON];
@@ -521,11 +614,10 @@ void setup()
   button_monitor.set(buttons); // create a button monitor
   // -------------------------------------------
 
-  //page_monitor.show(INITIAL_PAGE);
-  //page_monitor.show(MAIN_PAGE);
-  //page_monitor.show(MENU_PAGE);
+  page_monitor.show(INITIAL_PAGE);
+  page_monitor.show(MAIN_PAGE);
   
-  heartRateSensorSetup();
+  //heartRateSensorSetup();
 
   Wire.begin();
   mpu6050.begin();
