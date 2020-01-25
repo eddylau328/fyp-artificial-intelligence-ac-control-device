@@ -28,6 +28,9 @@ It shows how to use millis() to acheive timer function.
 #### [MPU6050_tockn library](https://forum.arduino.cc/index.php?topic=587830.0)
 It shows how to implement the MPU6050_tockn library and read the MPU6050 accelerometer and gyroscope values.
 
+#### [ds18b20](https://create.arduino.cc/projecthub/TheGadgetBoy/ds18b20-digital-temperature-sensor-and-arduino-9cc806)
+It shows how to use the library.
+
 ## Air Conditioner
 ### Power Consumption
 #### [Ideal Air Conditioner temperature for electricity savings](https://www.bijlibachao.com/air-conditioners/ideal-air-conditioner-temperature-for-electricity-saving.html)
@@ -87,6 +90,8 @@ This website talks about the working methods of compressor, thermostat, and some
 
 
 ### OTHERS
+#### [MAX30102 working priniciple](https://hackaday.io/project/26103-preemiealert/log/64833-max30102-how-does-it-work)
+
 #### [LCD1602](./references/LCD1602_datasheet.pdf)
 - Supply Voltage For Logic VDD-VSS
     - Min 4.5, Max 5.5 V
