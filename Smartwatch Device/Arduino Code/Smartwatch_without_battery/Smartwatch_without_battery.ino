@@ -375,39 +375,155 @@ class PageMonitor{
     }
 };
 
-/*
+
+#define ENTER_BUTTON 0
+#define ENTER_BUTTON_PIN 33
+#define BACK_BUTTON 1
+#define BACK_BUTTON_PIN 35
+#define LEFT_BUTTON 2
+#define LEFT_BUTTON_PIN 34
+#define RIGHT_BUTTON 3
+#define RIGHT_BUTTON_PIN 36
+
+#define TOTAL_BUTTON 4
+
 class Button{
   public:
-    virtual void call(PageMonitor pages){}
-}
-
-class ForwardButton{
-  public:
-    virtual void call(PageMonitor pages){
-      
+    int pin_num;
+    // override function that trigger when user push button
+    virtual void call(){}
+    
+    void set(int pin_num){
+      this->pin_num = pin_num;
+      pinMode(pin_num, INPUT);
     }
-}
-*/
+    
+    bool check_state(){
+      // digitalRead function stores the Push button state 
+      // in variable push_button_state
+      int Push_button_state = digitalRead(pin_num);
+      // if condition checks if push button is pressed
+      if ( Push_button_state == HIGH )
+        return true;
+      else
+        return false;
+    }
+};
 
+class EnterButton: public Button{
+  public:
+    void call(){
+      Serial.println("press enter button");
+    }
+};
+
+class BackButton: public Button{
+  public:
+    void call(){
+      Serial.println("press back button");
+    }
+};
+
+class LeftButton: public Button{
+  public:
+    void call(){
+      Serial.println("press left button");
+    }
+};
+
+class RightButton: public Button{
+  public:
+    void call(){
+      Serial.println("press right button");
+    }
+};
+
+class ButtonMonitor{
+  public:
+    Button *buttons[TOTAL_BUTTON];
+    int button_hold = -1;
+    Timer timer;
+    
+    void set(Button *buttons[]){
+      for (int i = 0; i < TOTAL_BUTTON; i++){
+        this->buttons[i] = buttons[i];
+      }
+      timer.settimer(100);
+      timer.starttimer();
+    }
+
+    // check whether any button is triggered
+    void check_trigger(){
+      if (timer.checkfinish()){
+      bool any_button_on = false;
+      for (int i = 0; i < TOTAL_BUTTON; i++){
+        if (buttons[i]->check_state()){
+          if (button_hold == -1){
+            buttons[i]->call();
+            button_hold = i;
+          }
+          any_button_on = true;
+          timer.resettimer();
+          timer.starttimer();
+        }
+      }
+      
+      if (!any_button_on)
+        button_hold = -1;
+      }
+    }
+    
+};
+
+
+// Create PageMonitor and pages that is needed
 PageMonitor page_monitor;
 Page *pages[TOTAL_PAGE];
 InitialPage initial_page;
 MainPage main_page;
 MenuPage menu_page;
 
+// Create button and the function
+ButtonMonitor button_monitor;
+Button *buttons[TOTAL_BUTTON];
+EnterButton enter_button;
+BackButton back_button;
+RightButton right_button;
+LeftButton left_button;
+
 void setup()
 {
   Serial.begin(115200);
   Serial.println("Initializing...");
 
+  // PAGE SETUP --------------------------------
   pages[INITIAL_PAGE] = &initial_page;
   pages[MAIN_PAGE] = &main_page;
   pages[MENU_PAGE] = &menu_page;
-  page_monitor.set(new OLED(&display), pages);
 
-  page_monitor.show(INITIAL_PAGE);
-  page_monitor.show(MAIN_PAGE);
-  page_monitor.show(MENU_PAGE);
+  // create a page monitor
+  page_monitor.set(new OLED(&display), pages);
+  // -------------------------------------------
+
+  // BUTTON SETUP ------------------------------
+  enter_button.set(ENTER_BUTTON_PIN);
+  buttons[ENTER_BUTTON] = &enter_button;
+  
+  back_button.set(BACK_BUTTON_PIN);
+  buttons[BACK_BUTTON] = &back_button;
+  
+  right_button.set(RIGHT_BUTTON_PIN);
+  buttons[RIGHT_BUTTON] = &right_button;
+  
+  left_button.set(LEFT_BUTTON_PIN);
+  buttons[LEFT_BUTTON] = &left_button;
+  
+  button_monitor.set(buttons); // create a button monitor
+  // -------------------------------------------
+
+  //page_monitor.show(INITIAL_PAGE);
+  //page_monitor.show(MAIN_PAGE);
+  //page_monitor.show(MENU_PAGE);
   
   heartRateSensorSetup();
 
@@ -524,6 +640,9 @@ void readMPU6050(){
 
 void loop()
 {
+
+  button_monitor.check_trigger();
+  
   /*
   if (tempTimer.checkfinish()){
     readTemperature();
