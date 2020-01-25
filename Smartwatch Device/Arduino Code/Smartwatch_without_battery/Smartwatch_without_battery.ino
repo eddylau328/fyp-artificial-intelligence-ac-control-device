@@ -363,6 +363,30 @@ class MenuPage: public Page{
     }
 };
 
+class TempPage: public Page{
+  public:
+    void show(OLED oled){
+      oled.display_text("Temperature: ", 0, 22, true, 1);
+    }
+        
+    void clear(OLED oled){
+      oled.display_text("Temperature: ", 0, 22, false, 1);
+    }
+};
+
+class MovePage: public Page{
+  public:
+    void show(OLED oled){
+      oled.display_text("Acceleration: ", 0, 22, true, 1);
+      oled.display_text("Euler Angle: ", 0, 42, true, 1);
+    }
+        
+    void clear(OLED oled){
+      oled.display_text("Acceleration: ", 0, 22, false, 1);
+      oled.display_text("Euler Angle: ", 0, 42, false, 1);
+    }
+};
+
 class PageMonitor{
   private:
     Page *pages[TOTAL_PAGE];
@@ -406,7 +430,7 @@ class Button{
   public:
     int pin_num;
     // override function that trigger when user push button
-    virtual void call(){}
+    virtual void call(PageMonitor *page_monitor){}
     
     void set(int pin_num){
       this->pin_num = pin_num;
@@ -428,22 +452,22 @@ class Button{
 class EnterButton: public Button{
   public:
     // when enter button is called
-    void call(PageMonitor page_monitor){
+    void call(PageMonitor *page_monitor){
       Serial.println("press enter button");
-      int current_page = page_monitor.get_current_page();
+      int current_page = page_monitor->get_current_page();
       switch(current_page){
         // when the location is at MENU_PAGE
         case MAIN_PAGE:
-          page_monitor.show(MENU_PAGE);
+          page_monitor->show(MENU_PAGE);
           break;
         case MENU_PAGE:
           // check cursor and click
           break;
         case TEMP_PAGE:
-          page_monitor.show(MENU_PAGE);
+          page_monitor->show(MENU_PAGE);
           break;
-        case MOVE_PAGE;
-          page_monitor.show(MENU_PAGE);
+        case MOVE_PAGE:
+          page_monitor->show(MENU_PAGE);
           break;
         case INITIAL_PAGE:
           // nothing needs to be happen
@@ -454,22 +478,22 @@ class EnterButton: public Button{
 
 class BackButton: public Button{
   public:
-    void call(){
+    void call(PageMonitor *page_monitor){
       Serial.println("press back button");
-      int current_page = page_monitor.get_current_page();
+      int current_page = page_monitor->get_current_page();
       switch(current_page){
         // when the location is at MENU_PAGE
         case MAIN_PAGE:
           //nothing needs to be happen
           break;
         case MENU_PAGE:
-          page_monitor.show(MAIN_PAGE);
+          page_monitor->show(MAIN_PAGE);
           break;
         case TEMP_PAGE:
-          page_monitor.show(MAIN_PAGE);
+          page_monitor->show(MAIN_PAGE);
           break;
-        case MOVE_PAGE;
-          page_monitor.show(MAIN_PAGE);
+        case MOVE_PAGE:
+          page_monitor->show(MAIN_PAGE);
           break;
         case INITIAL_PAGE:
           //nothing needs to be happen
@@ -480,22 +504,22 @@ class BackButton: public Button{
 
 class LeftButton: public Button{
   public:
-    void call(){
+    void call(PageMonitor *page_monitor){
       Serial.println("press left button");
-      int current_page = page_monitor.get_current_page();
+      int current_page = page_monitor->get_current_page();
       switch(current_page){
         // when the location is at MENU_PAGE
         case MAIN_PAGE:
-          page_monitor.show(MOVE_PAGE);
+          page_monitor->show(MOVE_PAGE);
           break;
         case MENU_PAGE:
           // move cursor (up)
           break;
         case TEMP_PAGE:
-          page_monitor.show(MAIN_PAGE);
+          page_monitor->show(MAIN_PAGE);
           break;
-        case MOVE_PAGE;
-          page_monitor.show(TEMP_PAGE);
+        case MOVE_PAGE:
+          page_monitor->show(TEMP_PAGE);
           break;
         case INITIAL_PAGE:
           //nothing needs to be happen
@@ -506,22 +530,22 @@ class LeftButton: public Button{
 
 class RightButton: public Button{
   public:
-    void call(){
+    void call(PageMonitor *page_monitor){
       Serial.println("press right button");
-      int current_page = page_monitor.get_current_page();
+      int current_page = page_monitor->get_current_page();
       switch(current_page){
         // when the location is at MENU_PAGE
         case MAIN_PAGE:
-          page_monitor.show(TEMP_PAGE);
+          page_monitor->show(TEMP_PAGE);
           break;
         case MENU_PAGE:
           //move cursor (down)
           break;
         case TEMP_PAGE:
-          page_monitor.show(MOVE_PAGE);
+          page_monitor->show(MOVE_PAGE);
           break;
-        case MOVE_PAGE;
-          page_monitor.show(MAIN_PAGE);
+        case MOVE_PAGE:
+          page_monitor->show(MAIN_PAGE);
           break;
         case INITIAL_PAGE:
           //nothing needs to be happen
@@ -546,13 +570,13 @@ class ButtonMonitor{
     }
 
     // check whether any button is triggered
-    void check_trigger(){
+    void check_trigger(PageMonitor *page_monitor){
       if (timer.checkfinish()){
       bool any_button_on = false;
       for (int i = 0; i < TOTAL_BUTTON; i++){
         if (buttons[i]->check_state()){
           if (button_hold == -1){
-            buttons[i]->call();
+            buttons[i]->call(page_monitor);
             button_hold = i;
           }
           any_button_on = true;
@@ -575,6 +599,8 @@ Page *pages[TOTAL_PAGE];
 InitialPage initial_page;
 MainPage main_page;
 MenuPage menu_page;
+TempPage temp_page;
+MovePage move_page;
 
 // Create button and the function
 ButtonMonitor button_monitor;
@@ -584,20 +610,21 @@ BackButton back_button;
 RightButton right_button;
 LeftButton left_button;
 
-void setup()
-{
-  Serial.begin(115200);
-  Serial.println("Initializing...");
-
+// initialize the pages the smartwatch needed
+void page_initialize(){
   // PAGE SETUP --------------------------------
   pages[INITIAL_PAGE] = &initial_page;
   pages[MAIN_PAGE] = &main_page;
   pages[MENU_PAGE] = &menu_page;
-
+  pages[MOVE_PAGE] = &move_page;
+  pages[TEMP_PAGE] = &temp_page;
+  
   // create a page monitor
   page_monitor.set(new OLED(&display), pages);
   // -------------------------------------------
+}
 
+void button_initialize(){
   // BUTTON SETUP ------------------------------
   enter_button.set(ENTER_BUTTON_PIN);
   buttons[ENTER_BUTTON] = &enter_button;
@@ -613,6 +640,16 @@ void setup()
   
   button_monitor.set(buttons); // create a button monitor
   // -------------------------------------------
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println("Initializing...");
+
+  page_initialize();
+  
+  button_initialize();
 
   page_monitor.show(INITIAL_PAGE);
   page_monitor.show(MAIN_PAGE);
@@ -733,7 +770,7 @@ void readMPU6050(){
 void loop()
 {
 
-  button_monitor.check_trigger();
+  button_monitor.check_trigger(&page_monitor);
   
   /*
   if (tempTimer.checkfinish()){
