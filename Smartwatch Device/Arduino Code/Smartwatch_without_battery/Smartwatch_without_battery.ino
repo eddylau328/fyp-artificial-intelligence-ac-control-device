@@ -6,7 +6,7 @@
 #include "heartRate.h"
 
 #include <SPI.h>
-#include <Adafruit_GFX.h>
+//#include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
 #include <Timer.h>
@@ -190,11 +190,20 @@ MPU6050 mpu6050(Wire);
 
 OneWire  ds(32);  // on pin 10 (a 4.7K resistor is necessary)
 
-#define INITIAL_PAGE 0
-#define MAIN_PAGE 1
-#define TEMP_PAGE 2
-#define MOVE_PAGE 3
-#define MENU_PAGE 4
+
+void heartRateSensorSetup(){
+  // Initialize sensor
+  if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) //Use default I2C port, 400kHz speed
+  {
+    Serial.println("MAX30105 was not found. Please check wiring/power. ");
+    while (1);
+  }
+  Serial.println("Place your index finger on the sensor with steady pressure.");
+
+  particleSensor.setup(); //Configure sensor with default settings
+  particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
+  particleSensor.setPulseAmplitudeGreen(0); //Turn off Green
+}
 
 class OLED{
   public:
@@ -215,62 +224,49 @@ class OLED{
       clear();
     }
 
-    void display_logo() {
+    void display_logo(bool light_up) {
+      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
       oled->drawBitmap(
       (oled->width()  - LOGO_WIDTH ) / 2,
       (oled->height() - LOGO_HEIGHT) / 2,
-      logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
+      logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, color);
       oled->display();
     }
 
-    void display_text(String text, int x, int y, bool isClear) {
-      if (isClear)
-        clear();
-    
+    void display_text(String text, int x, int y, bool light_up) {
+      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
       oled->setTextSize(1);             // Normal 1:1 pixel scale
-      oled->setTextColor(SSD1306_WHITE);        // Draw white text
+      oled->setTextColor(color);        // Draw white text
       oled->setCursor(x,y);             // Start at top-left corner
       oled->println(text);
       oled->display();
     }
     
-    void display_text(String text, int x, int y, bool isClear, int text_size) {
-      if (isClear)
-        clear();
-    
+    void display_text(String text, int x, int y, bool light_up, int text_size) {
+      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
       oled->setTextSize(text_size);             // Normal 1:1 pixel scale
-      oled->setTextColor(SSD1306_WHITE);        // Draw white text
+      oled->setTextColor(color);        // Draw white text
       oled->setCursor(x,y);             // Start at top-left corner
       oled->println(text);
       oled->display();
     }
     
-    void display_text_pic() {
+    void display_text_pic(bool light_up) {
+      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
       oled->drawBitmap(
         (oled->width()  -  TEXT_WIDTH) / 2,
         (oled->height() - TEXT_HEIGHT) / 2,
-        displayText, TEXT_WIDTH, TEXT_HEIGHT, 1);
-      oled->display();
-    }
-    
-    void clear_text(String text, int x, int y, int text_size){
-      oled->setTextSize(text_size);             // Normal 1:1 pixel scale
-      oled->setTextColor(SSD1306_BLACK);        // Draw white text
-      oled->setCursor(x,y);             // Start at top-left corner
-      oled->println(text);
+        displayText, TEXT_WIDTH, TEXT_HEIGHT, color);
       oled->display();
     }
 
-    void draw_pixel(int x, int y){
+    void display_pixel(int x, int y, bool light_up){
+        int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
         // Draw a single pixel in white
-        oled->drawPixel(x, y, SSD1306_WHITE);
+        oled->drawPixel(x, y, color);
         // Show the display buffer on the screen. You MUST call display() after
         // drawing commands to make them visible on screen!
         oled->display();
-    }
-
-    void clear(int x, int y){
-      oled->drawPixel(x, y, SSD1306_BLACK);
     }
     
     void clear(){
@@ -279,113 +275,148 @@ class OLED{
     
 };
 
+#define INITIAL_PAGE 0
+#define MAIN_PAGE 1
+#define TEMP_PAGE 2
+#define MOVE_PAGE 3
+#define MENU_PAGE 4
+#define TOTAL_PAGE 5
+
+// page is the same base object of different page that the oled will display
 class Page{
   public:
-    int page_num;
-        
+    // methods that can be override
     virtual void show(OLED oled){}
-    virtual void set_page_num(int page_num){};
+    virtual void clear(OLED oled){}
 };
 
 class InitialPage: public Page{
   public:
-
     void show(OLED oled){
       for (int i = 0; i < 6; i++){
-        oled.draw_pixel(10+i*5, 32);
+        oled.display_pixel(10+i*5, 32, true);
         delay(500);
       }
-      oled.clear();
+
+      for (int i = 0; i < 6; i++){
+        oled.display_pixel(10+i*5, 32, false);
+      }
       
       oled.display_text("Welcome back, Eddy!", 0, 32, true);
       delay(2000);
+      oled.display_text("Welcome back, Eddy!", 0, 32, false);
       
-      oled.clear();
-      oled.display_text_pic();
+      oled.display_text_pic(true);
       delay(3000);
-      
-      oled.clear();
-      oled.display_logo();
+      oled.display_text_pic(false);
+
+      oled.display_logo(true);
       delay(3000);
+      oled.display_logo(false);
       
-      oled.clear();
+    }
+};
+
+class MainPage: public Page{
+  public:
+    void show(OLED oled){
+      oled.display_text("BMP: ", 0, 22, true, 1);
+      oled.display_text("TMP: ", 0, 32, true, 1);
+      oled.display_text("Ang: ", 0, 42, true, 1);
+      oled.display_text("Acc: ", 0, 52, true, 1);
     }
 
-    void set_page_num(int page_num){
-      this->page_num = page_num;
+    void clear(OLED oled){
+      oled.display_text("BMP: ", 0, 22, false, 1);
+      oled.display_text("TMP: ", 0, 32, false, 1);
+      oled.display_text("Ang: ", 0, 42, false, 1);
+      oled.display_text("Acc: ", 0, 52, false, 1);
+    }
+};
+
+class MenuPage: public Page{
+  public:
+    void show(OLED oled){
+      oled.display_text("Wifi: ", 0, 22, true, 1);
+      oled.display_text("Power: ", 0, 32, true, 1);
+      oled.display_text("Send: ", 0, 42, true, 1);
+      oled.display_text("Back: ", 0, 52, true, 1);
+    }
+        
+    void clear(OLED oled){
+      oled.display_text("Wifi: ", 0, 22, false, 1);
+      oled.display_text("Power: ", 0, 32, false, 1);
+      oled.display_text("Send: ", 0, 42, false, 1);
+      oled.display_text("Back ", 0, 52, false, 1);
     }
 };
 
 class PageMonitor{
   private:
-    Page *pages;
+    Page *pages[TOTAL_PAGE];
     int current_page = -1;
-    int total_page = 0;
     OLED *oled;
     
   public:
-    void set(OLED *oled, Page *pages, int total_page){
+    void set(OLED *oled, Page *pages[]){
       this->oled = oled;
-      this->pages = pages;
-      this->total_page = total_page;
+      for (int i = 0 ; i < TOTAL_PAGE; i++){
+        this-> pages[i] = pages[i];
+      }
       current_page = 0;
     }
 
     void show(int page_num){
-      switch (page_num){
-        case 0:
-          pages[0].show(*oled);
-          break;
+      if (current_page != -1){
+        pages[current_page]->clear(*oled);
       }
+      pages[page_num]->show(*oled);
+      current_page = page_num;
     }
 };
 
-void heartRateSensorSetup(){
-  // Initialize sensor
-  if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) //Use default I2C port, 400kHz speed
-  {
-    Serial.println("MAX30105 was not found. Please check wiring/power. ");
-    while (1);
-  }
-  Serial.println("Place your index finger on the sensor with steady pressure.");
-
-  particleSensor.setup(); //Configure sensor with default settings
-  particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
-  particleSensor.setPulseAmplitudeGreen(0); //Turn off Green
+/*
+class Button{
+  public:
+    virtual void call(PageMonitor pages){}
 }
 
-void oledDisplaySetup(){
-  //oledDisplayText("Eddy FYP", 0, 0, false,2);
-  //oledDisplayText("BMP: ", 0, 22, false, 1);
-  //oledDisplayText("TMP: ", 0, 32, false, 1);
-  //oledDisplayText("Ang: ", 0, 42, false, 1);
-  //oledDisplayText("Acc: ", 0, 52, false, 1);
+class ForwardButton{
+  public:
+    virtual void call(PageMonitor pages){
+      
+    }
 }
+*/
 
 PageMonitor page_monitor;
-Page *page;
+Page *pages[TOTAL_PAGE];
 InitialPage initial_page;
+MainPage main_page;
+MenuPage menu_page;
 
 void setup()
 {
   Serial.begin(115200);
   Serial.println("Initializing...");
 
-  page = &initial_page;
-
-  page_monitor.set(new OLED(&display), page, 1);
+  pages[INITIAL_PAGE] = &initial_page;
+  pages[MAIN_PAGE] = &main_page;
+  pages[MENU_PAGE] = &menu_page;
+  page_monitor.set(new OLED(&display), pages);
 
   page_monitor.show(INITIAL_PAGE);
+  page_monitor.show(MAIN_PAGE);
+  page_monitor.show(MENU_PAGE);
   
   heartRateSensorSetup();
 
   Wire.begin();
   mpu6050.begin();
 
-// 21:47:15.290 -> X : 1.63
-// 21:47:15.290 -> Y : 0.43
-// 21:47:15.290 -> Z : -2.67
-
+  // 21:47:15.290 -> X : 1.63
+  // 21:47:15.290 -> Y : 0.43
+  // 21:47:15.290 -> Z : -2.67
   mpu6050.calcGyroOffsets(1.63,0.43,-2.67);
 
   bodyTempSensor.begin(); 
