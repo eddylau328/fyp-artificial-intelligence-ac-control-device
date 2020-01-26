@@ -29,7 +29,10 @@ It shows how to use millis() to acheive timer function.
 It shows how to implement the MPU6050_tockn library and read the MPU6050 accelerometer and gyroscope values.
 
 #### [ds18b20](https://create.arduino.cc/projecthub/TheGadgetBoy/ds18b20-digital-temperature-sensor-and-arduino-9cc806)
+[other ref link](https://randomnerdtutorials.com/esp32-multiple-ds18b20-temperature-sensors/)
 It shows how to use the library.
+
+#### [virtual function in C++](https://www.geeksforgeeks.org/virtual-function-cpp/)
 
 ## Air Conditioner
 ### Power Consumption
