@@ -312,6 +312,7 @@ class Page{
   public:
     // methods that can be override
     virtual void show(OLED oled){}
+    virtual void update(OLED oled){}
     virtual void clear(OLED oled){}
 };
 
@@ -338,24 +339,81 @@ class InitialPage: public Page{
       //oled.display_logo(true);
       //delay(3000);
       //oled.display_logo(false);
-      
     }
 };
 
 class MainPage: public Page{
+  private:
+    // used to save the update
+    String strTemp="", last_strTemp="";
+    String strAcc="", last_strAcc="";
+    String strGyr="", last_strGyr="";
+    float* bodyTemp;
+    int* acc, * gry;
+    
   public:
+    // override function
     void show(OLED oled){
       oled.display_text("BMP: ", 0, 22, true, 1);
       oled.display_text("TMP: ", 0, 32, true, 1);
       oled.display_text("Ang: ", 0, 42, true, 1);
       oled.display_text("Acc: ", 0, 52, true, 1);
     }
-
+    // override function
     void clear(OLED oled){
       oled.display_text("BMP: ", 0, 22, false, 1);
       oled.display_text("TMP: ", 0, 32, false, 1);
       oled.display_text("Ang: ", 0, 42, false, 1);
       oled.display_text("Acc: ", 0, 52, false, 1);
+
+      // clear update part
+      oled.display_text(last_strTemp,30, 32, false,1);
+      oled.display_text(last_strGyr,30, 42, false, 1);
+      oled.display_text(last_strAcc,30, 52, false, 1);
+
+      // reset update_part
+      strTemp=""; last_strTemp="";
+      strAcc=""; last_strAcc="";
+      strGyr=""; last_strGyr="";
+    }
+    
+    // override function
+    void update(OLED oled){
+      strTemp = String(*bodyTemp);
+      strGyr = "(" + String(gyr[0]) + "," + String(gyr[1]) + "," + String(gyr[2]) + ")";
+      strAcc = "(" + String(acc[0]) + "," + String(acc[1]) + "," + String(acc[2]) + ")";
+      /*
+      if (lastStrBeatAvg != strBeatAvg){
+        oledClearText(lastStrBeatAvg,30, 22, 1);
+        oledDisplayText(strBeatAvg, 30, 22, false, 1);
+      }
+      lastStrBeatAvg = strBeatAvg;
+      */
+      
+      if (last_strTemp != strTemp){
+        oled.display_text(last_strTemp,30, 32, false,1);
+        oled.display_text(strTemp, 30, 32, true, 1);    
+      }
+      last_strTemp = strTemp;
+    
+      if (last_strGyr != strGyr){
+        oled.display_text(last_strGyr,30, 42, false, 1);
+        oled.display_text(strGyr, 30, 42, true, 1);    
+      }
+      last_strGyr = strGyr;
+    
+      if (last_strAcc != strAcc){
+        oled.display_text(last_strAcc,30, 52, false, 1);
+        oled.display_text(strAcc, 30, 52, true, 1);    
+      }
+      last_strAcc = strAcc;
+    }
+    
+    // connect the object data, which means saving the address and point to the same value
+    void set_parameters(float* bodyTemp, int* acc, int* gry){
+      this->bodyTemp = bodyTemp;  // linking to the global variable
+      this->acc = acc;            // linking to the global variable
+      this->gry = gry;            // linking to the global variable
     }
 };
 
@@ -433,6 +491,10 @@ class PageMonitor{
       current_page = page_num;
     }
 
+    void update(){
+      pages[current_page]->update(*oled);
+    }
+    
     void show_nav_bar(){
       nav_bar->show(*oled);
     }
@@ -643,6 +705,10 @@ NavBar nav_bar;
 // initialize the pages the smartwatch needed
 void page_initialize(){
   // PAGE SETUP --------------------------------
+  // set up the parameters for update, which the page may need
+  main_page.set_parameters(&bodyTemp, acc, gyr);
+  
+  
   pages[INITIAL_PAGE] = &initial_page;
   pages[MAIN_PAGE] = &main_page;
   pages[MENU_PAGE] = &menu_page;
@@ -715,13 +781,7 @@ void setup()
 
 String lastStrBeatAvg = "";
 String strBeatAvg;
-String lastStrTemp = "";
-String strTemp;
 
-String strAcc;
-String strGyr;
-String laststrAcc;
-String laststrGyr;
 /*
 void oledDisplayLoop(){
   if (lastStrBeatAvg != strBeatAvg){
@@ -760,7 +820,7 @@ void readTemperature(){
   /********************************************************************/
    Serial.print("Temperature is: ");
    bodyTemp = bodyTempSensor.getTempCByIndex(0);
-   strTemp = String(bodyTemp);
+   
    Serial.print(bodyTemp);
    
 }
@@ -799,8 +859,7 @@ void readMPU6050(){
     //Serial.print("\tangleZ : ");Serial.println(mpu6050.getAngleZ());
     Serial.println("=======================================================\n");
 
-    strGyr = "(" + String(gyr[0]) + "," + String(gyr[1]) + "," + String(gyr[2]) + ")";
-    strAcc = "(" + String(acc[0]) + "," + String(acc[1]) + "," + String(acc[2]) + ")";
+
     
     mpu6050Timer.resettimer();
     mpu6050Timer.starttimer();
@@ -812,13 +871,18 @@ void loop()
 
   button_monitor.check_trigger(&page_monitor);
   
-  /*
+  
   if (tempTimer.checkfinish()){
     readTemperature();
     tempTimer.resettimer();
     tempTimer.starttimer();
   }
+
+  readMPU6050();
+
+  page_monitor.update();
   
+  /*
   long irValue = particleSensor.getIR();
   if (checkForBeat(irValue) == true)
   {
@@ -858,9 +922,7 @@ void loop()
   }  
   
   Serial.println();
-
-  readMPU6050();
-
+  
   oledDisplayLoop();
   */
 }
