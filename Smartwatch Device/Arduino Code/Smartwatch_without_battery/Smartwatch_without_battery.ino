@@ -205,6 +205,10 @@ void heartRateSensorSetup(){
   particleSensor.setPulseAmplitudeGreen(0); //Turn off Green
 }
 
+/*========================================================================================================
+                                          OLED PART START
+  ========================================================================================================*/
+
 class OLED{
   public:
     Adafruit_SSD1306 *oled;
@@ -274,6 +278,15 @@ class OLED{
     }
     
 };
+
+/*========================================================================================================
+                                          OLED PART END
+  ========================================================================================================*/
+
+
+/*========================================================================================================
+                                          PAGE PART START
+  ========================================================================================================*/
 
 #define INITIAL_PAGE 0
 #define MAIN_PAGE 1
@@ -352,14 +365,12 @@ class MenuPage: public Page{
       oled.display_text("Wifi: ", 0, 22, true, 1);
       oled.display_text("Power: ", 0, 32, true, 1);
       oled.display_text("Send: ", 0, 42, true, 1);
-      oled.display_text("Back: ", 0, 52, true, 1);
     }
         
     void clear(OLED oled){
       oled.display_text("Wifi: ", 0, 22, false, 1);
       oled.display_text("Power: ", 0, 32, false, 1);
       oled.display_text("Send: ", 0, 42, false, 1);
-      oled.display_text("Back ", 0, 52, false, 1);
     }
 };
 
@@ -387,15 +398,28 @@ class MovePage: public Page{
     }
 };
 
+class NavBar{
+  public:
+    void show(OLED oled){
+      oled.display_text("Eddy FYP", 0, 0, true, 2);
+    }
+    
+    void clear(OLED oled){
+      oled.display_text("Eddy FYP", 0, 0, false, 2);
+    }
+};
+
 class PageMonitor{
   private:
     Page *pages[TOTAL_PAGE];
+    NavBar *nav_bar;
     int current_page = -1;
     OLED *oled;
     
   public:
-    void set(OLED *oled, Page *pages[]){
+    void set(OLED *oled, Page *pages[], NavBar *nav_bar){
       this->oled = oled;
+      this->nav_bar = nav_bar;
       for (int i = 0 ; i < TOTAL_PAGE; i++){
         this-> pages[i] = pages[i];
       }
@@ -409,12 +433,22 @@ class PageMonitor{
       current_page = page_num;
     }
 
+    void show_nav_bar(){
+      nav_bar->show(*oled);
+    }
+
     int get_current_page(){
       return current_page;
     }
 };
+/*========================================================================================================
+                                          PAGE PART END
+  ========================================================================================================*/
 
 
+/*========================================================================================================
+                                          BUTTON PART START
+  ========================================================================================================*/
 #define ENTER_BUTTON 0
 #define ENTER_BUTTON_PIN 33
 #define BACK_BUTTON 1
@@ -592,6 +626,10 @@ class ButtonMonitor{
     
 };
 
+/*========================================================================================================
+                                          BUTTON PART END
+  ========================================================================================================*/
+
 
 // Create PageMonitor and pages that is needed
 PageMonitor page_monitor;
@@ -601,15 +639,7 @@ MainPage main_page;
 MenuPage menu_page;
 TempPage temp_page;
 MovePage move_page;
-
-// Create button and the function
-ButtonMonitor button_monitor;
-Button *buttons[TOTAL_BUTTON];
-EnterButton enter_button;
-BackButton back_button;
-RightButton right_button;
-LeftButton left_button;
-
+NavBar nav_bar;
 // initialize the pages the smartwatch needed
 void page_initialize(){
   // PAGE SETUP --------------------------------
@@ -620,9 +650,18 @@ void page_initialize(){
   pages[TEMP_PAGE] = &temp_page;
   
   // create a page monitor
-  page_monitor.set(new OLED(&display), pages);
+  page_monitor.set(new OLED(&display), pages, &nav_bar);
   // -------------------------------------------
 }
+
+
+// Create button and the function
+ButtonMonitor button_monitor;
+Button *buttons[TOTAL_BUTTON];
+EnterButton enter_button;
+BackButton back_button;
+RightButton right_button;
+LeftButton left_button;
 
 void button_initialize(){
   // BUTTON SETUP ------------------------------
@@ -652,6 +691,7 @@ void setup()
   button_initialize();
 
   page_monitor.show(INITIAL_PAGE);
+  page_monitor.show_nav_bar();
   page_monitor.show(MAIN_PAGE);
   
   //heartRateSensorSetup();
