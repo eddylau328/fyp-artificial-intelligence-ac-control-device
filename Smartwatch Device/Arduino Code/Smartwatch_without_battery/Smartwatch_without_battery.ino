@@ -173,8 +173,8 @@ DallasTemperature bodyTempSensor(&oneWire);
 /********************************************************************/ 
 float bodyTemp;
 
-int acc[3] = {0,0,0};
-int gyr[3] = {0,0,0};
+float acc[3] = {0,0,0};
+float gyr[3] = {0,0,0};
 
 Timer tempTimer;
 Timer mpu6050Timer;
@@ -253,6 +253,68 @@ class OLED{
       oled->setCursor(x,y);             // Start at top-left corner
       oled->println(text);
       oled->display();
+    }
+
+    void display_text(float text, int decimal_place, int x, int y, bool light_up, int text_size) {
+      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
+      oled->setTextSize(text_size);             // Normal 1:1 pixel scale
+      oled->setTextColor(color);        // Draw white text
+      oled->setCursor(x,y);             // Start at top-left corner
+      oled->println(text, decimal_place);
+      oled->display();
+    }
+
+    void display_text(int text, int x, int y, bool light_up, int text_size) {
+      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
+      oled->setTextSize(text_size);             // Normal 1:1 pixel scale
+      oled->setTextColor(color);        // Draw white text
+      oled->setCursor(x,y);             // Start at top-left corner
+      oled->println(text);
+      oled->display();
+    }
+
+    void display_text(String text, int x, int y, bool light_up, int text_size, bool highlight) {
+      int color;
+      int bg_color;
+      if (highlight == true && light_up == true){
+        color = SSD1306_BLACK;
+        bg_color = SSD1306_WHITE;
+        oled->setTextSize(text_size);             // Normal 1:1 pixel scale
+        oled->setTextColor(color, bg_color);        // Draw white text
+        oled->setCursor(x,y);             // Start at top-left corner
+        oled->println(text);
+        oled->display();
+      }else if (highlight == false && light_up == true){
+        color = SSD1306_WHITE;
+        bg_color = SSD1306_BLACK;
+        oled->setTextSize(text_size);             // Normal 1:1 pixel scale
+        oled->setTextColor(color, bg_color);        // Draw white text
+        oled->setCursor(x,y);             // Start at top-left corner
+        oled->println(text);
+        oled->display();
+      }else if (highlight == true && light_up == false){
+        color = SSD1306_WHITE;
+        bg_color = SSD1306_BLACK;
+        oled->setTextSize(text_size);             // Normal 1:1 pixel scale
+        oled->setTextColor(color, bg_color);        
+        oled->setCursor(x,y);             // Start at top-left corner
+        oled->println(text);
+        
+        color = SSD1306_BLACK;
+        oled->setTextSize(text_size);             // Normal 1:1 pixel scale
+        oled->setTextColor(color, bg_color);        
+        oled->setCursor(x,y);             // Start at top-left corner
+        oled->println(text);
+        oled->display();
+      }else{
+        color = SSD1306_BLACK;
+        bg_color = SSD1306_BLACK;
+        oled->setTextSize(text_size);             // Normal 1:1 pixel scale
+        oled->setTextColor(color, bg_color);        // Draw white text
+        oled->setCursor(x,y);             // Start at top-left corner
+        oled->println(text);
+        oled->display();
+      }
     }
     
     void display_text_pic(bool light_up) {
@@ -345,43 +407,45 @@ class InitialPage: public Page{
 class MainPage: public Page{
   private:
     // used to save the update
-    String strTemp="", last_strTemp="";
-    String strAcc="", last_strAcc="";
-    String strGyr="", last_strGyr="";
+    float last_bodyTemp;
+    float last_acc[3];
+    float last_gyr[3];
     float* bodyTemp;
-    int* acc, * gry;
+    float* acc, * gry;
     
   public:
     // override function
     void show(OLED oled){
-      oled.display_text("BMP: ", 0, 22, true, 1);
-      oled.display_text("TMP: ", 0, 32, true, 1);
-      oled.display_text("Ang: ", 0, 42, true, 1);
-      oled.display_text("Acc: ", 0, 52, true, 1);
+      oled.display_text("BMP:", 0, 22, true, 1);
+      oled.display_text("TMP:", 0, 32, true, 1);
+      oled.display_text("Ang:", 0, 42, true, 1);
+      oled.display_text("Acc:", 0, 52, true, 1);
     }
     // override function
     void clear(OLED oled){
-      oled.display_text("BMP: ", 0, 22, false, 1);
-      oled.display_text("TMP: ", 0, 32, false, 1);
-      oled.display_text("Ang: ", 0, 42, false, 1);
-      oled.display_text("Acc: ", 0, 52, false, 1);
+      oled.display_text("BMP:", 0, 22, false, 1);
+      oled.display_text("TMP:", 0, 32, false, 1);
+      oled.display_text("Ang:", 0, 42, false, 1);
+      oled.display_text("Acc:", 0, 52, false, 1);
 
       // clear update part
-      oled.display_text(last_strTemp,30, 32, false,1);
-      oled.display_text(last_strGyr,30, 42, false, 1);
-      oled.display_text(last_strAcc,30, 52, false, 1);
+      oled.display_text(last_bodyTemp, 2,30, 32, false,1);
+      for (int i = 0; i < 3; i++){
+        oled.display_text(last_gyr[i], 0,30+i*35, 42, false, 1);
+        oled.display_text(last_acc[i], 1,30+i*35, 52, false, 1);
+      }
 
       // reset update_part
-      strTemp=""; last_strTemp="";
-      strAcc=""; last_strAcc="";
-      strGyr=""; last_strGyr="";
+      last_bodyTemp = 0;
+      for (int i = 0; i < 3; i++){
+        last_acc[i] = 0;
+        last_gyr[i] = 0;
+      }
     }
     
     // override function
     void update(OLED oled){
-      strTemp = String(*bodyTemp);
-      strGyr = "(" + String(gyr[0]) + "," + String(gyr[1]) + "," + String(gyr[2]) + ")";
-      strAcc = "(" + String(acc[0]) + "," + String(acc[1]) + "," + String(acc[2]) + ")";
+      
       /*
       if (lastStrBeatAvg != strBeatAvg){
         oledClearText(lastStrBeatAvg,30, 22, 1);
@@ -390,27 +454,34 @@ class MainPage: public Page{
       lastStrBeatAvg = strBeatAvg;
       */
       
-      if (last_strTemp != strTemp){
-        oled.display_text(last_strTemp,30, 32, false,1);
-        oled.display_text(strTemp, 30, 32, true, 1);    
+      if (last_bodyTemp != *bodyTemp){
+        oled.display_text(last_bodyTemp,2,30, 32, false,1);
+        oled.display_text(*bodyTemp,2, 30, 32, true, 1);    
       }
-      last_strTemp = strTemp;
-    
-      if (last_strGyr != strGyr){
-        oled.display_text(last_strGyr,30, 42, false, 1);
-        oled.display_text(strGyr, 30, 42, true, 1);    
+      last_bodyTemp = *bodyTemp;
+      for (int i = 0; i < 3; i++){
+        if (last_gyr[i] != gry[i]){
+          oled.display_text(last_gyr[i],0, 30+i*35, 42, false, 1);
+          oled.display_text(gyr[i],0, 30+i*35, 42, true, 1);
+        }
       }
-      last_strGyr = strGyr;
-    
-      if (last_strAcc != strAcc){
-        oled.display_text(last_strAcc,30, 52, false, 1);
-        oled.display_text(strAcc, 30, 52, true, 1);    
+      for (int i=0; i<3; i++){
+        last_gyr[i] = gyr[i];
       }
-      last_strAcc = strAcc;
+
+      for (int i=0; i<3; i++){
+        if (last_acc[i] != acc[i]){
+          oled.display_text(last_acc[i], 1,30+i*35, 52, false, 1);
+          oled.display_text(acc[i], 1, 30+i*35, 52, true, 1);
+        }
+      }
+      for (int i=0; i<3; i++){
+        last_acc[i] = acc[i];
+      }
     }
     
     // connect the object data, which means saving the address and point to the same value
-    void set_parameters(float* bodyTemp, int* acc, int* gry){
+    void set_parameters(float* bodyTemp, float* acc, float* gry){
       this->bodyTemp = bodyTemp;  // linking to the global variable
       this->acc = acc;            // linking to the global variable
       this->gry = gry;            // linking to the global variable
@@ -419,49 +490,122 @@ class MainPage: public Page{
 
 class MenuPage: public Page{
   public:
+    // override function
     void show(OLED oled){
       oled.display_text("Wifi: ", 0, 22, true, 1);
       oled.display_text("Power: ", 0, 32, true, 1);
       oled.display_text("Send: ", 0, 42, true, 1);
     }
-        
+    // override function
     void clear(OLED oled){
       oled.display_text("Wifi: ", 0, 22, false, 1);
       oled.display_text("Power: ", 0, 32, false, 1);
       oled.display_text("Send: ", 0, 42, false, 1);
     }
+    void update(OLED oled){
+
+    }
 };
 
 class TempPage: public Page{
+  private:
+    float last_bodyTemp;
+    float* bodyTemp;
   public:
+    // override function
     void show(OLED oled){
       oled.display_text("Temperature: ", 0, 22, true, 1);
     }
-        
+    // override function
     void clear(OLED oled){
       oled.display_text("Temperature: ", 0, 22, false, 1);
+
+      // clear update part
+      oled.display_text(last_bodyTemp,2,30, 32, false,1);
+
+      // reset update_part
+      last_bodyTemp = 0;
+
+    }
+    // override function
+    void update(OLED oled){
+      if (last_bodyTemp != *bodyTemp){
+        oled.display_text(last_bodyTemp,2,30, 32, false,1);
+        oled.display_text(*bodyTemp,2, 30, 32, true, 1);    
+      }
+      last_bodyTemp = *bodyTemp;
+    }
+    // connect the object data, which means saving the address and point to the same value
+    void set_parameters(float* bodyTemp){
+      this->bodyTemp = bodyTemp;  // linking to the global variable
     }
 };
 
 class MovePage: public Page{
+  private:
+    // used to save the update
+    float last_acc[3];
+    float last_gyr[3];
+    float* acc, * gry;
   public:
+    // override function
     void show(OLED oled){
       oled.display_text("Acceleration: ", 0, 22, true, 1);
       oled.display_text("Euler Angle: ", 0, 42, true, 1);
     }
-        
+    // override function
     void clear(OLED oled){
       oled.display_text("Acceleration: ", 0, 22, false, 1);
       oled.display_text("Euler Angle: ", 0, 42, false, 1);
+
+      // clear update_part
+      for (int i = 0; i < 3; i++){
+        oled.display_text(last_gyr[i],0, 10+i*35, 32, false, 1);
+        oled.display_text(last_acc[i], 1,0+i*35, 52, false, 1);
+      }
+      
+      // reset update_part
+      for (int i = 0; i < 3; i++){
+        last_acc[i] = 0;
+        last_gyr[i] = 0;
+      }
+    }
+    // override function
+    void update(OLED oled){
+      for (int i = 0; i < 3; i++){
+        if (last_gyr[i] != gry[i]){
+          oled.display_text(last_gyr[i],0, 10+i*35, 32, false, 1);
+          oled.display_text(gyr[i],0, 10+i*35, 32, true, 1);
+        }
+      }
+      for (int i=0; i<3; i++){
+        last_gyr[i] = gyr[i];
+      }
+
+      for (int i=0; i<3; i++){
+        if (last_acc[i] != acc[i]){
+          oled.display_text(last_acc[i], 1,0+i*35, 52, false, 1);
+          oled.display_text(acc[i], 1, 0+i*35, 52, true, 1);
+        }
+      }
+      for (int i=0; i<3; i++){
+        last_acc[i] = acc[i];
+      }
+    }
+    // connect the object data, which means saving the address and point to the same value
+    void set_parameters(float* acc, float* gry){
+      this->acc = acc;            // linking to the global variable
+      this->gry = gry;            // linking to the global variable
     }
 };
 
 class NavBar{
   public:
+    // override function
     void show(OLED oled){
       oled.display_text("Eddy FYP", 0, 0, true, 2);
     }
-    
+    // override function
     void clear(OLED oled){
       oled.display_text("Eddy FYP", 0, 0, false, 2);
     }
@@ -707,7 +851,8 @@ void page_initialize(){
   // PAGE SETUP --------------------------------
   // set up the parameters for update, which the page may need
   main_page.set_parameters(&bodyTemp, acc, gyr);
-  
+  temp_page.set_parameters(&bodyTemp);
+  move_page.set_parameters(acc, gyr);
   
   pages[INITIAL_PAGE] = &initial_page;
   pages[MAIN_PAGE] = &main_page;
@@ -832,9 +977,9 @@ void readMPU6050(){
     
     Serial.println("=======================================================");
     //Serial.print("temp : ");Serial.println(mpu6050.getTemp());
-    acc[0] = (int)(mpu6050.getAccX()*9.81);
-    acc[1] = (int)(mpu6050.getAccY()*9.81);
-    acc[2] = (int)(mpu6050.getAccZ()*9.81);
+    acc[0] = mpu6050.getAccX();
+    acc[1] = mpu6050.getAccY();
+    acc[2] = mpu6050.getAccZ();
     Serial.print("accX : ");Serial.print(acc[0]);
     Serial.print("\taccY : ");Serial.print(acc[1]);
     Serial.print("\taccZ : ");Serial.println(acc[2]);
@@ -846,9 +991,9 @@ void readMPU6050(){
     //Serial.print("accAngleX : ");Serial.print(mpu6050.getAccAngleX());
     //Serial.print("\taccAngleY : ");Serial.println(mpu6050.getAccAngleY());
 
-    gyr[0] = (int)mpu6050.getGyroAngleX();
-    gyr[1] = (int)mpu6050.getGyroAngleY();
-    gyr[2] = (int)mpu6050.getGyroAngleZ();
+    gyr[0] = mpu6050.getGyroAngleX();
+    gyr[1] = mpu6050.getGyroAngleY();
+    gyr[2] = mpu6050.getGyroAngleZ();
   
     Serial.print("gyroAngleX : ");Serial.print(gyr[0]);
     Serial.print("\tgyroAngleY : ");Serial.print(gyr[1]);
