@@ -24,7 +24,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define LOGO_HEIGHT   64
 #define LOGO_WIDTH    128
 // 'pepe_oled', 128x64px
-const unsigned char logo_bmp [] PROGMEM = {
+unsigned char logo_bmp [] PROGMEM = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -94,7 +94,7 @@ const unsigned char logo_bmp [] PROGMEM = {
 
 #define TEXT_HEIGHT   60
 #define TEXT_WIDTH    106
-const unsigned char displayText [] PROGMEM = {
+unsigned char displayText [] PROGMEM = {
 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c, 
 0x00, 0x00, 0xe1, 0x80, 0x00, 0x00, 0x03, 0xe0, 0x10, 0x0e, 0x38, 0x00, 0x00, 0x08, 0x00, 0x00, 
 0x83, 0x00, 0x60, 0x01, 0xfe, 0x00, 0x0c, 0x0c, 0x30, 0x00, 0x00, 0x08, 0x0c, 0x01, 0x87, 0xff, 
@@ -228,12 +228,12 @@ class OLED{
       clear();
     }
 
-    void display_logo(bool light_up) {
+    void display_pic(unsigned char bmp [],int width, int height, bool light_up) {
       int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
       oled->drawBitmap(
-      (oled->width()  - LOGO_WIDTH ) / 2,
-      (oled->height() - LOGO_HEIGHT) / 2,
-      logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, color);
+      (oled->width()  - width ) / 2,
+      (oled->height() - height) / 2,
+      bmp, width, height, color);
       oled->display();
     }
 
@@ -316,15 +316,6 @@ class OLED{
         oled->display();
       }
     }
-    
-    void display_text_pic(bool light_up) {
-      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
-      oled->drawBitmap(
-        (oled->width()  -  TEXT_WIDTH) / 2,
-        (oled->height() - TEXT_HEIGHT) / 2,
-        displayText, TEXT_WIDTH, TEXT_HEIGHT, color);
-      oled->display();
-    }
 
     void display_pixel(int x, int y, bool light_up){
         int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
@@ -394,13 +385,13 @@ class InitialPage: public Page{
       delay(2000);
       oled.display_text("Welcome back, Eddy!", 0, 32, false);
       
-      //oled.display_text_pic(true);
-      //delay(3000);
-      //oled.display_text_pic(false);
+      oled.display_pic(displayText,TEXT_WIDTH, TEXT_HEIGHT,true);
+      delay(3000);
+      oled.display_pic(displayText,TEXT_WIDTH, TEXT_HEIGHT,false);
 
-      //oled.display_logo(true);
-      //delay(3000);
-      //oled.display_logo(false);
+      oled.display_pic(logo_bmp,LOGO_WIDTH, LOGO_HEIGHT,true);
+      delay(3000);
+      oled.display_pic(logo_bmp,LOGO_WIDTH, LOGO_HEIGHT,false);
     }
 };
 
@@ -560,8 +551,8 @@ class MovePage: public Page{
 
       // clear update_part
       for (int i = 0; i < 3; i++){
-        oled.display_text(last_gyr[i],0, 10+i*35, 32, false, 1);
-        oled.display_text(last_acc[i], 1,0+i*35, 52, false, 1);
+        oled.display_text(last_acc[i], 1,10+i*35, 32, false, 1);
+        oled.display_text(last_gyr[i],0, 10+i*35, 52, false, 1);
       }
       
       // reset update_part
@@ -572,24 +563,24 @@ class MovePage: public Page{
     }
     // override function
     void update(OLED oled){
-      for (int i = 0; i < 3; i++){
-        if (last_gyr[i] != gry[i]){
-          oled.display_text(last_gyr[i],0, 10+i*35, 32, false, 1);
-          oled.display_text(gyr[i],0, 10+i*35, 32, true, 1);
-        }
-      }
-      for (int i=0; i<3; i++){
-        last_gyr[i] = gyr[i];
-      }
-
       for (int i=0; i<3; i++){
         if (last_acc[i] != acc[i]){
-          oled.display_text(last_acc[i], 1,0+i*35, 52, false, 1);
-          oled.display_text(acc[i], 1, 0+i*35, 52, true, 1);
+          oled.display_text(last_acc[i], 1,10+i*35, 32, false, 1);
+          oled.display_text(acc[i], 1, 10+i*35, 32, true, 1);
         }
       }
       for (int i=0; i<3; i++){
         last_acc[i] = acc[i];
+      }
+      
+      for (int i = 0; i < 3; i++){
+        if (last_gyr[i] != gry[i]){
+          oled.display_text(last_gyr[i],0, 10+i*35, 52, false, 1);
+          oled.display_text(gyr[i],0, 10+i*35, 52, true, 1);
+        }
+      }
+      for (int i=0; i<3; i++){
+        last_gyr[i] = gyr[i];
       }
     }
     // connect the object data, which means saving the address and point to the same value
