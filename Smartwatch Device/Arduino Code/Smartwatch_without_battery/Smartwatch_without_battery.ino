@@ -21,10 +21,24 @@
 #define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-#define LOGO_HEIGHT   64
-#define LOGO_WIDTH    128
-// 'pepe_oled', 128x64px
-unsigned char logo_bmp [] PROGMEM = {
+#define MIN_VOLTAGE_LEVEL 3.3
+#define MAX_VOLTAGE_LEVEL 4.2
+float battery_voltage;
+
+class Bitmap{
+  public:
+    int height;
+    int width;
+    unsigned char *pic;
+    void set(unsigned char *pic, int width, int height){
+      this->pic = pic;
+      this->width = width;
+      this->height = height;
+    }
+};
+
+
+unsigned char pepe_pic_array [] PROGMEM = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -91,10 +105,7 @@ unsigned char logo_bmp [] PROGMEM = {
 0x00, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-
-#define TEXT_HEIGHT   60
-#define TEXT_WIDTH    106
-unsigned char displayText [] PROGMEM = {
+unsigned char slogan_pic_array [] PROGMEM = {
 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c, 
 0x00, 0x00, 0xe1, 0x80, 0x00, 0x00, 0x03, 0xe0, 0x10, 0x0e, 0x38, 0x00, 0x00, 0x08, 0x00, 0x00, 
 0x83, 0x00, 0x60, 0x01, 0xfe, 0x00, 0x0c, 0x0c, 0x30, 0x00, 0x00, 0x08, 0x0c, 0x01, 0x87, 0xff, 
@@ -149,6 +160,23 @@ unsigned char displayText [] PROGMEM = {
 0x00, 0x00, 0xe0, 0x00, 0x60, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x70, 0x01, 0x80, 0x00, 
 0x70, 0x00, 0x60, 0x00, 0x00, 0x03, 0x00, 0x00
 };
+
+unsigned char battery_pic_array [] PROGMEM =  {
+ 0xff, 0xff, 0xe0, 0x80, 0x00, 0x20, 0x80, 0x00, 0x30, 0x80, 0x00, 0x10, 0x80, 0x00, 0x10, 0x80, 
+  0x00, 0x10, 0x80, 0x00, 0x30, 0x80, 0x00, 0x20, 0xff, 0xff, 0xe0
+};
+
+
+Bitmap battery_pic;
+Bitmap pepe_pic;
+Bitmap slogan_pic;
+
+void bitmap_initialize(){
+  battery_pic.set(battery_pic_array,20, 9);
+  pepe_pic.set(pepe_pic_array,128, 64);
+  slogan_pic.set(slogan_pic_array, 106,60);
+}
+
 
 MAX30105 particleSensor;
 
@@ -234,6 +262,12 @@ class OLED{
       (oled->width()  - width ) / 2,
       (oled->height() - height) / 2,
       bmp, width, height, color);
+      oled->display();
+    }
+
+    void display_pic(unsigned char bmp [],int width, int height,int x, int y, bool light_up) {
+      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
+      oled->drawBitmap(x, y,bmp, width, height, color);
       oled->display();
     }
 
@@ -385,13 +419,13 @@ class InitialPage: public Page{
       delay(2000);
       oled.display_text("Welcome back, Eddy!", 0, 32, false);
       
-      oled.display_pic(displayText,TEXT_WIDTH, TEXT_HEIGHT,true);
+      oled.display_pic(slogan_pic.pic,slogan_pic.width, slogan_pic.height,true);
       delay(3000);
-      oled.display_pic(displayText,TEXT_WIDTH, TEXT_HEIGHT,false);
+      oled.display_pic(slogan_pic.pic,slogan_pic.width, slogan_pic.height,false);
 
-      oled.display_pic(logo_bmp,LOGO_WIDTH, LOGO_HEIGHT,true);
+      oled.display_pic(pepe_pic.pic,pepe_pic.width, pepe_pic.height,true);
       delay(3000);
-      oled.display_pic(logo_bmp,LOGO_WIDTH, LOGO_HEIGHT,false);
+      oled.display_pic(pepe_pic.pic,pepe_pic.width, pepe_pic.height,false);
     }
 };
 
@@ -591,14 +625,45 @@ class MovePage: public Page{
 };
 
 class NavBar{
+  private:
+    float* battery_volt_level;
   public:
     // override function
     void show(OLED oled){
-      oled.display_text("Eddy FYP", 0, 0, true, 2);
+      oled.display_text("FYP", 0, 0, true, 2);
+      oled.display_pic(battery_pic.pic,battery_pic.width, battery_pic.height, 105, 0, true);
+      batterylevel_display(oled, true);
     }
     // override function
     void clear(OLED oled){
-      oled.display_text("Eddy FYP", 0, 0, false, 2);
+      oled.display_text("FYP", 0, 0, false, 2);
+      oled.display_pic(battery_pic.pic,battery_pic.width, battery_pic.height, 105, 0, false);
+      
+      batterylevel_display(oled, false);
+    }
+    void set_parameters(float *battery_volt_level){
+      this->battery_volt_level = battery_volt_level;
+    }
+
+    void update(OLED oled){
+      batterylevel_display(oled, true);
+    }
+    
+    void batterylevel_display(OLED oled, bool lightup){
+      if (lightup){
+        int range = (int)((*battery_volt_level - MIN_VOLTAGE_LEVEL)/(MAX_VOLTAGE_LEVEL-MIN_VOLTAGE_LEVEL) * 15);
+        for (int y = 0; y < 5; y++){
+          for (int x = 0; x < range; x++){
+            oled.display_pixel(107+x, 2+y, true);
+          }
+        }
+      }else{
+        for (int y = 0; y < 5; y++){
+          for (int x = 0; x < 15; x++){
+            oled.display_pixel(107+x, 2+y,false);
+          }
+        } 
+      }
     }
 };
 
@@ -628,6 +693,7 @@ class PageMonitor{
 
     void update(){
       pages[current_page]->update(*oled);
+      nav_bar->update(*oled);
     }
     
     void show_nav_bar(){
@@ -839,12 +905,14 @@ MovePage move_page;
 NavBar nav_bar;
 // initialize the pages the smartwatch needed
 void page_initialize(){
+  bitmap_initialize();
+  
   // PAGE SETUP --------------------------------
   // set up the parameters for update, which the page may need
   main_page.set_parameters(&bodyTemp, acc, gyr);
   temp_page.set_parameters(&bodyTemp);
   move_page.set_parameters(acc, gyr);
-  
+  nav_bar.set_parameters(&battery_voltage);
   pages[INITIAL_PAGE] = &initial_page;
   pages[MAIN_PAGE] = &main_page;
   pages[MENU_PAGE] = &menu_page;
@@ -888,6 +956,8 @@ void setup()
   Serial.begin(115200);
   Serial.println("Initializing...");
 
+  battery_voltage = 3.4;
+  
   page_initialize();
   
   button_initialize();
