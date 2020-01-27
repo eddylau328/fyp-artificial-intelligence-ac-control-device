@@ -34,6 +34,8 @@ It shows how to use the library.
 
 #### [virtual function in C++](https://www.geeksforgeeks.org/virtual-function-cpp/)
 
+#### [turn png into bitmap](https://javl.github.io/image2cpp/)
+
 ## Air Conditioner
 ### Power Consumption
 #### [Ideal Air Conditioner temperature for electricity savings](https://www.bijlibachao.com/air-conditioners/ideal-air-conditioner-temperature-for-electricity-saving.html)
