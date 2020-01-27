@@ -25,6 +25,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define MAX_VOLTAGE_LEVEL 4.2
 float battery_voltage;
 
+enum Control{
+  LEFT,RIGHT,ENTER,BACK
+};
+
 class Bitmap{
   public:
     int height;
@@ -400,6 +404,7 @@ class Page{
     // methods that can be override
     virtual void show(OLED oled){}
     virtual void update(OLED oled){}
+    virtual void active_update(OLED oled, Control motion){}
     virtual void clear(OLED oled){}
 };
 
@@ -514,21 +519,106 @@ class MainPage: public Page{
 };
 
 class MenuPage: public Page{
+  private:
+    int pos[2][2] = {{1 , 0}, {0 , 0}};
+    String strlist[2][2] = {{"Wifi:","ON"}, {"Send:", "ON"}};
+    //String str_status_list[2];
+    //bool *wifi_status, *send_status;
+    
   public:
     // override function
     void show(OLED oled){
-      oled.display_text("Wifi: ", 0, 22, true, 1);
-      oled.display_text("Power: ", 0, 32, true, 1);
-      oled.display_text("Send: ", 0, 42, true, 1);
+      for (int i = 0 ; i < 2; i++){
+        for (int j = 0 ; j < 2; j++){
+          oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, true, 1, pos[i][j]);
+        }
+      }
     }
     // override function
     void clear(OLED oled){
-      oled.display_text("Wifi: ", 0, 22, false, 1);
-      oled.display_text("Power: ", 0, 32, false, 1);
-      oled.display_text("Send: ", 0, 42, false, 1);
+      for (int i = 0 ; i < 2; i++){
+        for (int j = 0 ; j < 2; j++){
+          oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, true, 1, pos[i][j]);
+          pos[i][j] = 0;
+        }
+      }
+      pos[0][0] = 1;
     }
-    void update(OLED oled){
-
+    
+    void active_update(OLED oled, Control control){
+      bool isPass = false;
+      switch(control){
+        case LEFT:
+          Serial.println("pass left");
+          for (int j = 0; j < 2 ; j++){
+            for (int i = 0; i < 2 ; i++){
+              if(pos[i][j] == 1){
+                if (i-1 < 0){
+                  pos[(i-1+2)%2][j] = 1;
+                }else{
+                  pos[(i-1)%2][j] = 1;
+                }
+                pos[i][j] = 0; 
+                isPass = true;
+                break;
+              }
+            }
+            if (isPass == true){
+              break;
+            }
+          }
+          break;
+        case RIGHT:
+          Serial.println("pass right");
+          for (int j = 0; j < 2 ; j++){
+            for (int i = 0; i < 2 ; i++){
+              if(pos[i][j] == 1){
+                pos[(i+1)%2][j] = 1;
+                pos[i][j] = 0;
+                isPass = true;
+                break;
+              }
+            }
+            if (isPass == true)
+              break;
+           }
+           break;
+        case ENTER:
+          Serial.println("pass enter");
+          for (int j = 0; j < 2 ; j++){
+            for (int i = 0; i < 2 ; i++){
+              if(pos[i][j] == 1 && j < 1){
+                pos[i][j] = 0;
+                pos[i][j+1] = 1;
+                isPass = true; 
+                break;
+              }
+            }
+            if (isPass == true)
+              break;
+          }
+          break;
+        case BACK:
+          Serial.println("pass back");
+          for (int j = 0; j < 2 ; j++){
+            for (int i = 0; i < 2 ; i++){
+              if(pos[i][j] == 1 && j > 0){
+                pos[i][j-1] = 1;
+                pos[i][j] = 0;
+                isPass = true;
+                break;
+              }
+            }
+            if (isPass == true)
+              break;
+          }
+          break;
+      }
+      for (int j = 0; j < 2 ; j++){
+        for (int i = 0; i < 2 ; i++){
+          oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, true, 1, pos[i][j]);
+        }
+      }
     }
 };
 
@@ -695,6 +785,10 @@ class PageMonitor{
       pages[current_page]->update(*oled);
       nav_bar->update(*oled);
     }
+
+    void active_update(Control control){
+      pages[current_page]->active_update(*oled, control);
+    }
     
     void show_nav_bar(){
       nav_bar->show(*oled);
@@ -759,6 +853,7 @@ class EnterButton: public Button{
           break;
         case MENU_PAGE:
           // check cursor and click
+          page_monitor->active_update(ENTER);
           break;
         case TEMP_PAGE:
           page_monitor->show(MENU_PAGE);
@@ -784,7 +879,7 @@ class BackButton: public Button{
           //nothing needs to be happen
           break;
         case MENU_PAGE:
-          page_monitor->show(MAIN_PAGE);
+          page_monitor->active_update(BACK);
           break;
         case TEMP_PAGE:
           page_monitor->show(MAIN_PAGE);
@@ -811,6 +906,7 @@ class LeftButton: public Button{
           break;
         case MENU_PAGE:
           // move cursor (up)
+          page_monitor->active_update(LEFT);
           break;
         case TEMP_PAGE:
           page_monitor->show(MAIN_PAGE);
@@ -837,6 +933,7 @@ class RightButton: public Button{
           break;
         case MENU_PAGE:
           //move cursor (down)
+          page_monitor->active_update(RIGHT);
           break;
         case TEMP_PAGE:
           page_monitor->show(MOVE_PAGE);
