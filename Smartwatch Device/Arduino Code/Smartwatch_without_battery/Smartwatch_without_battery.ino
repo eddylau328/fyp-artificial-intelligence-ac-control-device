@@ -170,7 +170,6 @@ unsigned char battery_pic_array [] PROGMEM =  {
   0x00, 0x10, 0x80, 0x00, 0x30, 0x80, 0x00, 0x20, 0xff, 0xff, 0xe0
 };
 
-
 Bitmap battery_pic;
 Bitmap pepe_pic;
 Bitmap slogan_pic;
@@ -401,11 +400,13 @@ main_page -> menu_page  |  main_page <- menu_page
 // page is the same base object of different page that the oled will display
 class Page{
   public:
+    bool isReverse = false;
     // methods that can be override
     virtual void show(OLED oled){}
     virtual void update(OLED oled){}
     virtual void active_update(OLED oled, Control motion){}
     virtual void clear(OLED oled){}
+    bool get_isReverse(){return isReverse;}
 };
 
 class InitialPage: public Page{
@@ -413,7 +414,7 @@ class InitialPage: public Page{
     void show(OLED oled){
       for (int i = 0; i < 6; i++){
         oled.display_pixel(10+i*5, 32, true);
-        delay(500);
+        delay(250);
       }
 
       for (int i = 0; i < 6; i++){
@@ -423,7 +424,8 @@ class InitialPage: public Page{
       oled.display_text("Welcome back, Eddy!", 0, 32, true);
       delay(2000);
       oled.display_text("Welcome back, Eddy!", 0, 32, false);
-      
+
+      /*
       oled.display_pic(slogan_pic.pic,slogan_pic.width, slogan_pic.height,true);
       delay(3000);
       oled.display_pic(slogan_pic.pic,slogan_pic.width, slogan_pic.height,false);
@@ -431,6 +433,7 @@ class InitialPage: public Page{
       oled.display_pic(pepe_pic.pic,pepe_pic.width, pepe_pic.height,true);
       delay(3000);
       oled.display_pic(pepe_pic.pic,pepe_pic.width, pepe_pic.height,false);
+      */
     }
 };
 
@@ -538,11 +541,12 @@ class MenuPage: public Page{
     void clear(OLED oled){
       for (int i = 0 ; i < 2; i++){
         for (int j = 0 ; j < 2; j++){
-          oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, true, 1, pos[i][j]);
+          oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, false, 1, pos[i][j]);
           pos[i][j] = 0;
         }
       }
       pos[0][0] = 1;
+      isReverse = false;
     }
     
     void active_update(OLED oled, Control control){
@@ -602,11 +606,17 @@ class MenuPage: public Page{
           Serial.println("pass back");
           for (int j = 0; j < 2 ; j++){
             for (int i = 0; i < 2 ; i++){
-              if(pos[i][j] == 1 && j > 0){
-                pos[i][j-1] = 1;
-                pos[i][j] = 0;
-                isPass = true;
-                break;
+              if(pos[i][j] == 1){
+                if (j>0){
+                  pos[i][j-1] = 1;
+                  pos[i][j] = 0;
+                  isPass = true;
+                  break;
+                }else{
+                  isReverse = true;
+                  isPass = true;
+                  break;
+                }
               }
             }
             if (isPass == true)
@@ -614,9 +624,11 @@ class MenuPage: public Page{
           }
           break;
       }
-      for (int j = 0; j < 2 ; j++){
-        for (int i = 0; i < 2 ; i++){
-          oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, true, 1, pos[i][j]);
+      if(!isReverse){
+        for (int j = 0; j < 2 ; j++){
+          for (int i = 0; i < 2 ; i++){
+            oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, true, 1, pos[i][j]);
+          }
         }
       }
     }
@@ -762,6 +774,7 @@ class PageMonitor{
     Page *pages[TOTAL_PAGE];
     NavBar *nav_bar;
     int current_page = -1;
+    int last_page = -1;
     OLED *oled;
     
   public:
@@ -776,6 +789,7 @@ class PageMonitor{
     void show(int page_num){
       if (current_page != -1){
         pages[current_page]->clear(*oled);
+        last_page = current_page;
       }
       pages[page_num]->show(*oled);
       current_page = page_num;
@@ -788,6 +802,12 @@ class PageMonitor{
 
     void active_update(Control control){
       pages[current_page]->active_update(*oled, control);
+      if (pages[current_page]->get_isReverse()){
+        pages[current_page]->clear(*oled);
+        pages[last_page]->show(*oled);
+        current_page = last_page;
+        last_page = -1;
+      }
     }
     
     void show_nav_bar(){
