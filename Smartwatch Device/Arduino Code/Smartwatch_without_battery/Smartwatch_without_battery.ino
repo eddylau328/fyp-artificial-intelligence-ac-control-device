@@ -14,6 +14,12 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
+#include "RTClib.h"
+RTC_DS3231 rtc;
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+DateTime current_time;
+
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
@@ -728,7 +734,10 @@ class MovePage: public Page{
 
 class NavBar{
   private:
+    float last_battery_volt_level;
+    DateTime past;
     float* battery_volt_level;
+    DateTime* now;
   public:
     // override function
     void show(OLED oled){
@@ -743,12 +752,42 @@ class NavBar{
       
       batterylevel_display(oled, false);
     }
-    void set_parameters(float *battery_volt_level){
+    void set_parameters(float *battery_volt_level, DateTime *now){
       this->battery_volt_level = battery_volt_level;
+      this->now = now;
     }
 
     void update(OLED oled){
-      batterylevel_display(oled, true);
+      if (last_battery_volt_level != *battery_volt_level){
+        batterylevel_display(oled, false);
+        batterylevel_display(oled, true);
+        last_battery_volt_level = *battery_volt_level;
+      }
+      if (past.minute() != now->minute()){
+        currenttime_display(oled, false);
+        past = *now;
+        currenttime_display(oled, true);
+      }
+    }
+
+    void currenttime_display(OLED oled, bool lightup){
+      String str_time = "";
+      int hour = past.hour();
+      int minute = past.minute();
+      if (past.hour() < 10){
+        str_time = "0" + String(hour);
+      }else{
+        str_time = String(hour);
+      }
+      
+      str_time = str_time + ":";
+      
+      if (past.minute() < 10){
+        str_time = str_time + "0" + String(minute);
+      }else {
+        str_time = str_time + String(minute);
+      }
+      oled.display_text(str_time, 54, 0, lightup, 1);
     }
     
     void batterylevel_display(OLED oled, bool lightup){
@@ -1029,7 +1068,7 @@ void page_initialize(){
   main_page.set_parameters(&bodyTemp, acc, gyr);
   temp_page.set_parameters(&bodyTemp);
   move_page.set_parameters(acc, gyr);
-  nav_bar.set_parameters(&battery_voltage);
+  nav_bar.set_parameters(&battery_voltage, &current_time);
   pages[INITIAL_PAGE] = &initial_page;
   pages[MAIN_PAGE] = &main_page;
   pages[MENU_PAGE] = &menu_page;
@@ -1066,6 +1105,14 @@ void button_initialize(){
   
   button_monitor.set(buttons); // create a button monitor
   // -------------------------------------------
+}
+
+void clock_initialize(){
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+  //rtc.adjust(DateTime(2020, 2, 4, 23, 49, 00));
 }
 
 void setup()
@@ -1189,9 +1236,29 @@ void readMPU6050(){
   }
 }
 
+void read_time(){
+    current_time = rtc.now();
+    /*
+    Serial.print(current_time.year());
+    Serial.print('/');
+    Serial.print(current_time.month());
+    Serial.print('/');
+    Serial.print(current_time.day());
+    Serial.print(" (");
+    Serial.print(daysOfTheWeek[current_time.dayOfTheWeek()]);
+    Serial.print(") ");
+    Serial.print(current_time.hour(), DEC);
+    Serial.print(':');
+    Serial.print(current_time.minute(), DEC);
+    Serial.print(':');
+    Serial.print(current_time.second(), DEC);
+    Serial.println();
+    */
+}
+
 void loop()
 {
-
+  read_time();
   button_monitor.check_trigger(&page_monitor);
   
   
@@ -1204,6 +1271,7 @@ void loop()
   readMPU6050();
 
   page_monitor.update();
+
   
   /*
   long irValue = particleSensor.getIR();
