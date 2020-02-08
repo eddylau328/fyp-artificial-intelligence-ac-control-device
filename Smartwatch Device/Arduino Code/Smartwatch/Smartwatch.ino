@@ -30,6 +30,14 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define MIN_VOLTAGE_LEVEL 3.3
 #define MAX_VOLTAGE_LEVEL 4.2
 float battery_voltage;
+int voltage_read_offset = 200;
+Timer voltTimer;
+
+void read_battery_voltage(){
+  int sensor_value = analogRead(39) + 200;
+  battery_voltage = (sensor_value*3.3/4095)*(30000+7500)/7500;
+  Serial.println(battery_voltage);
+}
 
 enum Control{
   LEFT,RIGHT,ENTER,BACK
@@ -367,6 +375,13 @@ class OLED{
         // Show the display buffer on the screen. You MUST call display() after
         // drawing commands to make them visible on screen!
         oled->display();
+    }
+
+    void display_rect(int x, int y, int w, int h, bool light_up){
+      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
+      oled->drawRect(x,y,w,h,color); 
+      oled->fillRect(x,y,w,h,color);
+      oled->display();
     }
     
     void clear(){
@@ -734,7 +749,7 @@ class MovePage: public Page{
 
 class NavBar{
   private:
-    float last_battery_volt_level;
+    int last_battery_volt_level;
     DateTime past;
     float* battery_volt_level;
     DateTime* now;
@@ -758,10 +773,11 @@ class NavBar{
     }
 
     void update(OLED oled){
-      if (last_battery_volt_level != *battery_volt_level){
+      int battery_level = (*battery_volt_level - MIN_VOLTAGE_LEVEL)/(MAX_VOLTAGE_LEVEL-MIN_VOLTAGE_LEVEL) * 15;
+      if (last_battery_volt_level != battery_level){
+        last_battery_volt_level = battery_level;
         batterylevel_display(oled, false);
         batterylevel_display(oled, true);
-        last_battery_volt_level = *battery_volt_level;
       }
       if (past.minute() != now->minute()){
         currenttime_display(oled, false);
@@ -793,18 +809,23 @@ class NavBar{
     void batterylevel_display(OLED oled, bool lightup){
       if (lightup){
         int range = (int)((*battery_volt_level - MIN_VOLTAGE_LEVEL)/(MAX_VOLTAGE_LEVEL-MIN_VOLTAGE_LEVEL) * 15);
+        /*
         for (int y = 0; y < 5; y++){
           for (int x = 0; x < range; x++){
             oled.display_pixel(107+x, 2+y, true);
           }
         }
+        */
       }else{
+        /*
         for (int y = 0; y < 5; y++){
           for (int x = 0; x < 15; x++){
             oled.display_pixel(107+x, 2+y,false);
           }
-        } 
+        }
+        */
       }
+      oled.display_rect(107,2,last_battery_volt_level,5,lightup);
     }
 };
 
@@ -1112,7 +1133,7 @@ void clock_initialize(){
     Serial.println("Couldn't find RTC");
     while (1);
   }
-  //rtc.adjust(DateTime(2020, 2, 4, 23, 49, 00));
+  //rtc.adjust(DateTime(2020, 2, 5, 23, 20, 00));
 }
 
 void setup()
@@ -1123,7 +1144,7 @@ void setup()
   battery_voltage = 3.4;
   
   page_initialize();
-  
+  //clock_initialize();
   button_initialize();
 
   page_monitor.show(INITIAL_PAGE);
@@ -1134,11 +1155,11 @@ void setup()
 
   Wire.begin();
   mpu6050.begin();
-
-  // 21:47:15.290 -> X : 1.63
-  // 21:47:15.290 -> Y : 0.43
-  // 21:47:15.290 -> Z : -2.67
-  mpu6050.calcGyroOffsets(1.63,0.43,-2.67);
+  
+  //23:17:43.783 -> X : -1.35
+  //23:17:43.783 -> Y : -1.23
+  //23:17:43.783 -> Z : -7.52
+  mpu6050.calcGyroOffsets(-1.35,-1.23,-7.52);
 
   bodyTempSensor.begin(); 
   
@@ -1147,6 +1168,10 @@ void setup()
 
   mpu6050Timer.settimer(1000);
   mpu6050Timer.starttimer();  
+
+  read_battery_voltage();
+  voltTimer.settimer(30000);
+  voltTimer.starttimer();
 }
 
 String lastStrBeatAvg = "";
@@ -1258,7 +1283,12 @@ void read_time(){
 
 void loop()
 {
-  read_time();
+  //read_time();
+  if (voltTimer.checkfinish()){
+    read_battery_voltage();
+    voltTimer.resettimer();
+    voltTimer.starttimer();
+  }
   button_monitor.check_trigger(&page_monitor);
   
   
