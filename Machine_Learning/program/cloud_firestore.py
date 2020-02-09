@@ -7,7 +7,7 @@ class Cloud_firestore:
     def __init__(self):
         try:
             # Fetch the service account key JSON file contents
-            cred = credentials.Certificate('../../../datalog-418c9-firebase-adminsdk-og0bw-bacec2a5fc.json')
+            cred = credentials.Certificate('../../../fypacmonitor-firebase-adminsdk-s80u2-adb9132a09.json')
             cloud_app = firebase_admin.initialize_app(cred, name="cloud")
             self.cloud_db = firestore.client()
             print("Connected to firestore cloud ...")

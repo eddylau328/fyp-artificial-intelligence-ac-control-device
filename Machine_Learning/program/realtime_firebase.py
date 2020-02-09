@@ -6,10 +6,10 @@ class Realtime_firebase:
     def __init__(self):
         try:
             # Fetch the service account key JSON file contents
-            cred = credentials.Certificate('../../../datalog-418c9-firebase-adminsdk-og0bw-bacec2a5fc.json')
+            cred = credentials.Certificate('../../../fypacmonitor-firebase-adminsdk-s80u2-adb9132a09.json')
             # Initialize the app with a service account, granting admin privileges
             firebase_admin.initialize_app(cred, {
-                'databaseURL': 'https://datalog-418c9.firebaseio.com/'
+                'databaseURL': 'https://fypacmonitor.firebaseio.com/'
             })
             print("Connected to realtime firebase ...")
         except:

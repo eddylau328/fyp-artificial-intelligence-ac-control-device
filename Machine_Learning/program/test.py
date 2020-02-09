@@ -9,3 +9,5 @@ class Database:
         self.cloud_db = c_fs.Cloud_firestore()
 
 
+db = Database()
+
