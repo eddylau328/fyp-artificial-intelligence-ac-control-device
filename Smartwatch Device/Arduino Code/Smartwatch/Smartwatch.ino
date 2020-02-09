@@ -14,6 +14,12 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
+#include "RTClib.h"
+RTC_DS3231 rtc;
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+DateTime current_time;
+
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
@@ -24,6 +30,14 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define MIN_VOLTAGE_LEVEL 3.3
 #define MAX_VOLTAGE_LEVEL 4.2
 float battery_voltage;
+int voltage_read_offset = 200;
+Timer voltTimer;
+
+void read_battery_voltage(){
+  int sensor_value = analogRead(39) + 200;
+  battery_voltage = (sensor_value*3.3/4095)*(30000+7500)/7500;
+  Serial.println(battery_voltage);
+}
 
 enum Control{
   LEFT,RIGHT,ENTER,BACK
@@ -169,7 +183,6 @@ unsigned char battery_pic_array [] PROGMEM =  {
  0xff, 0xff, 0xe0, 0x80, 0x00, 0x20, 0x80, 0x00, 0x30, 0x80, 0x00, 0x10, 0x80, 0x00, 0x10, 0x80, 
   0x00, 0x10, 0x80, 0x00, 0x30, 0x80, 0x00, 0x20, 0xff, 0xff, 0xe0
 };
-
 
 Bitmap battery_pic;
 Bitmap pepe_pic;
@@ -363,6 +376,13 @@ class OLED{
         // drawing commands to make them visible on screen!
         oled->display();
     }
+
+    void display_rect(int x, int y, int w, int h, bool light_up){
+      int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
+      oled->drawRect(x,y,w,h,color); 
+      oled->fillRect(x,y,w,h,color);
+      oled->display();
+    }
     
     void clear(){
       oled->clearDisplay();
@@ -401,11 +421,13 @@ main_page -> menu_page  |  main_page <- menu_page
 // page is the same base object of different page that the oled will display
 class Page{
   public:
+    bool isReverse = false;
     // methods that can be override
     virtual void show(OLED oled){}
     virtual void update(OLED oled){}
     virtual void active_update(OLED oled, Control motion){}
     virtual void clear(OLED oled){}
+    bool get_isReverse(){return isReverse;}
 };
 
 class InitialPage: public Page{
@@ -413,7 +435,7 @@ class InitialPage: public Page{
     void show(OLED oled){
       for (int i = 0; i < 6; i++){
         oled.display_pixel(10+i*5, 32, true);
-        delay(500);
+        delay(250);
       }
 
       for (int i = 0; i < 6; i++){
@@ -423,7 +445,8 @@ class InitialPage: public Page{
       oled.display_text("Welcome back, Eddy!", 0, 32, true);
       delay(2000);
       oled.display_text("Welcome back, Eddy!", 0, 32, false);
-      
+
+      /*
       oled.display_pic(slogan_pic.pic,slogan_pic.width, slogan_pic.height,true);
       delay(3000);
       oled.display_pic(slogan_pic.pic,slogan_pic.width, slogan_pic.height,false);
@@ -431,6 +454,7 @@ class InitialPage: public Page{
       oled.display_pic(pepe_pic.pic,pepe_pic.width, pepe_pic.height,true);
       delay(3000);
       oled.display_pic(pepe_pic.pic,pepe_pic.width, pepe_pic.height,false);
+      */
     }
 };
 
@@ -538,11 +562,12 @@ class MenuPage: public Page{
     void clear(OLED oled){
       for (int i = 0 ; i < 2; i++){
         for (int j = 0 ; j < 2; j++){
-          oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, true, 1, pos[i][j]);
+          oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, false, 1, pos[i][j]);
           pos[i][j] = 0;
         }
       }
       pos[0][0] = 1;
+      isReverse = false;
     }
     
     void active_update(OLED oled, Control control){
@@ -602,11 +627,17 @@ class MenuPage: public Page{
           Serial.println("pass back");
           for (int j = 0; j < 2 ; j++){
             for (int i = 0; i < 2 ; i++){
-              if(pos[i][j] == 1 && j > 0){
-                pos[i][j-1] = 1;
-                pos[i][j] = 0;
-                isPass = true;
-                break;
+              if(pos[i][j] == 1){
+                if (j>0){
+                  pos[i][j-1] = 1;
+                  pos[i][j] = 0;
+                  isPass = true;
+                  break;
+                }else{
+                  isReverse = true;
+                  isPass = true;
+                  break;
+                }
               }
             }
             if (isPass == true)
@@ -614,9 +645,11 @@ class MenuPage: public Page{
           }
           break;
       }
-      for (int j = 0; j < 2 ; j++){
-        for (int i = 0; i < 2 ; i++){
-          oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, true, 1, pos[i][j]);
+      if(!isReverse){
+        for (int j = 0; j < 2 ; j++){
+          for (int i = 0; i < 2 ; i++){
+            oled.display_text(strlist[i][j], 0 + j*32, 22 + i*10, true, 1, pos[i][j]);
+          }
         }
       }
     }
@@ -716,7 +749,10 @@ class MovePage: public Page{
 
 class NavBar{
   private:
+    int last_battery_volt_level;
+    DateTime past;
     float* battery_volt_level;
+    DateTime* now;
   public:
     // override function
     void show(OLED oled){
@@ -731,29 +767,65 @@ class NavBar{
       
       batterylevel_display(oled, false);
     }
-    void set_parameters(float *battery_volt_level){
+    void set_parameters(float *battery_volt_level, DateTime *now){
       this->battery_volt_level = battery_volt_level;
+      this->now = now;
     }
 
     void update(OLED oled){
-      batterylevel_display(oled, true);
+      int battery_level = (*battery_volt_level - MIN_VOLTAGE_LEVEL)/(MAX_VOLTAGE_LEVEL-MIN_VOLTAGE_LEVEL) * 15;
+      if (last_battery_volt_level != battery_level){
+        last_battery_volt_level = battery_level;
+        batterylevel_display(oled, false);
+        batterylevel_display(oled, true);
+      }
+      if (past.minute() != now->minute()){
+        currenttime_display(oled, false);
+        past = *now;
+        currenttime_display(oled, true);
+      }
+    }
+
+    void currenttime_display(OLED oled, bool lightup){
+      String str_time = "";
+      int hour = past.hour();
+      int minute = past.minute();
+      if (past.hour() < 10){
+        str_time = "0" + String(hour);
+      }else{
+        str_time = String(hour);
+      }
+      
+      str_time = str_time + ":";
+      
+      if (past.minute() < 10){
+        str_time = str_time + "0" + String(minute);
+      }else {
+        str_time = str_time + String(minute);
+      }
+      oled.display_text(str_time, 54, 0, lightup, 1);
     }
     
     void batterylevel_display(OLED oled, bool lightup){
       if (lightup){
         int range = (int)((*battery_volt_level - MIN_VOLTAGE_LEVEL)/(MAX_VOLTAGE_LEVEL-MIN_VOLTAGE_LEVEL) * 15);
+        /*
         for (int y = 0; y < 5; y++){
           for (int x = 0; x < range; x++){
             oled.display_pixel(107+x, 2+y, true);
           }
         }
+        */
       }else{
+        /*
         for (int y = 0; y < 5; y++){
           for (int x = 0; x < 15; x++){
             oled.display_pixel(107+x, 2+y,false);
           }
-        } 
+        }
+        */
       }
+      oled.display_rect(107,2,last_battery_volt_level,5,lightup);
     }
 };
 
@@ -762,6 +834,7 @@ class PageMonitor{
     Page *pages[TOTAL_PAGE];
     NavBar *nav_bar;
     int current_page = -1;
+    int last_page = -1;
     OLED *oled;
     
   public:
@@ -776,6 +849,7 @@ class PageMonitor{
     void show(int page_num){
       if (current_page != -1){
         pages[current_page]->clear(*oled);
+        last_page = current_page;
       }
       pages[page_num]->show(*oled);
       current_page = page_num;
@@ -788,6 +862,12 @@ class PageMonitor{
 
     void active_update(Control control){
       pages[current_page]->active_update(*oled, control);
+      if (pages[current_page]->get_isReverse()){
+        pages[current_page]->clear(*oled);
+        pages[last_page]->show(*oled);
+        current_page = last_page;
+        last_page = -1;
+      }
     }
     
     void show_nav_bar(){
@@ -1009,7 +1089,7 @@ void page_initialize(){
   main_page.set_parameters(&bodyTemp, acc, gyr);
   temp_page.set_parameters(&bodyTemp);
   move_page.set_parameters(acc, gyr);
-  nav_bar.set_parameters(&battery_voltage);
+  nav_bar.set_parameters(&battery_voltage, &current_time);
   pages[INITIAL_PAGE] = &initial_page;
   pages[MAIN_PAGE] = &main_page;
   pages[MENU_PAGE] = &menu_page;
@@ -1048,6 +1128,14 @@ void button_initialize(){
   // -------------------------------------------
 }
 
+void clock_initialize(){
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+  //rtc.adjust(DateTime(2020, 2, 5, 23, 20, 00));
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -1056,7 +1144,7 @@ void setup()
   battery_voltage = 3.4;
   
   page_initialize();
-  
+  //clock_initialize();
   button_initialize();
 
   page_monitor.show(INITIAL_PAGE);
@@ -1067,11 +1155,11 @@ void setup()
 
   Wire.begin();
   mpu6050.begin();
-
-  // 21:47:15.290 -> X : 1.63
-  // 21:47:15.290 -> Y : 0.43
-  // 21:47:15.290 -> Z : -2.67
-  mpu6050.calcGyroOffsets(1.63,0.43,-2.67);
+  
+  //23:17:43.783 -> X : -1.35
+  //23:17:43.783 -> Y : -1.23
+  //23:17:43.783 -> Z : -7.52
+  mpu6050.calcGyroOffsets(-1.35,-1.23,-7.52);
 
   bodyTempSensor.begin(); 
   
@@ -1080,6 +1168,10 @@ void setup()
 
   mpu6050Timer.settimer(1000);
   mpu6050Timer.starttimer();  
+
+  read_battery_voltage();
+  voltTimer.settimer(30000);
+  voltTimer.starttimer();
 }
 
 String lastStrBeatAvg = "";
@@ -1169,9 +1261,34 @@ void readMPU6050(){
   }
 }
 
+void read_time(){
+    current_time = rtc.now();
+    /*
+    Serial.print(current_time.year());
+    Serial.print('/');
+    Serial.print(current_time.month());
+    Serial.print('/');
+    Serial.print(current_time.day());
+    Serial.print(" (");
+    Serial.print(daysOfTheWeek[current_time.dayOfTheWeek()]);
+    Serial.print(") ");
+    Serial.print(current_time.hour(), DEC);
+    Serial.print(':');
+    Serial.print(current_time.minute(), DEC);
+    Serial.print(':');
+    Serial.print(current_time.second(), DEC);
+    Serial.println();
+    */
+}
+
 void loop()
 {
-
+  //read_time();
+  if (voltTimer.checkfinish()){
+    read_battery_voltage();
+    voltTimer.resettimer();
+    voltTimer.starttimer();
+  }
   button_monitor.check_trigger(&page_monitor);
   
   
@@ -1184,6 +1301,7 @@ void loop()
   readMPU6050();
 
   page_monitor.update();
+
   
   /*
   long irValue = particleSensor.getIR();
