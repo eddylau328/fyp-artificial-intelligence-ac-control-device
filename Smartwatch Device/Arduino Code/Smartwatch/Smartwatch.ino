@@ -14,6 +14,17 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+
+#include <FirebaseArduino.h>
+#include <ArduinoJson.h>
+// Set these to run example.
+#define FIREBASE_HOST "fypacmonitor.firebaseio.com"
+#define FIREBASE_AUTH "jaT833r4mymesl03s37FD9jeV9JnWZzcM1xrnX8d"
+
+String serial_num = "watch0001";
+String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
+
+
 // Date and time functions using a DS3231 RTC connected via I2C and Wire lib
 #include "RTClib.h"
 RTC_DS3231 rtc;
@@ -1249,6 +1260,23 @@ void read_time(){
     Serial.print(current_time.second(), DEC);
     Serial.println();
     */
+}
+
+void send_data_2_firebase(){
+    StaticJsonBuffer<1000> doc;
+    JsonObject& data =doc.createObject();
+    data["acc"] = acc;
+
+    //firebase send sensor data action
+    String name = Firebase.push(firebase_sensor_address, data);
+    if (Firebase.failed()) {
+      Serial.print("Firebase Pushing /sensor failed:");
+      Serial.println(Firebase.error());
+      return;
+    }else{
+      Serial.print("Firebase Pushed /sensor ");
+      Serial.println(name);
+    }
 }
 
 void loop()
