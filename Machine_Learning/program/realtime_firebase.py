@@ -16,26 +16,37 @@ class Realtime_firebase:
             print("Failed to connect to Realtime firebase ...")
 
 
-    def getLatestData(self):
+    # get data from the input path
+    # **kwargs give condition
+    def get(self, path):
         try:
-            ref = db.reference('sensor')
+            ref = db.reference(path)
             # forming a list of data
             data = [detail for _ , detail in ref.get().items()]
-            # get the latest data from the list
-            return data.pop()
+            return data
         except:
-            print("Failed to get the latest data ...")
+            print("Failed to get the data ...")
             return
 
 
-    def sendAction(self, action):
+    # add data to the input path
+    def add(self, path, data):
         try:
-            ref = db.reference('step')
-            ref.push({'action':action})
-            print("Action %s has been sent successful" %action)
+            ref = db.reference(path)
+            ref.push(data)
+            print("Data has been sent successful")
         except:
-            print("Action %s sending failed" %action)
+            print("Data sending failed")
 
 
     def __del__(self):
         print("Disconnected to realtime firebase ...")
+
+'''
+    # remove data to the input path
+    def remove(self, path, data=None):
+        try:
+
+        except:
+            print("Data removing failed")
+'''
