@@ -43,8 +43,8 @@ class Realtime_firebase:
         print("Disconnected to realtime firebase ...")
 
 '''
-    # remove data to the input path
-    def remove(self, path, data=None):
+    # delete data to the input path
+    def delete(self, path, data=None):
         try:
 
         except:

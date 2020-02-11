@@ -15,13 +15,15 @@ class Cloud_firestore:
             print("Failed to connect to firestore cloud ...")
 
 
-    def add(self,data_name, data):
+    def add(self, path, data):
         try:
-            doc_ref = self.cloud_db.collection(u'record').document(data_name)
+            doc_ref = self.cloud_db.document(path)
             doc_ref.set(data)
-            print("Added %s data to firestore cloud" %data_name)
+            print("Added %s data to firestore cloud" %path)
+            return True
         except:
-            print("Failed to add %s data to firestore cloud" %data_name)
+            print("Failed to add %s data to firestore cloud" %path)
+            return False
 
 
     def get(self, path, keys=None):
@@ -41,7 +43,7 @@ class Cloud_firestore:
                         pack.set(key, data.get(key))
                 return pack
         except:
-            print(u'No such document!')
+            print('No such document!')
             return
 
 
@@ -51,7 +53,34 @@ class Cloud_firestore:
             doc = doc_ref.get()
             return True
         except:
-            print(u'Path does not exist')
+            print('Path does not exist')
+            return False
+
+
+    def move(self, original_path, new_path):
+        # original_path needs to exist, new_path needs to not exist
+        if (self.cloud_db.check_path(original_path) && not self.cloud_db.check_path(new_path)):
+            data = self.cloud_db.get(original_path)
+            isSuccess = self.cloud_db.add(new_path, data)
+            # prevent add data process fail, lossing all the data
+            if (isSuccess == True):
+                self.cloud_db.delete(original_path)
+            else:
+                print("Fail, terminate move document process!")
+                return False
+            return True
+        else:
+            return False
+
+
+    def delete(self, path):
+        doc_ref = self.cloud_db.document(path)
+        try:
+            doc_ref.delete()
+            print('Success to delete document %s!' %path)
+            return True
+        except:
+            print('Fail to delete document %s!' %path)
             return False
 
 

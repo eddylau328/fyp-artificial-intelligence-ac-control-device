@@ -47,8 +47,57 @@ class Database:
             return False
 
 
+    def get_smartwatch_train_data(self, **kwargs):
+        search_paths = []
+        if ('untrain' in kwargs):
+            base_search_path = "Devices/"+self.smartwatch_id+"/train_dataset/untrain_dataset/"
+        # work is the movement of working
+        # For example, typing keyboard, writing
+        if ('work' in kwargs):
+            if (kwargs.get('work') == True):
+                search_paths.append(base_search_path+"work")
+
+        # move is the movement that describes user moving around the room but usually not that fast
+        # For example, stretching, walking, grabbing things
+        if ('move' in kwargs):
+            if (kwargs.get('move') == True):
+                search_paths.append(base_search_path+"move")
+
+        # sleep is the movement that describes user sleeping
+        # For example, laying down on the bed, turning around on the bed
+        if ('sleep' in kwargs):
+            if (kwargs.get('sleep') == True):
+                search_paths.append(base_search_path+"sleep")
+
+        if ('exercise' in kwargs):
+            if (kwargs.get('exercise') == True):
+                search_paths.append(base_search_path+"exercise")
+
+        result_data = []
+
+        for path in search_paths:
+            if ('keys' in kwargs):
+                result_data.append(self.cloud_db.get(path, kwargs.get('keys')))
+            else:
+                result_data.append(self.cloud_db.get(path))
+
+        return result_data
+
+
+    def cloud_move_data(self, original_path, new_path):
+        result = self.cloud_db.move(original_path, new_path)
+        if (result):
+            print("Success to move document from %s to %s!", %(original_path, new_path))
+        else:
+            print("Fail to move document from %s to %s!", %(original_path, new_path))
+
+
+    #def transfer_realtime_data_2_cloud(self, realtime_db_path, cloud_path):
+
+
 
 db = Database()
 db.set_user('eddylau')
 db.setup()
+
 
