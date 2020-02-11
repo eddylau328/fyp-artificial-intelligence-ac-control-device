@@ -17,8 +17,8 @@
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 
-#define WIFI_SSID "Lau Family"
-#define WIFI_PASSWORD "27050880"
+#define WIFI_SSID "Eddy Wifi"
+#define WIFI_PASSWORD "12345678xd"
 #define FIREBASE_HOST "fypacmonitor.firebaseio.com"
 #define FIREBASE_AUTH "jaT833r4mymesl03s37FD9jeV9JnWZzcM1xrnX8d"
 
@@ -404,7 +404,7 @@ class OLED{
 
     void display_rect(int x, int y, int w, int h, bool light_up){
       int color = light_up? SSD1306_WHITE : SSD1306_BLACK;
-      oled->drawRect(x,y,w,h,color);
+      //oled->drawRect(x,y,w,h,color);
       oled->fillRect(x,y,w,h,color);
       oled->display();
     }
@@ -429,7 +429,8 @@ class OLED{
 #define TEMP_PAGE 2
 #define MOVE_PAGE 3
 #define MENU_PAGE 4
-#define TOTAL_PAGE 5
+#define EMPTY_PAGE 5
+#define TOTAL_PAGE 6
 
 /* ------------------------------------------------------------------------
 
@@ -715,6 +716,17 @@ class TempPage: public Page{
     }
 };
 
+class EmptyPage: public Page{
+  public:
+    void show(OLED oled){
+      oled.clear();      
+    }
+    // override function
+    void clear(OLED oled){}
+    // override function
+    void update(OLED oled){}
+};
+
 class MovePage: public Page{
   private:
     // used to save the update
@@ -807,12 +819,8 @@ class NavBar{
       }
     }
 
-
     void batterylevel_display(OLED oled, bool lightup){
-      if (lightup){
-        int range = (int)((*battery_volt_level - MIN_VOLTAGE_LEVEL)/(MAX_VOLTAGE_LEVEL-MIN_VOLTAGE_LEVEL) * 15);
-      }
-      oled.display_rect(107,2,last_battery_volt_level,5,lightup);
+       oled.display_rect(107,2,last_battery_volt_level,5,lightup);
     }
 };
 
@@ -823,7 +831,6 @@ class PageMonitor{
     int current_page = -1;
     int last_page = -1;
     OLED *oled;
-    bool isDisplay = true;
 
   public:
     void set(OLED *oled, Page *pages[], NavBar *nav_bar){
@@ -837,35 +844,24 @@ class PageMonitor{
     void show(int page_num){
       if (current_page != -1){
         pages[current_page]->clear(*oled);
-        last_page = current_page;
+        if (current_page == EMPTY_PAGE){
+          show_nav_bar();
+          last_page = MENU_PAGE;
+        }else
+          last_page = current_page;
       }
       pages[page_num]->show(*oled);
+      Serial.println(page_num);
       current_page = page_num;
     }
 
-    void set_display(bool need_display){
-      isDisplay = need_display;
-      if (isDisplay == false){
-        clear();
-      }
-    }
-
-    void clear(){
-      if (current_page != -1){
-        pages[current_page]->clear(*oled);
-      }
-      nav_bar->clear(*oled);
-    }
-
     void update(){
-      if (isDisplay == true){
-        pages[current_page]->update(*oled);
+      pages[current_page]->update(*oled);
+      if (current_page != EMPTY_PAGE)
         nav_bar->update(*oled);
-      }
     }
 
     void active_update(Control control){
-      if (isDisplay == true){
         pages[current_page]->active_update(*oled, control);
         if (pages[current_page]->get_isReverse()){
           pages[current_page]->clear(*oled);
@@ -873,7 +869,6 @@ class PageMonitor{
           current_page = last_page;
           last_page = -1;
         }
-      }
     }
 
     void show_nav_bar(){
@@ -950,6 +945,9 @@ class EnterButton: public Button{
         case INITIAL_PAGE:
           // nothing needs to be happen
           break;
+        case EMPTY_PAGE:
+          page_monitor->show(MAIN_PAGE);
+          break;
       }
     }
 };
@@ -975,6 +973,9 @@ class BackButton: public Button{
           break;
         case INITIAL_PAGE:
           //nothing needs to be happen
+          break;
+        case EMPTY_PAGE:
+          page_monitor->show(MAIN_PAGE);
           break;
       }
     }
@@ -1003,6 +1004,9 @@ class LeftButton: public Button{
         case INITIAL_PAGE:
           //nothing needs to be happen
           break;
+        case EMPTY_PAGE:
+          page_monitor->show(MAIN_PAGE);
+          break;
       }
     }
 };
@@ -1030,6 +1034,9 @@ class RightButton: public Button{
         case INITIAL_PAGE:
           //nothing needs to be happen
           break;
+        case EMPTY_PAGE:
+          page_monitor->show(MAIN_PAGE);
+          break;
       }
     }
 };
@@ -1050,7 +1057,8 @@ class ButtonMonitor{
     }
 
     // check whether any button is triggered
-    void check_trigger(PageMonitor *page_monitor){
+    bool check_trigger(PageMonitor *page_monitor){
+      bool interact = false;
       if (timer.checkfinish()){
       bool any_button_on = false;
       for (int i = 0; i < TOTAL_BUTTON; i++){
@@ -1060,6 +1068,7 @@ class ButtonMonitor{
             button_hold = i;
           }
           any_button_on = true;
+          interact = true;
           timer.resettimer();
           timer.starttimer();
         }
@@ -1068,6 +1077,8 @@ class ButtonMonitor{
       if (!any_button_on)
         button_hold = -1;
       }
+
+      return interact;
     }
 
 };
@@ -1085,6 +1096,7 @@ MainPage main_page;
 MenuPage menu_page;
 TempPage temp_page;
 MovePage move_page;
+EmptyPage empty_page;
 NavBar nav_bar;
 // initialize the pages the smartwatch needed
 void page_initialize(){
@@ -1101,6 +1113,7 @@ void page_initialize(){
   pages[MENU_PAGE] = &menu_page;
   pages[MOVE_PAGE] = &move_page;
   pages[TEMP_PAGE] = &temp_page;
+  pages[EMPTY_PAGE] = &empty_page;
 
   // create a page monitor
   page_monitor.set(new OLED(&display), pages, &nav_bar);
@@ -1134,17 +1147,20 @@ void button_initialize(){
   // -------------------------------------------
 }
 
+Timer interactTimer;
+
 void setup()
 {
   Serial.begin(115200);
   Serial.println("Initializing...");
-  
+
   page_initialize();
   button_initialize();
 
   page_monitor.show(INITIAL_PAGE);
-  page_monitor.show_nav_bar();
-  page_monitor.show(MAIN_PAGE);
+
+  wifi_connect();
+  firebase_connect();
 
   Wire.begin();
   mpu6050.begin();
@@ -1155,9 +1171,6 @@ void setup()
   mpu6050.calcGyroOffsets(-1.35,-1.23,-7.52);
 
   bodyTempSensor.begin();
-
-  wifi_connect();
-  firebase_connect();
 
   tempTimer.settimer(2000);
   tempTimer.starttimer();
@@ -1171,6 +1184,12 @@ void setup()
 
   firebaseTimer.settimer(2000);
   firebaseTimer.starttimer();
+  
+  interactTimer.settimer(5000);
+  interactTimer.starttimer();
+
+  page_monitor.show_nav_bar();
+  page_monitor.show(MAIN_PAGE);
 }
 
 
@@ -1256,7 +1275,11 @@ void loop()
     voltTimer.resettimer();
     voltTimer.starttimer();
   }
-  button_monitor.check_trigger(&page_monitor);
+  
+  if (button_monitor.check_trigger(&page_monitor)){
+    interactTimer.resettimer();
+    interactTimer.starttimer();
+  }
 
 
   if (tempTimer.checkfinish()){
@@ -1268,11 +1291,19 @@ void loop()
   readMPU6050();
 
   if (firebaseTimer.checkfinish()){
-    send_data_2_firebase();
+    //send_data_2_firebase();
     firebaseTimer.resettimer();
     firebaseTimer.starttimer();
   }
 
   page_monitor.update();
+
+  if (interactTimer.checkfinish() && interactTimer.checkCounting()){
+    Serial.println();
+    Serial.print("sleep");
+    Serial.println();
+    page_monitor.show(EMPTY_PAGE);
+    interactTimer.resettimer();
+  }
 
 }
