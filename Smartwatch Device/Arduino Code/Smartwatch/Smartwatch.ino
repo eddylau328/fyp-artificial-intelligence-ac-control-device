@@ -14,22 +14,35 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+#include <WiFi.h>
+#include <FirebaseESP32.h>
 
-#include <FirebaseArduino.h>
-#include <ArduinoJson.h>
-// Set these to run example.
+#define WIFI_SSID "Lau Family"
+#define WIFI_PASSWORD "27050880"
 #define FIREBASE_HOST "fypacmonitor.firebaseio.com"
 #define FIREBASE_AUTH "jaT833r4mymesl03s37FD9jeV9JnWZzcM1xrnX8d"
+
+//Define Firebase Data object
+FirebaseData firebaseData;
+
+void wifi_connect(){
+  //connect to WiFi
+  Serial.printf("Connecting to %s ", WIFI_SSID);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+  }
+  Serial.println(" CONNECTED");
+}
 
 String serial_num = "watch0001";
 String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
 
-
-// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
-#include "RTClib.h"
-RTC_DS3231 rtc;
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-DateTime current_time;
+void firebase_connect(){
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.reconnectWiFi(true);
+}
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -234,6 +247,7 @@ float gyr[3] = {0,0,0};
 
 Timer tempTimer;
 Timer mpu6050Timer;
+Timer firebaseTimer;
 
 MPU6050 mpu6050(Wire);
 
@@ -481,22 +495,22 @@ class MainPage: public Page{
   public:
     // override function
     void show(OLED oled){
-      oled.display_text("BMP:", 0, 22, true, 1);
+      //oled.display_text("BMP:", 0, 22, true, 1);
       oled.display_text("TMP:", 0, 32, true, 1);
-      oled.display_text("Ang:", 0, 42, true, 1);
+      //oled.display_text("Ang:", 0, 42, true, 1);
       oled.display_text("Acc:", 0, 52, true, 1);
     }
     // override function
     void clear(OLED oled){
-      oled.display_text("BMP:", 0, 22, false, 1);
+      //oled.display_text("BMP:", 0, 22, false, 1);
       oled.display_text("TMP:", 0, 32, false, 1);
-      oled.display_text("Ang:", 0, 42, false, 1);
+      //oled.display_text("Ang:", 0, 42, false, 1);
       oled.display_text("Acc:", 0, 52, false, 1);
 
       // clear update part
       oled.display_text(last_bodyTemp, 2,30, 32, false,1);
       for (int i = 0; i < 3; i++){
-        oled.display_text(last_gyr[i], 0,30+i*35, 42, false, 1);
+        //oled.display_text(last_gyr[i], 0,30+i*35, 42, false, 1);
         oled.display_text(last_acc[i], 1,30+i*35, 52, false, 1);
       }
 
@@ -504,7 +518,7 @@ class MainPage: public Page{
       last_bodyTemp = 0;
       for (int i = 0; i < 3; i++){
         last_acc[i] = 0;
-        last_gyr[i] = 0;
+        //last_gyr[i] = 0;
       }
     }
 
@@ -524,6 +538,7 @@ class MainPage: public Page{
         oled.display_text(*bodyTemp,2, 30, 32, true, 1);
       }
       last_bodyTemp = *bodyTemp;
+      /*
       for (int i = 0; i < 3; i++){
         if (last_gyr[i] != gry[i]){
           oled.display_text(last_gyr[i],0, 30+i*35, 42, false, 1);
@@ -533,7 +548,7 @@ class MainPage: public Page{
       for (int i=0; i<3; i++){
         last_gyr[i] = gyr[i];
       }
-
+      */
       for (int i=0; i<3; i++){
         if (last_acc[i] != acc[i]){
           oled.display_text(last_acc[i], 1,30+i*35, 52, false, 1);
@@ -549,7 +564,7 @@ class MainPage: public Page{
     void set_parameters(float* bodyTemp, float* acc, float* gry){
       this->bodyTemp = bodyTemp;  // linking to the global variable
       this->acc = acc;            // linking to the global variable
-      this->gry = gry;            // linking to the global variable
+      //this->gry = gry;            // linking to the global variable
     }
 };
 
@@ -710,23 +725,23 @@ class MovePage: public Page{
     // override function
     void show(OLED oled){
       oled.display_text("Acceleration: ", 0, 22, true, 1);
-      oled.display_text("Euler Angle: ", 0, 42, true, 1);
+      //oled.display_text("Euler Angle: ", 0, 42, true, 1);
     }
     // override function
     void clear(OLED oled){
       oled.display_text("Acceleration: ", 0, 22, false, 1);
-      oled.display_text("Euler Angle: ", 0, 42, false, 1);
+      //oled.display_text("Euler Angle: ", 0, 42, false, 1);
 
       // clear update_part
       for (int i = 0; i < 3; i++){
         oled.display_text(last_acc[i], 1,10+i*35, 32, false, 1);
-        oled.display_text(last_gyr[i],0, 10+i*35, 52, false, 1);
+        //oled.display_text(last_gyr[i],0, 10+i*35, 52, false, 1);
       }
 
       // reset update_part
       for (int i = 0; i < 3; i++){
         last_acc[i] = 0;
-        last_gyr[i] = 0;
+        //last_gyr[i] = 0;
       }
     }
     // override function
@@ -740,7 +755,7 @@ class MovePage: public Page{
       for (int i=0; i<3; i++){
         last_acc[i] = acc[i];
       }
-
+      /*
       for (int i = 0; i < 3; i++){
         if (last_gyr[i] != gry[i]){
           oled.display_text(last_gyr[i],0, 10+i*35, 52, false, 1);
@@ -750,20 +765,20 @@ class MovePage: public Page{
       for (int i=0; i<3; i++){
         last_gyr[i] = gyr[i];
       }
+      */
     }
     // connect the object data, which means saving the address and point to the same value
     void set_parameters(float* acc, float* gry){
       this->acc = acc;            // linking to the global variable
-      this->gry = gry;            // linking to the global variable
+      //this->gry = gry;            // linking to the global variable
     }
 };
 
 class NavBar{
   private:
     int last_battery_volt_level;
-    DateTime past;
     float* battery_volt_level;
-    DateTime* now;
+    
   public:
     // override function
     void show(OLED oled){
@@ -778,9 +793,9 @@ class NavBar{
 
       batterylevel_display(oled, false);
     }
-    void set_parameters(float *battery_volt_level, DateTime *now){
+    
+    void set_parameters(float *battery_volt_level){
       this->battery_volt_level = battery_volt_level;
-      this->now = now;
     }
 
     void update(OLED oled){
@@ -790,51 +805,12 @@ class NavBar{
         batterylevel_display(oled, false);
         batterylevel_display(oled, true);
       }
-      if (past.minute() != now->minute()){
-        currenttime_display(oled, false);
-        past = *now;
-        currenttime_display(oled, true);
-      }
     }
 
-    void currenttime_display(OLED oled, bool lightup){
-      String str_time = "";
-      int hour = past.hour();
-      int minute = past.minute();
-      if (past.hour() < 10){
-        str_time = "0" + String(hour);
-      }else{
-        str_time = String(hour);
-      }
-
-      str_time = str_time + ":";
-
-      if (past.minute() < 10){
-        str_time = str_time + "0" + String(minute);
-      }else {
-        str_time = str_time + String(minute);
-      }
-      oled.display_text(str_time, 54, 0, lightup, 1);
-    }
 
     void batterylevel_display(OLED oled, bool lightup){
       if (lightup){
         int range = (int)((*battery_volt_level - MIN_VOLTAGE_LEVEL)/(MAX_VOLTAGE_LEVEL-MIN_VOLTAGE_LEVEL) * 15);
-        /*
-        for (int y = 0; y < 5; y++){
-          for (int x = 0; x < range; x++){
-            oled.display_pixel(107+x, 2+y, true);
-          }
-        }
-        */
-      }else{
-        /*
-        for (int y = 0; y < 5; y++){
-          for (int x = 0; x < 15; x++){
-            oled.display_pixel(107+x, 2+y,false);
-          }
-        }
-        */
       }
       oled.display_rect(107,2,last_battery_volt_level,5,lightup);
     }
@@ -847,6 +823,7 @@ class PageMonitor{
     int current_page = -1;
     int last_page = -1;
     OLED *oled;
+    bool isDisplay = true;
 
   public:
     void set(OLED *oled, Page *pages[], NavBar *nav_bar){
@@ -866,18 +843,36 @@ class PageMonitor{
       current_page = page_num;
     }
 
+    void set_display(bool need_display){
+      isDisplay = need_display;
+      if (isDisplay == false){
+        clear();
+      }
+    }
+
+    void clear(){
+      if (current_page != -1){
+        pages[current_page]->clear(*oled);
+      }
+      nav_bar->clear(*oled);
+    }
+
     void update(){
-      pages[current_page]->update(*oled);
-      nav_bar->update(*oled);
+      if (isDisplay == true){
+        pages[current_page]->update(*oled);
+        nav_bar->update(*oled);
+      }
     }
 
     void active_update(Control control){
-      pages[current_page]->active_update(*oled, control);
-      if (pages[current_page]->get_isReverse()){
-        pages[current_page]->clear(*oled);
-        pages[last_page]->show(*oled);
-        current_page = last_page;
-        last_page = -1;
+      if (isDisplay == true){
+        pages[current_page]->active_update(*oled, control);
+        if (pages[current_page]->get_isReverse()){
+          pages[current_page]->clear(*oled);
+          pages[last_page]->show(*oled);
+          current_page = last_page;
+          last_page = -1;
+        }
       }
     }
 
@@ -898,13 +893,13 @@ class PageMonitor{
                                           BUTTON PART START
   ========================================================================================================*/
 #define ENTER_BUTTON 0
-#define ENTER_BUTTON_PIN 33
+#define ENTER_BUTTON_PIN 35
 #define BACK_BUTTON 1
-#define BACK_BUTTON_PIN 35
+#define BACK_BUTTON_PIN 36
 #define LEFT_BUTTON 2
-#define LEFT_BUTTON_PIN 34
+#define LEFT_BUTTON_PIN 33
 #define RIGHT_BUTTON 3
-#define RIGHT_BUTTON_PIN 36
+#define RIGHT_BUTTON_PIN 34
 
 #define TOTAL_BUTTON 4
 
@@ -1100,7 +1095,7 @@ void page_initialize(){
   main_page.set_parameters(&bodyTemp, acc, gyr);
   temp_page.set_parameters(&bodyTemp);
   move_page.set_parameters(acc, gyr);
-  nav_bar.set_parameters(&battery_voltage, &current_time);
+  nav_bar.set_parameters(&battery_voltage);
   pages[INITIAL_PAGE] = &initial_page;
   pages[MAIN_PAGE] = &main_page;
   pages[MENU_PAGE] = &menu_page;
@@ -1139,30 +1134,17 @@ void button_initialize(){
   // -------------------------------------------
 }
 
-void clock_initialize(){
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    while (1);
-  }
-  //rtc.adjust(DateTime(2020, 2, 5, 23, 20, 00));
-}
-
 void setup()
 {
   Serial.begin(115200);
   Serial.println("Initializing...");
-
-  battery_voltage = 3.4;
-
+  
   page_initialize();
-  //clock_initialize();
   button_initialize();
 
   page_monitor.show(INITIAL_PAGE);
   page_monitor.show_nav_bar();
   page_monitor.show(MAIN_PAGE);
-
-  //heartRateSensorSetup();
 
   Wire.begin();
   mpu6050.begin();
@@ -1174,6 +1156,9 @@ void setup()
 
   bodyTempSensor.begin();
 
+  wifi_connect();
+  firebase_connect();
+
   tempTimer.settimer(2000);
   tempTimer.starttimer();
 
@@ -1183,6 +1168,9 @@ void setup()
   read_battery_voltage();
   voltTimer.settimer(30000);
   voltTimer.starttimer();
+
+  firebaseTimer.settimer(2000);
+  firebaseTimer.starttimer();
 }
 
 
@@ -1198,7 +1186,7 @@ void readTemperature(){
    bodyTemp = bodyTempSensor.getTempCByIndex(0);
 
    Serial.print(bodyTemp);
-
+   Serial.println();
 }
 
 void readMPU6050(){
@@ -1222,13 +1210,13 @@ void readMPU6050(){
     //Serial.print("accAngleX : ");Serial.print(mpu6050.getAccAngleX());
     //Serial.print("\taccAngleY : ");Serial.println(mpu6050.getAccAngleY());
 
-    gyr[0] = mpu6050.getGyroAngleX();
-    gyr[1] = mpu6050.getGyroAngleY();
-    gyr[2] = mpu6050.getGyroAngleZ();
+    //gyr[0] = mpu6050.getGyroAngleX();
+    //gyr[1] = mpu6050.getGyroAngleY();
+    //gyr[2] = mpu6050.getGyroAngleZ();
 
-    Serial.print("gyroAngleX : ");Serial.print(gyr[0]);
-    Serial.print("\tgyroAngleY : ");Serial.print(gyr[1]);
-    Serial.print("\tgyroAngleZ : ");Serial.println(gyr[2]);
+    //Serial.print("gyroAngleX : ");Serial.print(gyr[0]);
+    //Serial.print("\tgyroAngleY : ");Serial.print(gyr[1]);
+    //Serial.print("\tgyroAngleZ : ");Serial.println(gyr[2]);
 
     //Serial.print("angleX : ");Serial.print(mpu6050.getAngleX());
     //Serial.print("\tangleY : ");Serial.print(mpu6050.getAngleY());
@@ -1242,41 +1230,22 @@ void readMPU6050(){
   }
 }
 
-void read_time(){
-    current_time = rtc.now();
-    /*
-    Serial.print(current_time.year());
-    Serial.print('/');
-    Serial.print(current_time.month());
-    Serial.print('/');
-    Serial.print(current_time.day());
-    Serial.print(" (");
-    Serial.print(daysOfTheWeek[current_time.dayOfTheWeek()]);
-    Serial.print(") ");
-    Serial.print(current_time.hour(), DEC);
-    Serial.print(':');
-    Serial.print(current_time.minute(), DEC);
-    Serial.print(':');
-    Serial.print(current_time.second(), DEC);
-    Serial.println();
-    */
-}
-
 void send_data_2_firebase(){
-    StaticJsonBuffer<1000> doc;
-    JsonObject& data =doc.createObject();
-    data["acc"] = acc;
-
-    //firebase send sensor data action
-    String name = Firebase.push(firebase_sensor_address, data);
-    if (Firebase.failed()) {
-      Serial.print("Firebase Pushing /sensor failed:");
-      Serial.println(Firebase.error());
-      return;
-    }else{
-      Serial.print("Firebase Pushed /sensor ");
-      Serial.println(name);
-    }
+  FirebaseJson json_data;
+  json_data.add("acc_x", acc[0]);
+  json_data.add("acc_y", acc[1]);
+  json_data.add("acc_z", acc[2]);
+  if (Firebase.pushJSON(firebaseData, firebase_sensor_address, json_data))
+  {
+    Serial.println("PUSHED");
+  }
+  else
+  {
+    Serial.println("FAILED");
+    Serial.println("REASON: " + firebaseData.errorReason());
+    Serial.println("------------------------------------");
+    Serial.println();
+  }
 }
 
 void loop()
@@ -1297,6 +1266,12 @@ void loop()
   }
 
   readMPU6050();
+
+  if (firebaseTimer.checkfinish()){
+    send_data_2_firebase();
+    firebaseTimer.resettimer();
+    firebaseTimer.starttimer();
+  }
 
   page_monitor.update();
 
