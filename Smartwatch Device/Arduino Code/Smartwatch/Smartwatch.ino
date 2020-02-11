@@ -17,8 +17,8 @@
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 
-#define WIFI_SSID "Eddy Wifi"
-#define WIFI_PASSWORD "12345678xd"
+#define WIFI_SSID "Lau Family"
+#define WIFI_PASSWORD "27050880"
 #define FIREBASE_HOST "fypacmonitor.firebaseio.com"
 #define FIREBASE_AUTH "jaT833r4mymesl03s37FD9jeV9JnWZzcM1xrnX8d"
 
@@ -851,6 +851,8 @@ class PageMonitor{
           last_page = current_page;
       }
       pages[page_num]->show(*oled);
+      if (page_num == EMPTY_PAGE)
+        nav_bar->clear(*oled);        
       Serial.println(page_num);
       current_page = page_num;
     }
