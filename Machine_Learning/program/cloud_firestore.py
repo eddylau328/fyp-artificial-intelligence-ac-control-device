@@ -7,7 +7,7 @@ class Cloud_firestore:
     def __init__(self):
         try:
             # Fetch the service account key JSON file contents
-            cred = credentials.Certificate('../../../fypacmonitor-firebase-adminsdk-s80u2-adb9132a09.json')
+            cred = credentials.Certificate('../../../fypacmonitor-firebase-adminsdk-s80u2-878cd05541.json')
             cloud_app = firebase_admin.initialize_app(cred, {
               'projectId': 'fypacmonitor',
             })
