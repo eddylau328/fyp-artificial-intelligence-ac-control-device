@@ -60,13 +60,12 @@ class Cloud_firestore:
 
     def move(self, original_path, new_path):
         # original_path needs to exist, new_path needs to not exist
-        print(self.get(new_path))
-        if (self.check_path(original_path) and not self.check_path(new_path)):
-            data = self.cloud_db.get(original_path)
-            isSuccess = self.cloud_db.add(new_path, data)
+        if (self.check_document(original_path) and not self.check_document(new_path)):
+            data = self.get(original_path)
+            isSuccess = self.add(new_path, data)
             # prevent add data process fail, lossing all the data
             if (isSuccess == True):
-                self.cloud_db.delete(original_path)
+                self.delete(original_path)
             else:
                 print("Fail, terminate move document process!")
                 return False
