@@ -1293,7 +1293,7 @@ void loop()
   readMPU6050();
 
   if (firebaseTimer.checkfinish()){
-    //send_data_2_firebase();
+    send_data_2_firebase();
     firebaseTimer.resettimer();
     firebaseTimer.starttimer();
   }
