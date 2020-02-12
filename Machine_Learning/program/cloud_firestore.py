@@ -52,7 +52,6 @@ class Cloud_firestore:
     def check_document(self, path):
         doc_ref = self.cloud_db.document(path)
         doc = doc_ref.get()
-
         if doc.exists:
             return True
         else:
