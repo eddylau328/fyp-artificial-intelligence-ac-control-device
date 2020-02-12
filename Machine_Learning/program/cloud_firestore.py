@@ -8,7 +8,9 @@ class Cloud_firestore:
         try:
             # Fetch the service account key JSON file contents
             cred = credentials.Certificate('../../../fypacmonitor-firebase-adminsdk-s80u2-adb9132a09.json')
-            cloud_app = firebase_admin.initialize_app(cred, name="cloud")
+            cloud_app = firebase_admin.initialize_app(cred, {
+              'projectId': 'fypacmonitor',
+            })
             self.cloud_db = firestore.client()
             print("Connected to firestore cloud ...")
         except:
@@ -47,19 +49,20 @@ class Cloud_firestore:
             return
 
 
-    def check_path(self, path):
+    def check_document(self, path):
         doc_ref = self.cloud_db.document(path)
-        try:
-            doc = doc_ref.get()
+        doc = doc_ref.get()
+
+        if doc.exists:
             return True
-        except:
-            print('Path does not exist')
+        else:
             return False
 
 
     def move(self, original_path, new_path):
         # original_path needs to exist, new_path needs to not exist
-        if (self.cloud_db.check_path(original_path) && not self.cloud_db.check_path(new_path)):
+        print(self.get(new_path))
+        if (self.check_path(original_path) and not self.check_path(new_path)):
             data = self.cloud_db.get(original_path)
             isSuccess = self.cloud_db.add(new_path, data)
             # prevent add data process fail, lossing all the data
@@ -86,3 +89,5 @@ class Cloud_firestore:
 
     def __del__(self):
         print("Disconnected to firestore cloud ...")
+
+

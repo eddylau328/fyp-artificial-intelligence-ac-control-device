@@ -50,3 +50,6 @@ class Realtime_firebase:
         except:
             print("Data removing failed")
 '''
+
+
+#db = Realtime_firebase()

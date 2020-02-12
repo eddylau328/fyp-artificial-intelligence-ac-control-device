@@ -1,21 +1,38 @@
 import realtime_firebase as rt_fb
 import cloud_firestore as c_fs
+from enum import Enum
+
+class DatabaseType(Enum):
+    REALTIME = 1
+    CLOUD = 2
 
 
 class Database:
 
     def __init__(self):
-        self.realtime_db = rt_fb.Realtime_firebase()
-        self.cloud_db = c_fs.Cloud_firestore()
+        self.db = None
         self.username = ""
         self.smartwatch_id = ""
         self.acmonitor_id = ""
+        self.is_set_up = False
+
+
+    def connect_database(self, database_type):
+        if (database_type == DatabaseType.REALTIME):
+            self.db = rt_fb.Realtime_firebase()
+        else:
+            self.db = c_fs.Cloud_firestore()
+
+
+    def disconnect_database(self):
+        self.db.__del__()
 
 
     # set up target username
     def set_user(self, username):
-        user_search_path = "Users/"+username;
-        if (self.cloud_db.check_path(user_search_path)):
+        self.connect_database(DatabaseType.CLOUD)
+        user_search_path = "Users/"+username+"/info/personal";
+        if (self.db.check_document(user_search_path)):
             self.username = username
             print("Found user %s!" %username)
             return True
@@ -41,6 +58,7 @@ class Database:
             else:
                 print("Setup Terminate! AC monitor cannot found!")
                 return False
+            self.is_set_up = True
             return True
         else:
             print("Setup Terminate! User is not setup yet!")
@@ -48,6 +66,10 @@ class Database:
 
 
     def get_smartwatch_train_data(self, **kwargs):
+        # prevent username is not setup
+        if (not self.is_set_up):
+            return
+
         search_paths = []
         if ('untrain' in kwargs):
             base_search_path = "Devices/"+self.smartwatch_id+"/train_dataset/untrain_dataset/"
@@ -85,11 +107,15 @@ class Database:
 
 
     def cloud_move_data(self, original_path, new_path):
+        # prevent username is not setup
+        if (not self.is_set_up):
+            return
+
         result = self.cloud_db.move(original_path, new_path)
         if (result):
-            print("Success to move document from %s to %s!", %(original_path, new_path))
+            print("Success to move document from %s to %s!" %(original_path, new_path))
         else:
-            print("Fail to move document from %s to %s!", %(original_path, new_path))
+            print("Fail to move document from %s to %s!" %(original_path, new_path))
 
 
     #def transfer_realtime_data_2_cloud(self, realtime_db_path, cloud_path):
@@ -98,6 +124,9 @@ class Database:
 
 db = Database()
 db.set_user('eddylau')
-db.setup()
+#db.setup()
 
+#old = "Devices/" + db.smartwatch_id + "/train_dataset/untrain_dataset/work/test_move"
+#new = "Devices/" + db.smartwatch_id + "/train_dataset/trained_dataset/work/test_move"
+#db.cloud_move_data(old, new)
 
