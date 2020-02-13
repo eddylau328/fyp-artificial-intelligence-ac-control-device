@@ -20,6 +20,10 @@ This explains the algorithm of using convolution neural network to classify huma
 #### [Deep Q-learning from Demonstrations](https://arxiv.org/abs/1704.03732)
 Maybe useful for speeding the learning process for the agent.
 
+### Keras Tutorial
+#### [Keras input explanation: input_shape, units, batch_size, dim, etc ](https://stackoverflow.com/questions/44747343/keras-input-explanation-input-shape-units-batch-size-dim-etc)
+
+
 ## Arduino
 ### Coding
 #### [Timer](https://randomnerdtutorials.com/interrupts-timers-esp8266-arduino-ide-nodemcu/)
