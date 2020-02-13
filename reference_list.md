@@ -23,6 +23,15 @@ Maybe useful for speeding the learning process for the agent.
 ### Keras Tutorial
 #### [Keras input explanation: input_shape, units, batch_size, dim, etc ](https://stackoverflow.com/questions/44747343/keras-input-explanation-input-shape-units-batch-size-dim-etc)
 
+#### [Understanding 1D and 3D Convolution Neural Network | Keras](https://towardsdatascience.com/understanding-1d-and-3d-convolution-neural-network-keras-9d8f76e29610)
+
+#### [Introduction to 1D Convolutional Neural Networks in Keras for Time Sequences](https://blog.goodaudience.com/introduction-to-1d-convolutional-neural-networks-in-keras-for-time-sequences-3a7ff801a2cf)
+
+#### [How to Use the Keras Functional API for Deep Learning](https://machinelearningmastery.com/keras-functional-api-deep-learning/)
+
+#### [Keras Tutorial: The Ultimate Beginner's Guide to Deep Learning in Python](https://elitedatascience.com/keras-tutorial-deep-learning-in-python)
+
+#### [C4W1L10 CNN Example](https://www.youtube.com/watch?v=bXJx7y51cl0)
 
 ## Arduino
 ### Coding
