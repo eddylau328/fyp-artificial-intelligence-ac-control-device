@@ -245,9 +245,27 @@ float bodyTemp;
 float acc[3] = {0,0,0};
 float gyr[3] = {0,0,0};
 
+class DataPack{
+  public:
+    FirebaseJson json_data;
+    float acc[3];
+    int type;
+    void set_acc(float acc[]){
+      for (int i = 0 ; i < 3 ; i ++)
+        this->acc[i] = acc[i];
+    }
+    void set_type(int movement){
+      type = movement;
+    }
+    void set_json_data(){
+      json_data.add("acc_x", acc[0]);
+      json_data.add("acc_y", acc[1]);
+      json_data.add("acc_z", acc[2]);
+    }
+};
+
 Timer tempTimer;
 Timer mpu6050Timer;
-Timer firebaseTimer;
 
 MPU6050 mpu6050(Wire);
 
@@ -1151,6 +1169,32 @@ void button_initialize(){
 
 Timer interactTimer;
 
+// ---------------------------------------------------------------------------
+volatile int interruptCounter;
+int totalInterruptCounter;
+ 
+hw_timer_t * esp32_timer = NULL;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+ 
+void IRAM_ATTR onTimer() {
+  portENTER_CRITICAL_ISR(&timerMux);
+  interruptCounter++;
+  portEXIT_CRITICAL_ISR(&timerMux);
+ 
+}
+
+void esp32_timer_initialize(){
+  esp32_timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(esp32_timer, &onTimer, true);
+  timerAlarmWrite(esp32_timer, 1000000, true);
+  timerAlarmEnable(esp32_timer);
+}
+
+// ---------------------------------------------------------------------------
+
+DataPack datapack[4];
+int pack_counter = 0;
+
 void setup()
 {
   Serial.begin(115200);
@@ -1177,21 +1221,20 @@ void setup()
   tempTimer.settimer(2000);
   tempTimer.starttimer();
 
-  mpu6050Timer.settimer(1000);
+  mpu6050Timer.settimer(250);
   mpu6050Timer.starttimer();
 
   read_battery_voltage();
   voltTimer.settimer(30000);
   voltTimer.starttimer();
-
-  firebaseTimer.settimer(2000);
-  firebaseTimer.starttimer();
   
   interactTimer.settimer(5000);
   interactTimer.starttimer();
 
   page_monitor.show_nav_bar();
   page_monitor.show(MAIN_PAGE);
+
+  esp32_timer_initialize();
 }
 
 
@@ -1203,11 +1246,11 @@ void readTemperature(){
    bodyTempSensor.requestTemperatures(); // Send the command to get temperature readings
    //Serial.println("DONE");
   /********************************************************************/
-   Serial.print("Temperature is: ");
+   //Serial.print("Temperature is: ");
    bodyTemp = bodyTempSensor.getTempCByIndex(0);
 
-   Serial.print(bodyTemp);
-   Serial.println();
+   //Serial.print(bodyTemp);
+   //Serial.println();
 }
 
 void readMPU6050(){
@@ -1215,14 +1258,17 @@ void readMPU6050(){
 
   if(mpu6050Timer.checkfinish()){
 
-    Serial.println("=======================================================");
+    //Serial.println("=======================================================");
     //Serial.print("temp : ");Serial.println(mpu6050.getTemp());
     acc[0] = mpu6050.getAccX();
     acc[1] = mpu6050.getAccY();
     acc[2] = mpu6050.getAccZ();
-    Serial.print("accX : ");Serial.print(acc[0]);
-    Serial.print("\taccY : ");Serial.print(acc[1]);
-    Serial.print("\taccZ : ");Serial.println(acc[2]);
+    if (pack_counter < 4){
+      datapack[pack_counter++].set_acc(acc);
+    }
+    //Serial.print("accX : ");Serial.print(acc[0]);
+    //Serial.print("\taccY : ");Serial.print(acc[1]);
+    //Serial.print("\taccZ : ");Serial.println(acc[2]);
 
     //Serial.print("gyroX : ");Serial.print(mpu6050.getGyroX());
     //Serial.print("\tgyroY : ");Serial.print(mpu6050.getGyroY());
@@ -1242,7 +1288,7 @@ void readMPU6050(){
     //Serial.print("angleX : ");Serial.print(mpu6050.getAngleX());
     //Serial.print("\tangleY : ");Serial.print(mpu6050.getAngleY());
     //Serial.print("\tangleZ : ");Serial.println(mpu6050.getAngleZ());
-    Serial.println("=======================================================\n");
+    //Serial.println("=======================================================\n");
 
 
 
@@ -1252,11 +1298,13 @@ void readMPU6050(){
 }
 
 void send_data_2_firebase(){
-  FirebaseJson json_data;
-  json_data.add("acc_x", acc[0]);
-  json_data.add("acc_y", acc[1]);
-  json_data.add("acc_z", acc[2]);
-  if (Firebase.pushJSON(firebaseData, firebase_sensor_address, json_data))
+  FirebaseJsonArray json_array;
+  for (int i = 0 ; i < 4; i++){
+    datapack[i].set_json_data();
+    json_array.set(i, datapack[i].json_data);
+  }
+  
+  if (Firebase.pushArray(firebaseData, firebase_sensor_address, json_array))
   {
     Serial.println("PUSHED");
   }
@@ -1273,7 +1321,7 @@ void loop()
 {
   //read_time();
   if (voltTimer.checkfinish()){
-    read_battery_voltage();
+  //  read_battery_voltage();
     voltTimer.resettimer();
     voltTimer.starttimer();
   }
@@ -1285,27 +1333,34 @@ void loop()
 
 
   if (tempTimer.checkfinish()){
-    readTemperature();
+  //  readTemperature();
     tempTimer.resettimer();
     tempTimer.starttimer();
   }
-
+  
   readMPU6050();
-
-  if (firebaseTimer.checkfinish()){
-    send_data_2_firebase();
-    firebaseTimer.resettimer();
-    firebaseTimer.starttimer();
-  }
 
   page_monitor.update();
 
   if (interactTimer.checkfinish() && interactTimer.checkCounting()){
-    Serial.println();
-    Serial.print("sleep");
-    Serial.println();
+    //Serial.println();
+    //Serial.print("sleep");
+    //Serial.println();
     page_monitor.show(EMPTY_PAGE);
     interactTimer.resettimer();
+  }
+
+  if (interruptCounter > 0) {
+    portENTER_CRITICAL(&timerMux);
+    interruptCounter--;
+    portEXIT_CRITICAL(&timerMux);
+ 
+    totalInterruptCounter++;
+    send_data_2_firebase();
+    pack_counter = 0;
+    
+    //Serial.print("An interrupt as occurred. Total number: ");
+    //Serial.println(totalInterruptCounter);
   }
 
 }
