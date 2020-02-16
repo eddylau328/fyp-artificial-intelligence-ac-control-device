@@ -73,6 +73,11 @@ class Realtime_firebase:
             print("Fail removing data at <%s>" %path)
 
 
+    #   parameters
+    #   show
+    #   export, filename dataname, indent
+    #   delete
+    #   get
     def extract_data(self, path, **kwargs):
         if (self.check(path)):
             data = self.get(path)

@@ -57,21 +57,48 @@ def transform_2_train_data(dict_list, size, y_value, x_train, y_train, overlap=F
 
     return x_train, y_train
 
-'''
-work_acc = get_data("smartwatch_data/work_acc.json", "acc")
-move_acc = get_data("smartwatch_data/move_acc.json", "acc")
+SLEEP_DATA_SIZE = 2
+REST_DATA_SIZE = 2
+#move_acc = get_data("smartwatch_data/move_acc.json", "acc")
+#move_acc = process_data(move_acc)
+
+work_acc = get_data("smartwatch_data/work_acc_4hz.json", "acc")
 work_acc = process_data(work_acc)
-move_acc = process_data(move_acc)
+
+sleep_acc = []
+for i in range(SLEEP_DATA_SIZE):
+    sleep_acc.append(process_data(get_data("smartwatch_data/sleep_acc_4hz_"+str(i)+".json", "acc")))
+
+rest_acc = []
+for i in range(SLEEP_DATA_SIZE):
+    rest_acc.append(process_data(get_data("smartwatch_data/rest_acc_4hz_"+str(i)+".json", "acc")))
 
 x_train, y_train = [], []
-x_train, y_train = transform_2_train_data(work_acc, 30, 0, x_train, y_train, overlap=True, overlap_size=15)
-x_train, y_train = transform_2_train_data(move_acc, 30, 1, x_train, y_train, overlap=True, overlap_size=15)
+x_train, y_train = transform_2_train_data(work_acc, 40, 0, x_train, y_train, overlap=True, overlap_size=40)
+print("Size of work_acc data is %s" %len(x_train))
+tmp = len(x_train)
+
+
+
+for i in range(SLEEP_DATA_SIZE):
+    x_train, y_train = transform_2_train_data(sleep_acc[i], 40, 1, x_train, y_train, overlap=True, overlap_size=40)
+    print("Size of sleep_acc data "+str(i) + " is %s" %(len(x_train)-tmp))
+    tmp = len(x_train)
+
+for i in range(REST_DATA_SIZE):
+    x_train, y_train = transform_2_train_data(rest_acc[i], 40, 2, x_train, y_train, overlap=True, overlap_size=40)
+    print("Size of rest_acc data " +str(i) + " is %s" %(len(x_train)-tmp))
+    tmp = len(x_train)
+
+TOTAL_DATA_SIZE = len(x_train)
 
 for i in range(len(y_train)):
     if y_train[i] is 0:
-        y_train[i] = [1,0]
-    else:
-        y_train[i] = [0,1]
+        y_train[i] = [1,0,0]
+    elif y_train[i] is 1:
+        y_train[i] = [0,1,0]
+    elif y_train[i] is 2:
+        y_train[i] = [0,0,1]
 
 
 combine = list(zip(x_train, y_train))
@@ -79,16 +106,20 @@ shuffle(combine)
 x_train, y_train = zip(*combine)
 x_train = np.asarray(x_train)
 y_train = np.asarray(y_train)
-x_train = x_train.reshape(96,30,3)
-y_train = y_train.reshape(96,2)
-print(x_train)
-print(y_train)
+x_train = x_train.reshape(TOTAL_DATA_SIZE,40,3)
+y_train = y_train.reshape(TOTAL_DATA_SIZE,3)
+print(np.shape(x_train))
+print(np.shape(y_train))
+
 
 model = Sequential([
-        Conv1D(filters = 64, kernel_size = 5, activation='relu', input_shape=(30,3), padding='valid'),
-        MaxPooling1D(pool_size = 5, strides=5, padding='valid'),
+        Conv1D(filters = 80, kernel_size = 5, activation='relu', input_shape=(40,3), padding='same'),
+        MaxPooling1D(pool_size = 4, strides=4, padding='valid'),
+        Conv1D(filters = 120, kernel_size = 2, activation='relu', padding='same'),
+        MaxPooling1D(pool_size = 2, strides=2, padding='valid'),
         Flatten(),
-        Dense(2, activation='softmax'),
+        Dense(64, activation='relu'),
+        Dense(3, activation='softmax'),
     ])
 
 model.summary()
@@ -96,4 +127,5 @@ model.summary()
 model.compile(loss="categorical_crossentropy", optimizer='adam', metrics=['accuracy'])
 
 model.fit(x_train, y_train, batch_size=32, validation_split=0.1)
-'''
+
+
