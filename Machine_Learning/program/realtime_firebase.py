@@ -100,3 +100,9 @@ class Realtime_firebase:
 
     def __del__(self):
         print("Disconnected to realtime firebase ...")
+
+
+if (__name__ == '__main__'):
+    r = Realtime_firebase()
+    path = "Devices/watch0001/sensors"
+    r.extract_data(path, export=True, dataname="acc", filename="smartwatch_data/sleep_acc_4hz_2", delete=True)

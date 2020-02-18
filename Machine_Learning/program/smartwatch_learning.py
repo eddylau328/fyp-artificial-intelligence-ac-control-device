@@ -80,18 +80,18 @@ def transform_2_train_data(dict_list, size, y_value, x_train, y_train, overlap, 
 
 
 MOVE_DATA_SIZE = 1
-WORK_DATA_SIZE = 2
-SLEEP_DATA_SIZE = 2
-REST_DATA_SIZE = 2
+WORK_DATA_SIZE = 3
+SLEEP_DATA_SIZE = 3
+REST_DATA_SIZE = 3
 
 PERIOD_SIZE = 20    # 4Hz => 4Hz * sec = PERIOD_SIZE
 OVERLAP_DATA = False
 OVERLAP_SIZE = 0
 
-move_acc = []
-for i in range(MOVE_DATA_SIZE):
-    move_acc.append(process_data(get_data("smartwatch_data/move_acc_4hz_"+str(i)+".json", "acc")))
-    print("Size of move_acc data "+str(i) + " is %s" %(len(move_acc[i])))
+#move_acc = []
+#for i in range(MOVE_DATA_SIZE):
+#    move_acc.append(process_data(get_data("smartwatch_data/move_acc_4hz_"+str(i)+".json", "acc")))
+#    print("Size of move_acc data "+str(i) + " is %s" %(len(move_acc[i])))
 
 
 work_acc = []
@@ -105,7 +105,7 @@ for i in range(SLEEP_DATA_SIZE):
     print("Size of sleep_acc data "+str(i) + " is %s" %(len(sleep_acc[i])))
 
 rest_acc = []
-for i in range(SLEEP_DATA_SIZE):
+for i in range(REST_DATA_SIZE):
     rest_acc.append(process_data(get_data("smartwatch_data/rest_acc_4hz_"+str(i)+".json", "acc")))
     print("Size of rest_acc data "+str(i) + " is %s" %(len(rest_acc[i])))
 
@@ -113,10 +113,10 @@ for i in range(SLEEP_DATA_SIZE):
 x_train, y_train = [], []
 tmp = 0
 
-for i in range(MOVE_DATA_SIZE):
-    x_train, y_train = transform_2_train_data(move_acc[i], PERIOD_SIZE, MovementType.move.value, x_train, y_train, overlap=OVERLAP_DATA, overlap_size=OVERLAP_SIZE)
-    print("Number of period of move_acc data "+str(i) + " is %s" %(len(x_train)-tmp))
-    tmp = len(x_train)
+#for i in range(MOVE_DATA_SIZE):
+#    x_train, y_train = transform_2_train_data(move_acc[i], PERIOD_SIZE, MovementType.move.value, x_train, y_train, overlap=OVERLAP_DATA, overlap_size=OVERLAP_SIZE)
+#    print("Number of period of move_acc data "+str(i) + " is %s" %(len(x_train)-tmp))
+#    tmp = len(x_train)
 
 for i in range(WORK_DATA_SIZE):
     x_train, y_train = transform_2_train_data(work_acc[i], PERIOD_SIZE, MovementType.work.value, x_train, y_train, overlap=OVERLAP_DATA, overlap_size=OVERLAP_SIZE)
@@ -136,15 +136,24 @@ for i in range(REST_DATA_SIZE):
 TOTAL_DATA_SIZE = len(x_train)
 print("The total data size is %s" %TOTAL_DATA_SIZE)
 
+#for i in range(len(y_train)):
+#    if y_train[i] is 0:
+#        y_train[i] = [1,0,0,0]
+#    elif y_train[i] is 1:
+#        y_train[i] = [0,1,0,0]
+#    elif y_train[i] is 2:
+#        y_train[i] = [0,0,1,0]
+#    elif y_train[i] is 3:
+#        y_train[i] = [0,0,0,1]
+
+
 for i in range(len(y_train)):
     if y_train[i] is 0:
-        y_train[i] = [1,0,0,0]
+        y_train[i] = [1,0,0]
     elif y_train[i] is 1:
-        y_train[i] = [0,1,0,0]
+        y_train[i] = [0,1,0]
     elif y_train[i] is 2:
-        y_train[i] = [0,0,1,0]
-    elif y_train[i] is 3:
-        y_train[i] = [0,0,0,1]
+        y_train[i] = [0,0,1]
 
 
 combine = list(zip(x_train, y_train))
@@ -153,7 +162,7 @@ x_train, y_train = zip(*combine)
 x_train = np.asarray(x_train)
 y_train = np.asarray(y_train)
 x_train = x_train.reshape(TOTAL_DATA_SIZE,PERIOD_SIZE,3)
-y_train = y_train.reshape(TOTAL_DATA_SIZE,4)
+y_train = y_train.reshape(TOTAL_DATA_SIZE,3)
 print(np.shape(x_train))
 print(np.shape(y_train))
 
@@ -165,7 +174,7 @@ model = Sequential([
         MaxPooling1D(pool_size = 2, strides=2, padding='valid'),
         Flatten(),
         Dense(64, activation='relu'),
-        Dense(4, activation='softmax'),
+        Dense(3, activation='softmax'),
     ])
 
 model.summary()
