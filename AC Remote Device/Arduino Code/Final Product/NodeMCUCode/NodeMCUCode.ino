@@ -1,7 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <FirebaseArduino.h>
 #include <ArduinoJson.h>
-//#include <SoftwareSerial.h>
+#include <SoftwareSerial.h>
 #include <Timer.h>
 
 // Set these to run example.
@@ -18,10 +18,7 @@ String firebase_receive_action = String("/Devices/"+serial_num+"/receive_action"
 
 // 60 seconds timer
 Timer firebase_sendtimer;
-long int firebase_sendtimerInterval = 5000;
-Timer request_datatimer;
-long int request_datatimerInterval = 5000;
-
+long int firebase_sendtimerInterval = 10000;
 
 // check whether the step_num in the machine learning 
 int step_num;
@@ -29,9 +26,11 @@ int action;
 
 float temperature, humidity, light_intensity, pressure;
 
+SoftwareSerial s(D7,D8);
+
 void setup() {
   Serial.begin(74880);
-  //s.begin(74880);
+  s.begin(74880);
   
   // connect to wifi.
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -54,7 +53,6 @@ void setup() {
 void instantiateTimers(){
   firebase_sendtimer.settimer(firebase_sendtimerInterval);
   firebase_sendtimer.starttimer();
-  request_datatimer.settimer(4000);
 }
 
 void send_data_2_firebase(){
@@ -77,56 +75,30 @@ void send_data_2_firebase(){
     }  
 }
 
-void send_request_data(){
-  Serial.print("a");
-  Serial.println("Request data!");
-}
-
-bool isPass = false;
-
 void loop() 
 {
   
-  if (firebase_sendtimer.checkfinish()){
-    Serial.println("10 seconds pass");
-    isPass = true;
-    send_request_data();
-    firebase_sendtimer.resettimer();
-    request_datatimer.starttimer();
-  }
-
-  if (isPass == true){
-    if (request_datatimer.checkfinish()){
-      send_request_data();
-      request_datatimer.resettimer();
-      request_datatimer.starttimer();
+  if (s.available() > 0){
+    StaticJsonBuffer<256> doc;
+    // deserialize the object
+    JsonObject& data = doc.parseObject(s);
+    if (!data.success()) {
+       Serial.println("parseObject() failed");
+    }else{
+      // save the received data
+      temperature = data["temp"];
+      humidity = data["hum"];
+      light_intensity = data["light"];
+      pressure = data["press"];
     }
-    if (Serial.available() > 0){
-      while(Serial.available() > 0){
-        Serial.write(Serial.read());
-      }
-      isPass = false;
-      /*
-      StaticJsonBuffer<1000> doc;
-      // deserialize the object
-      JsonObject& data = doc.parseObject(Serial);
-      if (!data.success()) {
-         Serial.println("parseObject() failed");
-      }else{
-        // save the received data
-        temperature = data["temp"];
-        humidity = data["hum"];
-        light_intensity = data["light"];
-        pressure = data["press"];
-        //data.prettyPrintTo(Serial);
-        isPass = false;
-        request_datatimer.resettimer();
-        send_data_2_firebase();
-        */
-        firebase_sendtimer.starttimer();
-      }
-    //}
   }
+    
+  if (firebase_sendtimer.checkfinish()){
+    send_data_2_firebase();
+    firebase_sendtimer.resettimer();
+    firebase_sendtimer.starttimer();
+  }
+  
 }
 
   /*

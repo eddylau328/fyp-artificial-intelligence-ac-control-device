@@ -17,8 +17,8 @@
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 
-#define WIFI_SSID "Lau Family"
-#define WIFI_PASSWORD "27050880"
+#define WIFI_SSID "Eddy Wifi"
+#define WIFI_PASSWORD "12345678xd"
 #define FIREBASE_HOST "fypacmonitor.firebaseio.com"
 #define FIREBASE_AUTH "jaT833r4mymesl03s37FD9jeV9JnWZzcM1xrnX8d"
 
@@ -247,7 +247,6 @@ float gyr[3] = {0,0,0};
 
 class DataPack{
   public:
-    FirebaseJson json_data;
     float acc[3];
     int type;
     void set_acc(float acc[]){
@@ -257,10 +256,10 @@ class DataPack{
     void set_type(int movement){
       type = movement;
     }
-    void set_json_data(){
-      json_data.add("acc_x", acc[0]);
-      json_data.add("acc_y", acc[1]);
-      json_data.add("acc_z", acc[2]);
+    void set_json_data(FirebaseJson *json_data){
+      json_data->add("acc_x", acc[0]);
+      json_data->add("acc_y", acc[1]);
+      json_data->add("acc_z", acc[2]);
     }
 };
 
@@ -1300,8 +1299,9 @@ void readMPU6050(){
 void send_data_2_firebase(){
   FirebaseJsonArray json_array;
   for (int i = 0 ; i < 4; i++){
-    datapack[i].set_json_data();
-    json_array.set(i, datapack[i].json_data);
+    FirebaseJson json_data;
+    datapack[i].set_json_data(&json_data);
+    json_array.set(i, json_data);
   }
   
   if (Firebase.pushArray(firebaseData, firebase_sensor_address, json_array))
