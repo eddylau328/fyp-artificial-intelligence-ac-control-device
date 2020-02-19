@@ -112,15 +112,16 @@ if (user_continue != 'y'):
 PERIOD_SIZE = 20    # 4Hz => 4Hz * sec = PERIOD_SIZE
 OVERLAP_DATA = False
 OVERLAP_SIZE = 0
-CLASS_SIZE = 3
-'''
+CLASS_SIZE = 4
+
+
 move_acc = []
 print("-------------------------------------------------")
 for i in range(MOVE_DATA_SIZE):
     move_acc.append(process_data(get_data("smartwatch_data/move/move_acc_4hz_"+str(i)+".json", "acc")))
     print("Size of move_acc data "+str(i) + " is %d" %(len(move_acc[i])))
 print("-------------------------------------------------")
-'''
+
 work_acc = []
 for i in range(WORK_DATA_SIZE):
     work_acc.append(process_data(get_data("smartwatch_data/work/work_acc_4hz_"+str(i)+".json", "acc")))
@@ -140,7 +141,7 @@ print("-------------------------------------------------")
 x_train, y_train = [], []
 tmp = 0
 tmp_total = 0
-'''
+
 print("-------------------------------------------------")
 for i in range(MOVE_DATA_SIZE):
     x_train, y_train = transform_2_train_data(move_acc[i], PERIOD_SIZE, MovementType.move.value, x_train, y_train, overlap=OVERLAP_DATA, overlap_size=OVERLAP_SIZE)
@@ -152,7 +153,7 @@ for i in range(MOVE_DATA_SIZE):
 print("Total = %d" %(tmp_total))
 tmp_total = 0
 print("-------------------------------------------------")
-'''
+
 print("-------------------------------------------------")
 for i in range(WORK_DATA_SIZE):
     x_train, y_train = transform_2_train_data(work_acc[i], PERIOD_SIZE, MovementType.work.value, x_train, y_train, overlap=OVERLAP_DATA, overlap_size=OVERLAP_SIZE)
@@ -191,7 +192,7 @@ print("-------------------------------------------------")
 TOTAL_DATA_SIZE = len(x_train)
 print("The total data size is %d" %TOTAL_DATA_SIZE)
 print("-------------------------------------------------")
-'''
+
 for i in range(len(y_train)):
     if y_train[i] is 0:
         y_train[i] = [1,0,0,0]
@@ -201,8 +202,8 @@ for i in range(len(y_train)):
         y_train[i] = [0,0,1,0]
     elif y_train[i] is 3:
         y_train[i] = [0,0,0,1]
-'''
 
+'''
 for i in range(len(y_train)):
     if y_train[i] is 0:
         y_train[i] = [1,0,0]
@@ -210,7 +211,7 @@ for i in range(len(y_train)):
         y_train[i] = [0,1,0]
     elif y_train[i] is 2:
         y_train[i] = [0,0,1]
-
+'''
 
 combine = list(zip(x_train, y_train))
 shuffle(combine)
