@@ -24,6 +24,33 @@ unsigned int onoffFan[52] = {3400,3250,850,2450,900,2400,900,750,900,2400,900,24
 int signal_len = 101;
 unsigned int modeList[3][101];
 
+
+
+#define TOTAL_SIGNALS 10
+#define SIGNAL_LENGTH 100
+
+
+class IRsignal{
+  public:
+    String command;
+    int ir_size;
+    unsigned int ir_wave[SIGNAL_LENGTH];
+    // constructor
+    IRsignal(){}
+    // constructor
+    IRsignal(String command, unsigned int ir_wave[], int ir_size){
+      create(command, ir_wave, ir_size);
+    }
+    
+    void create(String command, unsigned int ir_wave[], int ir_size){
+      this->command = command;
+      this->ir_size = ir_size;
+      for (int i = 0; i < 100; i++)
+        this->ir_wave[i] = ir_wave[i];
+    }
+};
+
+
 // Define the IR sensor pin
 const int RECV_PIN = 4;
 // Define the IR receiver and result object
@@ -34,6 +61,42 @@ Adafruit_BMP085 bmp;
 Adafruit_HTU21DF htu;
 BH1750 bh;
 
+IRsignal signals[TOTAL_SIGNALS];
+/*
+Commands
+- "poweron"
+- "poweroff"
+- "+temp"
+- "-temp"
+- "fanspeed"
+- "mode"
+- "swingon"
+- "swingoff"
+- "economyon"
+- "economyoff"
+*/
+void IRsignals_command_setup(){
+  unsigned int tmpArray[TOTAL_SIGNALS][100] = {
+      {4450,4250,600,1600,600,450,600,1550,600,1600,600,450,600,500,600,1550,600,500,600,500,600,1550,600,450,650,450,600,1550,600,1600,600,450,600,1550,600,500,600,1550,600,1600,600,1550,550,1600,600,500,600,1550,600,1550,600,1550,600,500,600,500,600,450,600,500,550,1600,600,500,600,500,600,1550,600,1550,600,1550,600,500,550,550,600,450,600,500,600,500,600,450,600,500,600,500,600,1550,550,1600,600,1550,600,1550,600,1600,500},
+      {4500,4200,600,1600,600,450,700,1450,650,1550,600,450,650,450,600,1550,650,450,600,450,650,1550,600,450,600,500,650,1500,650,1500,650,450,600,1550,650,450,600,500,600,1550,600,1550,650,1500,650,1500,650,1500,650,1550,650,1500,650,1500,650,450,600,450,650,450,650,450,600,450,600,500,600,500,600,1550,650,400,650,450,650,450,600,450,600,500,650,450,600,1550,650,450,600,1550,650,1500,650,1500,600,1550,650,1500,650,1550,500},
+      {4450,4250,650,1500,600,500,600,1550,650,1500,700,400,650,450,600,1550,600,500,650,400,650,1500,600,500,650,450,650,1500,600,1550,650,450,600,1550,600,1550,600,500,650,450,600,1550,600,1550,600,1550,650,1500,600,1550,650,450,650,1500,650,1500,650,450,600,500,600,450,700,400,600,500,600,1550,700,1450,650,450,600,450,650,450,650,450,600,450,700,400,650,450,650,400,650,1550,600,1550,600,1550,650,1500,650,1500,650,1550,500},
+      {4450,4250,650,1500,650,450,650,1500,600,1550,600,500,600,500,600,1550,650,450,600,450,650,1550,600,450,600,500,600,1550,650,1500,650,450,600,1550,600,1550,650,450,650,450,600,1550,650,1500,600,1550,650,1500,650,1550,600,450,600,1600,600,1550,650,400,650,450,650,450,600,450,600,500,600,500,600,1550,600,500,600,450,650,450,600,500,600,450,650,450,600,1550,650,450,600,1550,600,1550,650,1550,600,1550,650,1500,600,1550,500},
+      {4400,4300,600,1550,600,450,600,1600,600,1550,600,450,600,500,650,1500,650,450,600,500,650,1500,650,450,600,450,600,1550,650,1550,600,450,650,1550,600,450,650,450,650,450,600,1550,600,1550,600,1550,650,1500,650,1500,650,1550,600,1550,600,1550,600,500,650,400,700,400,650,450,600,450,650,450,650,1500,600,500,600,1550,650,450,600,1550,600,500,600,500,600,1550,600,500,650,1500,600,450,650,1550,600,450,650,1550,600,1550,500},
+      {4500,4250,650,1500,650,450,650,1500,650,1500,650,450,650,450,650,1500,600,450,650,450,650,1500,650,450,650,450,650,1500,650,1500,600,500,600,1550,600,500,600,450,650,450,650,450,650,1500,600,1550,650,1500,650,1500,700,1500,600,1550,600,1550,600,1550,600,500,600,500,600,450,650,450,650,1500,650,1500,650,1550,600,450,650,450,600,500,650,400,650,450,650,450,650,400,650,450,600,1550,650,1500,650,1500,700,1500,650,1500,500},
+      {4400,4300,600,1600,600,450,600,1550,600,1600,600,450,600,500,600,1550,600,500,600,450,650,1550,600,450,600,500,600,1550,600,1550,650,450,650,1500,600,1600,600,1550,600,1550,600,500,550,500,600,500,600,450,650,450,600,500,600,450,650,450,600,1550,600,1550,650,1550,600,1550,550,1600,650,450,600,450,650,450,600,500,550,500,650,450,600,1550,600,1550,650,1550,600,1550,600,1550,600,1550,600,1550,600,1550,650,450,600,500,500}
+    }; 
+  signals[0].create("poweron", tmpArray[0], SIGNAL_LENGTH);
+  signals[1].create("poweroff", tmpArray[0], SIGNAL_LENGTH);
+  signals[2].create("fanspeed", tmpArray[1], SIGNAL_LENGTH);
+  signals[3].create("+temp", tmpArray[2], SIGNAL_LENGTH);
+  signals[4].create("-temp", tmpArray[3], SIGNAL_LENGTH);
+  signals[5].create("mode", tmpArray[4], SIGNAL_LENGTH); 
+  signals[6].create("swingon", tmpArray[5], SIGNAL_LENGTH);
+  signals[7].create("swingoff", tmpArray[5], SIGNAL_LENGTH);
+  signals[8].create("economyon", tmpArray[6], SIGNAL_LENGTH);
+  signals[9].create("economyoff", tmpArray[6], SIGNAL_LENGTH);
+}
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -41,7 +104,7 @@ void setup() {
   bmp.begin();
   htu.begin();
   bh.begin();
-
+  IRsignals_command_setup();
   // Enable the ir receiver
   irrecv.enableIRIn();
   
@@ -56,6 +119,7 @@ void setup() {
     modeList[2][i] = speed3[i];
   }
   currentMode = 0;
+  
 }
 
 float temperature,pressure,humidity,light_intensity;
@@ -202,12 +266,34 @@ void switchIRSignal(){
   }
 }
 
+String command;
+
+void sendIRByCommand(){
+  while(Serial.available()) {
+    command= Serial.readString();// read the incoming data as string
+    Serial.println(command);
+    for (int i = 0 ; i < TOTAL_SIGNALS; i++){
+      bool flag = true;
+      for (int j = 0; j < signals[i].command.length(); j++)
+        if (signals[i].command[j] != command[j]){
+          flag = false;
+          break;
+        }
+      if (flag){
+        sendIR(signals[i].ir_wave, signals[i].ir_size);
+        break;
+      }
+    }
+  }
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
-  readEnvironment(1);
-  decodeIR();
-  sendIRByButton(modeList[currentMode],signal_len);
-  switchIRSignal();
+  //readEnvironment(1);
+  //decodeIR();
+  sendIRByCommand();
+  //sendIRByButton(modeList[currentMode],signal_len);
+  //switchIRSignal();
   //automatic_control();
-  delay(500);
+  //delay(500);
 }
