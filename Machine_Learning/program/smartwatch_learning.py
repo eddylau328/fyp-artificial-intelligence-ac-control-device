@@ -4,7 +4,7 @@ from random import shuffle
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv1D, MaxPooling1D
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv1D, MaxPooling1D, AveragePooling1D
 import sys
 
 class MovementType(Enum):
@@ -108,19 +108,21 @@ user_continue = input("Proceed reading data size [y/n]?")
 if (user_continue != 'y'):
     sys.exit()
 
-
-PERIOD_SIZE = 20    # 4Hz => 4Hz * sec = PERIOD_SIZE
+PERIOD = 5
+SAMPLING_HZ = 4
+PERIOD_SIZE = SAMPLING_HZ*PERIOD    # 4Hz => 4Hz * sec = PERIOD_SIZE
 OVERLAP_DATA = False
 OVERLAP_SIZE = 0
-CLASS_SIZE = 4
+CLASS_SIZE = 3
 
-
+'''
 move_acc = []
 print("-------------------------------------------------")
 for i in range(MOVE_DATA_SIZE):
     move_acc.append(process_data(get_data("smartwatch_data/move/move_acc_4hz_"+str(i)+".json", "acc")))
     print("Size of move_acc data "+str(i) + " is %d" %(len(move_acc[i])))
 print("-------------------------------------------------")
+'''
 
 work_acc = []
 for i in range(WORK_DATA_SIZE):
@@ -141,7 +143,7 @@ print("-------------------------------------------------")
 x_train, y_train = [], []
 tmp = 0
 tmp_total = 0
-
+'''
 print("-------------------------------------------------")
 for i in range(MOVE_DATA_SIZE):
     x_train, y_train = transform_2_train_data(move_acc[i], PERIOD_SIZE, MovementType.move.value, x_train, y_train, overlap=OVERLAP_DATA, overlap_size=OVERLAP_SIZE)
@@ -153,7 +155,7 @@ for i in range(MOVE_DATA_SIZE):
 print("Total = %d" %(tmp_total))
 tmp_total = 0
 print("-------------------------------------------------")
-
+'''
 print("-------------------------------------------------")
 for i in range(WORK_DATA_SIZE):
     x_train, y_train = transform_2_train_data(work_acc[i], PERIOD_SIZE, MovementType.work.value, x_train, y_train, overlap=OVERLAP_DATA, overlap_size=OVERLAP_SIZE)
@@ -192,7 +194,7 @@ print("-------------------------------------------------")
 TOTAL_DATA_SIZE = len(x_train)
 print("The total data size is %d" %TOTAL_DATA_SIZE)
 print("-------------------------------------------------")
-
+'''
 for i in range(len(y_train)):
     if y_train[i] is 0:
         y_train[i] = [1,0,0,0]
@@ -211,11 +213,12 @@ for i in range(len(y_train)):
         y_train[i] = [0,1,0]
     elif y_train[i] is 2:
         y_train[i] = [0,0,1]
-'''
 
+'''
 combine = list(zip(x_train, y_train))
 shuffle(combine)
 x_train, y_train = zip(*combine)
+'''
 x_train = np.asarray(x_train)
 y_train = np.asarray(y_train)
 x_train = x_train.reshape(TOTAL_DATA_SIZE,PERIOD_SIZE,3)
@@ -226,23 +229,25 @@ print("Current Y train data input shape = %s" %(np.shape(y_train),))
 
 
 
-'''
-model = Sequential([
-        Conv1D(filters = 64, kernel_size = 5, activation='relu', input_shape=(PERIOD_SIZE,3), padding='same'),
-        MaxPooling1D(pool_size = 4, strides=4, padding='valid'),
-        Conv1D(filters = 128, kernel_size = 2, activation='relu', padding='same'),
-        MaxPooling1D(pool_size = 2, strides=2, padding='valid'),
-        Flatten(),
-        Dense(64, activation='relu'),
-        Dense(3, activation='softmax'),
-    ])
-'''
 
 user_continue = input("Proceed training [y/n]?")
 
 if (user_continue != 'y'):
     sys.exit()
 
+
+model = Sequential([
+        Conv1D(filters = 32, kernel_size = 5, activation='relu', input_shape=(PERIOD_SIZE,3), padding='same'),
+        AveragePooling1D(pool_size=2, strides=None, padding='valid', data_format='channels_last'),
+        Conv1D(filters = 64, kernel_size = 4, activation='relu', padding='same'),
+        MaxPooling1D(pool_size = 2, strides=2, padding='valid'),
+        Flatten(),
+        Dense(128, activation='relu'),
+        Dense(3, activation='softmax'),
+    ])
+
+
+'''
 model = Sequential([
         Conv1D(filters = 32, kernel_size = 5, activation='relu', input_shape=(PERIOD_SIZE,3), padding='same'),
         MaxPooling1D(pool_size = 2, strides=2, padding='valid'),
@@ -252,7 +257,7 @@ model = Sequential([
         Dense(128, activation='relu'),
         Dense(CLASS_SIZE, activation='softmax'),
     ])
-
+'''
 
 model.summary()
 

@@ -33,6 +33,9 @@ Maybe useful for speeding the learning process for the agent.
 
 #### [C4W1L10 CNN Example](https://www.youtube.com/watch?v=bXJx7y51cl0)
 
+#### [Divide and Conquer-Based 1D CNN Human Activity Recognition Using Test Data Sharpening](./references/sensors-18-01055-v3.pdf)
+
+
 ## Arduino
 ### Coding
 #### [Timer](https://randomnerdtutorials.com/interrupts-timers-esp8266-arduino-ide-nodemcu/)
