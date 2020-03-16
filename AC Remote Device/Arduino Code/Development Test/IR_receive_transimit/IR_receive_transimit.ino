@@ -47,12 +47,12 @@ Adafruit_BMP085 bmp;
 Adafruit_HTU21DF htu;
 BH1750 bh;
 
-
 class IRmonitor{
   public:
-    int fan_state = 1;
+    int fanspeed = 1;
     int temperature = 24;
-    int swing_on = 0;
+    int swing_state = 0;
+    int power_state = 1;
     unsigned int wave[SIGNAL_LENGTH] = {4450,4250,600,1550,650,450,650,1500,600,1600,600,450,600,500,600,1550,600,500,600,450,600,1600,550,500,600,500,600,1550,600,1550,600,500,650,1500,600,1550,650,450,600,1550,700,1500,600,1550,600,1550,550,1600,650,1500,600,500,600,1550,600,500,600,450,650,450,600,500,600,450,650,450,600,500,550,1600,600,500,600,450,650,450,600,500,600,450,650,450,600,1550,650,450,550,1600,600,1550,600,1600,600,1550,650,1500,600,1550,500};
     const int fanspeed_mask[4][7] = {{-1,35,37,39,51,53,55},
                                      {1,1,0,0,0,1,1},
@@ -153,6 +153,23 @@ class IRmonitor{
       
     void sendCommand(IRrecv &irrecv, IRsend &irsend, String input_command){
       sendIR(irrecv, irsend, wave, SIGNAL_LENGTH);
+      int command_num = get_command(input_command);
+      int command_value = get_command_value(input_command, command_num);
+      switch(command_num){
+        case 0:
+          power_state = command_value;
+          break;
+        case 1:
+          temperature = command_value;
+          break;
+        case 2:
+          swing_state = command_value;
+          break;
+        case 3:
+          fanspeed = command_value;
+          break;
+      }
+      sendIR(irrecv, irsend, wave, SIGNAL_LENGTH);
     }
     
     void sendIR(IRrecv &irrecv, IRsend &irsend, unsigned int raw[], int rawlen) {
@@ -164,15 +181,33 @@ class IRmonitor{
 
     private:
       void translate_signal(){
-        for (int i=0; i<15;i++){
+        for (int i=1; i<15;i++){
           if (temp_mask[i][0] == temperature){
-            
+            assign_mask_value(temp_mask[0], temp_mask[i], 9);
           }
         }
+        for (int i=1; i<4;i++){
+          if (fanspeed_mask[i][0] == fanspeed){
+            assign_mask_value(fanspeed_mask[0], fanspeed_mask[i], 7);
+          }
+        }
+        for (int i=1; i<3;i++){
+          if (swing_mask[i][0] == swing_state){
+            assign_mask_value(swing_mask[0], swing_mask[i], 3);
+          }
+        }
+        for (int i=1; i<3;i++){
+          if (power_mask[i][0] == power_state){
+            assign_mask_value(power_mask[0], power_mask[i], 3);
+          }
+        }
+        assign_mask_value(mode_mask[0], mode_mask[1], 5);
       }
 
-      void assign_mask_value(){
-        
+      void assign_mask_value(int mask_location[], int mask_value[], int mask_length){
+        // first value is control function
+        for (int i = 1; i < mask_length; i++)
+          wave[mask_location[i]] = (mask_value[i])? high:low;
       }
 
 };
