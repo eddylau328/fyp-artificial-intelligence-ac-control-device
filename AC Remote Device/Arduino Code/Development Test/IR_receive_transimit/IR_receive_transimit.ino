@@ -47,193 +47,112 @@ Adafruit_BMP085 bmp;
 Adafruit_HTU21DF htu;
 BH1750 bh;
 
-/*
-Commands
-- "power on"
-- "power off"
-- "temp <deg C>" ~(deg C) is within [17,25]
-- "fanspeed <level>"  ~(level) is within [1,3]
-- "fanspeed auto"
-- "mode"
-- "swing on"
-- "swing off"
-- "economy on"
-- "economy off"
-*/
-#define POWER_ON 0
-#define POWER_OFF 1
-#define FANSPEED_1 2
-#define FANSPEED_2 3
-#define FANSPEED_3 4
-#define TEMP_25 5
-#define TEMP_24 6
-#define TEMP_23 7
-#define TEMP_22 8
-#define TEMP_21 9
-#define TEMP_20 10
-#define TEMP_19 11
-#define TEMP_18 12
-#define TEMP_17 13 
-#define SWING 14
-#define SWING_ON 14
-#define SWING_OFF 15
- 
-const static uint16_t power_on[] PROGMEM = {4450,4250,600,1550,650,450,650,1500,600,1600,600,450,600,500,600,1550,600,500,600,450,600,1600,550,500,600,500,600,1550,600,1550,600,500,650,1500,600,1550,650,450,600,1550,700,1500,600,1550,600,1550,550,1600,650,1500,600,500,600,1550,600,500,600,450,650,450,600,500,600,450,650,450,600,500,550,1600,600,500,600,450,650,450,600,500,600,450,650,450,600,1550,650,450,550,1600,600,1550,600,1600,600,1550,650,1500,600,1550,500};
-const static uint16_t power_off[] PROGMEM = {4300,4400,600,1550,650,450,600,1550,600,1550,600,500,600,450,650,1550,600,450,600,500,650,1500,600,500,600,500,600,1550,600,1550,600,500,600,1550,650,450,600,1550,600,1550,650,1500,650,1500,600,500,600,1550,700,1500,600,1550,650,450,600,450,650,450,600,450,650,1550,600,450,650,450,650,1500,700,1500,600,1550,600,450,650,450,650,450,600,450,700,400,650,450,600,450,650,450,650,1500,600,1600,600,1550,600,1550,600,1550,500};
-const static uint16_t fanspeed_1[] PROGMEM = {4400,4350,600,1550,550,500,600,1600,600,1550,600,450,600,500,600,1550,600,500,600,500,550,1600,550,500,600,500,600,1550,600,1550,600,500,600,1550,600,1600,600,450,600,500,600,1550,600,1550,600,1550,600,1600,600,1550,600,450,600,1600,550,1600,550,500,600,500,600,500,600,450,600,500,550,550,600,1550,600,500,600,450,600,500,600,500,550,500,600,500,600,1550,600,500,600,1550,600,1550,600,1550,600,1600,600,1550,550,1600,550};
-const static uint16_t fanspeed_2[] PROGMEM = {4450,4250,650,1550,600,450,600,1600,600,1550,600,450,600,500,600,1550,650,450,600,500,600,1550,600,500,600,450,600,1550,600,1600,600,450,600,1550,600,500,600,1550,600,500,600,1550,600,1550,600,1600,600,1550,600,1550,600,1550,600,500,600,1550,600,500,600,450,600,500,600,500,600,450,600,500,600,1550,600,500,600,500,550,500,600,500,600,500,600,450,600,1600,600,450,600,1600,600,1550,600,1550,600,1550,600,1550,600,1550,550};
-const static uint16_t fanspeed_3[] PROGMEM = {4400,4300,600,1550,600,500,600,1550,600,1550,600,500,550,550,600,1550,600,450,600,500,600,1550,600,500,600,500,600,1550,600,1550,650,450,600,1550,600,500,600,450,600,1550,600,1600,600,1550,600,1550,600,1550,600,1550,600,1600,600,1550,600,450,600,500,600,500,600,450,600,500,550,550,550,500,600,1600,550,500,600,500,550,500,600,500,600,500,600,450,600,1600,600,450,600,1600,600,1550,550,1600,600,1550,600,1550,600,1550,550};
-const static uint16_t temp_25[] PROGMEM = {4400,4300,650,1500,650,450,600,1550,650,1500,600,500,600,500,600,1550,600,500,600,450,600,1550,650,450,600,500,600,1550,550,1600,600,500,600,1550,650,450,600,450,600,1600,600,1550,600,1550,600,1550,650,1500,650,1500,600,1600,600,1550,600,500,600,450,600,500,600,450,650,450,600,500,600,1550,600,1550,650,450,600,500,600,450,650,450,600,500,600,450,600,500,650,450,600,1550,600,1550,600,1550,650,1500,600,1600,600,1550,500};
-const static uint16_t temp_24[] PROGMEM = {4450,4250,600,1550,600,500,650,1500,600,1550,600,500,600,500,600,1550,600,500,600,450,600,1600,600,450,600,500,600,1550,600,1550,650,450,600,1550,600,500,600,500,550,1600,600,1550,600,1550,600,1550,600,1600,600,1550,600,1550,650,1500,600,500,600,450,600,500,650,450,600,450,600,500,600,500,600,1550,650,450,600,450,650,450,600,500,600,450,600,500,600,1550,600,500,650,1500,650,1500,600,1600,600,1550,600,1550,600,1550,500};
-const static uint16_t temp_23[] PROGMEM = {4450,4250,600,1600,600,450,650,1500,700,1500,600,450,600,500,600,1550,650,450,600,450,650,1550,550,500,650,450,600,1550,600,1550,650,450,600,1550,600,500,650,1500,600,500,650,1500,600,1550,650,1500,600,1600,600,1550,550,1600,650,450,600,1550,600,500,600,450,600,500,600,500,600,450,650,450,550,1600,600,500,550,1600,600,500,600,450,600,500,650,450,600,1550,600,500,600,1550,550,550,550,1600,600,1550,600,1550,600,1550,550};
-const static uint16_t temp_22[] PROGMEM = {4450,4250,650,1550,600,450,650,1500,700,1500,650,400,650,450,600,1550,650,450,600,450,650,1550,600,450,600,500,650,1500,650,1500,650,450,600,1550,600,500,650,450,600,1550,600,1550,650,1500,650,1500,650,1500,650,1550,600,1550,600,1550,600,500,600,450,700,400,600,500,600,450,650,450,650,450,600,1550,650,1500,600,1550,650,450,650,450,650,400,650,450,600,1550,600,500,600,450,650,450,600,1550,650,1500,650,1550,600,1550,500};
-const static uint16_t temp_21[] PROGMEM = {4500,4200,650,1550,650,400,600,1550,650,1550,600,450,650,450,600,1550,650,450,600,450,650,1550,600,450,700,400,650,1500,650,1500,700,400,700,1450,650,450,650,450,650,1500,600,1550,650,1500,650,1500,600,1600,600,1550,650,1500,650,1500,650,450,600,500,650,400,650,450,600,500,600,450,600,500,600,1550,650,1500,700,400,600,500,650,400,700,400,600,500,600,1550,600,450,650,450,600,1550,650,1500,650,1550,600,1550,600,1550,500};
-const static uint16_t temp_20[] PROGMEM = {4350,4350,600,1550,600,500,600,1550,600,1550,600,500,600,450,600,1550,650,450,600,500,600,1550,650,450,600,450,600,1600,600,1550,650,400,600,1600,600,450,650,450,600,1550,650,1500,650,1550,600,1550,600,1550,600,1550,600,1550,600,1550,650,450,600,500,550,500,650,450,600,500,600,450,600,500,600,500,600,1550,600,500,600,450,600,500,600,500,600,450,600,1550,650,1550,550,500,600,1550,650,1550,600,1550,600,1550,600,1550,500};
-const static uint16_t temp_19[] PROGMEM = {4450,4250,700,1500,650,400,650,1550,650,1500,600,450,700,400,650,1500,650,450,700,400,600,1550,600,500,650,400,650,1500,700,1450,650,450,650,1500,700,400,700,400,650,1500,650,1500,650,1500,650,1550,600,1550,650,1500,600,1550,650,1500,700,400,650,450,600,450,650,450,650,450,650,400,700,400,650,450,650,1500,600,1550,700,400,650,400,700,400,650,450,650,1500,650,1500,650,450,700,400,650,1500,650,1500,650,1500,650,1500,500};
-const static uint16_t temp_18[] PROGMEM = {4300,4400,600,1550,600,450,650,1550,600,1550,600,450,550,550,550,1600,600,500,600,500,600,1550,600,500,550,500,600,1550,650,1500,650,450,600,1550,600,500,500,600,600,1550,600,1550,600,1550,600,1550,650,1550,600,1550,600,1550,600,1550,550,550,600,500,600,450,600,500,600,450,600,500,600,500,600,500,550,500,650,1500,600,500,550,550,600,450,650,450,550,1600,600,1550,600,1600,600,450,600,1550,600,1600,600,1550,600,1550,500};
-const static uint16_t temp_17[] PROGMEM = {4400,4300,600,1550,600,500,600,1550,600,1600,550,500,600,500,600,1550,600,500,600,450,600,1600,600,450,600,500,600,1550,600,1550,600,500,650,1500,600,500,600,500,550,1600,600,1550,600,1550,600,1550,600,1600,550,1600,600,1550,600,1550,600,500,600,500,600,450,600,500,600,500,600,450,650,450,600,500,550,500,600,500,600,500,600,450,650,450,600,500,600,1550,600,1550,600,1550,650,1500,600,1550,600,1600,600,1550,550,1600,550};
-const static uint16_t swing[] PROGMEM = {4400,4300,600,1550,600,500,600,1550,600,1550,650,450,600,450,600,1600,600,450,650,450,600,1550,600,500,600,500,600,1550,550,1600,600,500,600,1550,550,550,600,450,650,450,600,450,650,1550,600,1550,600,1550,600,1550,600,1600,550,1600,600,1550,600,1550,600,500,550,500,600,500,600,500,600,1550,600,1550,600,1550,650,450,600,500,600,450,600,500,600,500,600,450,650,450,600,500,600,1550,600,1550,600,1550,600,1600,550,1600,500};
-
-const static uint16_t *const signals_table[] PROGMEM = {power_on, power_off, fanspeed_1, fanspeed_2, fanspeed_3, temp_25,temp_24,temp_23,temp_22,temp_21,temp_20,temp_19,temp_18,temp_17,swing};
-
 
 class IRmonitor{
   public:
     int fan_state = 1;
     int temperature = 24;
     int swing_on = 0;
-    const int fan_speed_amplitude[4][6] = {{35,37,39,51,53,55},{1,0,0,0,1,1},{0, 1, 0, 1, 0, 1},{0, 0, 1, 1, 1, 0}};
+    unsigned int wave[SIGNAL_LENGTH] = {4450,4250,600,1550,650,450,650,1500,600,1600,600,450,600,500,600,1550,600,500,600,450,600,1600,550,500,600,500,600,1550,600,1550,600,500,650,1500,600,1550,650,450,600,1550,700,1500,600,1550,600,1550,550,1600,650,1500,600,500,600,1550,600,500,600,450,650,450,600,500,600,450,650,450,600,500,550,1600,600,500,600,450,650,450,600,500,600,450,650,450,600,1550,650,450,550,1600,600,1550,600,1600,600,1550,650,1500,600,1550,500};
+    const int fanspeed_mask[4][7] = {{-1,35,37,39,51,53,55},
+                                     {1,1,0,0,0,1,1},
+                                     {2,0,1,0,1,0,1},
+                                     {3,0,0,1,1,1,0}};
+    const int temp_mask[15][9] = {{-1,67,69,71,73,83,85,87,89},
+                                  {30,1,0,1,1,0,1,0,0},
+                                  {29,1,0,1,0,0,1,0,1},
+                                  {28,1,0,0,0,0,1,1,1},
+                                  {27,1,0,0,1,0,1,1,0},
+                                  {26,1,1,0,1,0,0,1,0},
+                                  {25,1,1,0,0,0,0,1,1},
+                                  {24,0,1,0,0,1,0,1,1},
+                                  {23,0,1,0,1,1,0,1,0},
+                                  {22,0,1,1,1,1,0,0,0},
+                                  {21,0,1,1,0,1,0,0,1},
+                                  {20,0,0,1,0,1,1,0,1},
+                                  {19,0,0,1,1,1,1,0,0},
+                                  {18,0,0,0,1,1,1,1,0},
+                                  {17,0,0,0,0,1,1,1,1}};
+    // 1: swing on, 0: swing off
+    const int swing_mask[3][3] = {{-1,41,57},
+                                  {1,0,1},
+                                  {0,1,0}};
+    // 1: power on, 0: power off
+    const int power_mask[3][3] = {{-1,45,61},
+                                  {1,1,0},
+                                  {0,0,1}};
+    // 0: cool mode
+    const int mode_mask[2][5] = {{-1,75,77,91,93},{0,0,0,1,1}};
     const int high = 1550;
     const int low = 500;
-    IRsignal *signals;
-
-    /*
-     *      35,37,39,51,53,55
-     * low   1, 0, 0, 0, 1, 1
-     * med   0, 1, 0, 1, 0, 1
-     * high  0, 0, 1, 1, 1, 0
-     */
+    const String commands[4] = {{"power"},{"temp"},{"swing"},{"fanspeed"}};
 
     IRmonitor(){}
-    void create(IRsignal *signals){
-      this->signals = signals;
-    }
-    
+
     bool checkCommand(String input_command){
-      // remove input command possible enter character
-      for (int i = input_command.length() - 1; i >= 0; i++)
-        if (input_command[i] == "\n"){
-          input_command[i] = "\0";
-          break;
-        }
-      bool flag = false;
-      for (int i = 0 ; i < TOTAL_SIGNALS; i++){
-        flag = false;
-        if (input_command.length() == signals[i].command.length()){
-          flag = true;
-          for (int j = 0; j < input_command.length(); j++){
-            if (signals[i].command[j] != input_command[j]){
-              flag = false;
-              break;
-            }
-          }
-          if (flag == true){
+      int command_num = get_command(input_command);
+      if (command_num == -1)
+        return false;
+      int value = get_command_value(input_command, command_num);
+      switch(command_num){
+        case 0:
+          if (value == 0 || value == 1)
             return true;
-          }
-        }
+          else
+            return false;
+        case 1:
+          if (value <= 30 && value >= 17)
+            return true;
+          else
+            return false;
+        case 2:
+          if (value == 0 || value == 1)
+            return true;
+          else
+            return false;
+        case 3:
+          if (value == 1 || value == 2 || value == 3)
+            return true;
+          else
+            return false;
       }
       return false;
     }
 
-    bool sendCommand(IRrecv &irrecv, IRsend &irsend, String input_command){
-      for (int i = input_command.length() - 1; i >= 0; i++)
-        if (input_command[i] == "\n"){
-          input_command[i] = "\0";
-          break;
-        }
+    int get_command(String input_command){
       bool flag = false;
-      for (int i = 0 ; i < TOTAL_SIGNALS; i++){
-        flag = false;
-        if (input_command.length() == signals[i].command.length()){
-          flag = true;
-          for (int j = 0; j < input_command.length(); j++){
-            if (signals[i].command[j] != input_command[j]){
-              flag = false;
-              break;
-            }
+      for (int i = 0; i < 4; i++){
+        flag = true;
+        // -1 is ignoring the null character
+        for (int j = 0; j < commands[i].length()-1; j++){
+          if (input_command[j] != commands[i][j]){
+            flag = false;
+            break;
           }
-          if (flag == true){
-            unsigned int wave[SIGNAL_LENGTH];
-            switch (signals[i].pos){
-              case POWER_ON:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[POWER_ON]+k);
-                break;
-              case POWER_OFF:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[POWER_OFF]+k);
-                break;
-              case FANSPEED_1:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[FANSPEED_1]+k);
-                break;
-              case FANSPEED_2:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[FANSPEED_2]+k);
-                break;
-              case FANSPEED_3:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[FANSPEED_3]+k);
-                break;
-              case TEMP_25:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[TEMP_25]+k);
-                break;
-              case TEMP_24:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[TEMP_24]+k);
-                break;
-              case TEMP_23:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[TEMP_23]+k);
-                break;
-              case TEMP_22:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[TEMP_22]+k);
-                break;
-              case TEMP_21:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[TEMP_21]+k);
-                break;
-              case TEMP_20:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[TEMP_20]+k);
-                break;
-              case TEMP_19:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[TEMP_19]+k);
-                break;
-              case TEMP_18:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[TEMP_18]+k);
-                break;
-              case TEMP_17:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[TEMP_17]+k);
-                break;
-              case SWING_ON:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[SWING]+k);
-                break;
-              case SWING_OFF:
-                for (int k = 0; k < SIGNAL_LENGTH; k++)
-                  wave[k] = pgm_read_word(signals_table[SWING]+k);
-                break;
-            }
-            sendIR(irrecv, irsend, wave, SIGNAL_LENGTH);
-          }
+        }
+        if (flag == true){
+          return i;
         }
       }
+      return -1;
+    }
+
+    int get_command_value(String input_command, int i){
+      String value = "";
+      for (int j = commands[i].length()-1; j < input_command.length();j++){
+        if (input_command[i] >= '0' && input_command[i] <= '9'){
+          value += input_command[i];
+        }else if (input_command[i] == ' ' && value.length() == 0){
+          continue;
+        }else{
+          break;
+        }
+      }
+      return value.toInt();
+    }
+      
+    void sendCommand(IRrecv &irrecv, IRsend &irsend, String input_command){
+      sendIR(irrecv, irsend, wave, SIGNAL_LENGTH);
     }
     
     void sendIR(IRrecv &irrecv, IRsend &irsend, unsigned int raw[], int rawlen) {
@@ -242,33 +161,24 @@ class IRmonitor{
       // Enable the ir receiver
       irrecv.enableIRIn();
     }
+
+    private:
+      void translate_signal(){
+        for (int i=0; i<15;i++){
+          if (temp_mask[i][0] == temperature){
+            
+          }
+        }
+      }
+
+      void assign_mask_value(){
+        
+      }
+
 };
 
 
 IRmonitor ir_monitor;
-IRsignal signals[TOTAL_SIGNALS];
-
-void IRsignals_command_setup(){
-  signals[0].create("power on", POWER_ON);
-  signals[1].create("power off", POWER_OFF);
-  signals[2].create("fanspeed 1", FANSPEED_1);
-  signals[3].create("fanspeed 2", FANSPEED_2);
-  signals[4].create("fanspeed 3", FANSPEED_3);
-  signals[5].create("temp 25", TEMP_25);
-  signals[6].create("temp 24", TEMP_24);
-  signals[7].create("temp 23", TEMP_23);
-  signals[8].create("temp 22", TEMP_22);
-  signals[9].create("temp 21", TEMP_21);
-  signals[10].create("temp 20", TEMP_20);
-  signals[11].create("temp 19", TEMP_19);
-  signals[12].create("temp 18", TEMP_18);
-  signals[13].create("temp 17", TEMP_17);
-  signals[14].create("swing on", SWING);
-  signals[15].create("swing off", SWING);
-  
-  ir_monitor.create(signals);
-}
-
 
 void setup() {
   // put your setup code here, to run once:
@@ -277,10 +187,10 @@ void setup() {
   bmp.begin();
   htu.begin();
   bh.begin();
-  IRsignals_command_setup();
+
   // Enable the ir receiver
   irrecv.enableIRIn();
-  
+
   // Set the switchPin as input
   pinMode(switchPin, INPUT);
   pinMode(modePin, INPUT);
@@ -414,89 +324,14 @@ void sendIRByCommand(){
   while(Serial.available()) {
     command= Serial.readString();// read the incoming data as string
     Serial.print(command);
-    if (ir_monitor.checkCommand(command))
-      ir_monitor.sendCommand(irrecv, irsend, command);
-    /*
-    for (int i = 0 ; i < TOTAL_SIGNALS; i++){
-      bool flag = true;
-      for (int j = 0; j < signals[i].command.length(); j++)
-        if (signals[i].command[j] != command[j]){
-          flag = false;
-          break;
-        }
-      if (flag){
-        unsigned int wave[SIGNAL_LENGTH];
-        switch (signals[i].pos){
-          case POWER_ON:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[POWER_ON]+k);
-            break;
-          case POWER_OFF:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[POWER_OFF]+k);
-            break;
-          case FANSPEED_1:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[FANSPEED_1]+k);
-            break;
-          case FANSPEED_2:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[FANSPEED_2]+k);
-            break;
-          case FANSPEED_3:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[FANSPEED_3]+k);
-            break;
-          case TEMP_25:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[TEMP_25]+k);
-            break;
-          case TEMP_24:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[TEMP_24]+k);
-            break;
-          case TEMP_23:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[TEMP_23]+k);
-            break;
-          case TEMP_22:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[TEMP_22]+k);
-            break;
-          case TEMP_21:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[TEMP_21]+k);
-            break;
-          case TEMP_20:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[TEMP_20]+k);
-            break;
-          case TEMP_19:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[TEMP_19]+k);
-            break;
-          case TEMP_18:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[TEMP_18]+k);
-            break;
-          case TEMP_17:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[TEMP_17]+k);
-            break;
-          case SWING_ON:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[SWING]+k);
-            break;
-          case SWING_OFF:
-            for (int k = 0; k < SIGNAL_LENGTH; k++)
-              wave[k] = pgm_read_word(signals_table[SWING]+k);
-            break;
-        }
-        sendIR(wave, SIGNAL_LENGTH);
+    // remove input command possible enter character
+    for (int i = command.length() - 1; i >= 0; i++)
+      if (command[i] == "\n"){
+        command[i] = "\0";
         break;
       }
-    }
-    */
+    if (ir_monitor.checkCommand(command))
+      ir_monitor.sendCommand(irrecv, irsend, command);
   }
 }
 
