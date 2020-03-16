@@ -27,6 +27,14 @@ Below is the connection between the infrared module and the Arduino Mega 2560.
 Below is the test of sending infrared signals to a television. The infrared signal from the television remote is recorded before the test by the infrared receiver.
 ![IR Communication Test vid](../Project Record/AC remote DEV/IR communication/vid_ir_communication_test.mp4 "IR Communication Test")
 
+To control the air conditioner, the IR signals for different settings are recorded. The IR signal involves different information, such as the current temperature setting, fan speed setting, power on/off setting, etc. The encoding method and data sequence for the control IR signals is unkwown for normal user. Therefore, a reverse engineering approach is used in this situation.
+
+By printing out different signals by using the plotting program, I gather the small differences and identify the cause of the change. As a result, I found out the masking spectrums that could make two different signals become same. Hence, with the masking spectrums, I can send the IR signals for different functions without saving all the IR signals combination.
+
+Below is a plot of the IR signals, which is before masking and after masking.
+![Before masking](../Project Record/AC remote DEV/IR communication/IR_before_masking.png "Before masking")
+![After masking](../Project Record/AC remote DEV/IR communication/IR_after_masking.png "After masking")
+
 #### Online Database Communication
 To record and process the data, this device will send and save the environment data to the online database. As Arduino Mega 2560 does not provide network connection, NodeMCU is used as a module for networking. The Arduino Mega 2560 will transfer the data to the NodeMCU, and the NodeMCU will send the data as a json type file to the online database directly. For the online database, this project used the Google Firebase as a online server. The online server provided a online real-time database for saving the data which is commonly used as an IoT database.
 
