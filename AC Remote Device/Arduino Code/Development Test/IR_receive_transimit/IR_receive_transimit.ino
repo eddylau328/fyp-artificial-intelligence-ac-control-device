@@ -4,7 +4,7 @@
 #include <BH1750.h>
 #include <avr/pgmspace.h>
 #include <IRremote.h>
-
+#include "IRmonitor.h"
 // Define the switch pin
 const int switchPin = 7;
 const int modePin = 3;
@@ -16,27 +16,6 @@ int currentMode = 0;
 // Define the IR send Object
 IRsend irsend;
 
-#define TOTAL_SIGNALS 16
-#define SIGNAL_LENGTH 100
-
-class IRsignal{
-  public:
-    String command;
-    int pos;
-    // constructor
-    IRsignal(){}
-    // constructor
-    IRsignal(String command, int pos){
-      create(command, pos);
-    }
-    
-    void create(String command, int pos){
-      this->command = command;
-      this->pos = pos;
-    }
-};
-
-
 // Define the IR sensor pin
 const int RECV_PIN = 4;
 // Define the IR receiver and result object
@@ -46,172 +25,6 @@ decode_results results;
 Adafruit_BMP085 bmp;
 Adafruit_HTU21DF htu;
 BH1750 bh;
-
-class IRmonitor{
-  public:
-    int fanspeed = 1;
-    int temperature = 24;
-    int swing_state = 0;
-    int power_state = 1;
-    unsigned int wave[SIGNAL_LENGTH] = {4450,4250,600,1550,650,450,650,1500,600,1600,600,450,600,500,600,1550,600,500,600,450,600,1600,550,500,600,500,600,1550,600,1550,600,500,650,1500,600,1550,650,450,600,1550,700,1500,600,1550,600,1550,550,1600,650,1500,600,500,600,1550,600,500,600,450,650,450,600,500,600,450,650,450,600,500,550,1600,600,500,600,450,650,450,600,500,600,450,650,450,600,1550,650,450,550,1600,600,1550,600,1600,600,1550,650,1500,600,1550,500};
-    const int fanspeed_mask[4][7] = {{-1,35,37,39,51,53,55},
-                                     {1,1,0,0,0,1,1},
-                                     {2,0,1,0,1,0,1},
-                                     {3,0,0,1,1,1,0}};
-    const int temp_mask[15][9] = {{-1,67,69,71,73,83,85,87,89},
-                                  {30,1,0,1,1,0,1,0,0},
-                                  {29,1,0,1,0,0,1,0,1},
-                                  {28,1,0,0,0,0,1,1,1},
-                                  {27,1,0,0,1,0,1,1,0},
-                                  {26,1,1,0,1,0,0,1,0},
-                                  {25,1,1,0,0,0,0,1,1},
-                                  {24,0,1,0,0,1,0,1,1},
-                                  {23,0,1,0,1,1,0,1,0},
-                                  {22,0,1,1,1,1,0,0,0},
-                                  {21,0,1,1,0,1,0,0,1},
-                                  {20,0,0,1,0,1,1,0,1},
-                                  {19,0,0,1,1,1,1,0,0},
-                                  {18,0,0,0,1,1,1,1,0},
-                                  {17,0,0,0,0,1,1,1,1}};
-    // 1: swing on, 0: swing off
-    const int swing_mask[3][3] = {{-1,41,57},
-                                  {1,0,1},
-                                  {0,1,0}};
-    // 1: power on, 0: power off
-    const int power_mask[3][3] = {{-1,45,61},
-                                  {1,1,0},
-                                  {0,0,1}};
-    // 0: cool mode
-    const int mode_mask[2][5] = {{-1,75,77,91,93},{0,0,0,1,1}};
-    const int high = 1550;
-    const int low = 500;
-    const String commands[4] = {{"power"},{"temp"},{"swing"},{"fanspeed"}};
-
-    IRmonitor(){}
-
-    bool checkCommand(String input_command){
-      int command_num = get_command(input_command);
-      if (command_num == -1)
-        return false;
-      int value = get_command_value(input_command, command_num);
-      switch(command_num){
-        case 0:
-          if (value == 0 || value == 1)
-            return true;
-          else
-            return false;
-        case 1:
-          if (value <= 30 && value >= 17)
-            return true;
-          else
-            return false;
-        case 2:
-          if (value == 0 || value == 1)
-            return true;
-          else
-            return false;
-        case 3:
-          if (value == 1 || value == 2 || value == 3)
-            return true;
-          else
-            return false;
-      }
-      return false;
-    }
-
-    int get_command(String input_command){
-      bool flag = false;
-      for (int i = 0; i < 4; i++){
-        flag = true;
-        // -1 is ignoring the null character
-        for (int j = 0; j < commands[i].length()-1; j++){
-          if (input_command[j] != commands[i][j]){
-            flag = false;
-            break;
-          }
-        }
-        if (flag == true){
-          return i;
-        }
-      }
-      return -1;
-    }
-
-    int get_command_value(String input_command, int i){
-      String value = "";
-      for (int j = commands[i].length()-1; j < input_command.length();j++){
-        if (input_command[i] >= '0' && input_command[i] <= '9'){
-          value += input_command[i];
-        }else if (input_command[i] == ' ' && value.length() == 0){
-          continue;
-        }else{
-          break;
-        }
-      }
-      return value.toInt();
-    }
-      
-    void sendCommand(IRrecv &irrecv, IRsend &irsend, String input_command){
-      sendIR(irrecv, irsend, wave, SIGNAL_LENGTH);
-      int command_num = get_command(input_command);
-      int command_value = get_command_value(input_command, command_num);
-      switch(command_num){
-        case 0:
-          power_state = command_value;
-          break;
-        case 1:
-          temperature = command_value;
-          break;
-        case 2:
-          swing_state = command_value;
-          break;
-        case 3:
-          fanspeed = command_value;
-          break;
-      }
-      sendIR(irrecv, irsend, wave, SIGNAL_LENGTH);
-    }
-    
-    void sendIR(IRrecv &irrecv, IRsend &irsend, unsigned int raw[], int rawlen) {
-      irsend.sendRaw(raw, rawlen, 38);
-      Serial.println("send");
-      // Enable the ir receiver
-      irrecv.enableIRIn();
-    }
-
-    private:
-      void translate_signal(){
-        for (int i=1; i<15;i++){
-          if (temp_mask[i][0] == temperature){
-            assign_mask_value(temp_mask[0], temp_mask[i], 9);
-          }
-        }
-        for (int i=1; i<4;i++){
-          if (fanspeed_mask[i][0] == fanspeed){
-            assign_mask_value(fanspeed_mask[0], fanspeed_mask[i], 7);
-          }
-        }
-        for (int i=1; i<3;i++){
-          if (swing_mask[i][0] == swing_state){
-            assign_mask_value(swing_mask[0], swing_mask[i], 3);
-          }
-        }
-        for (int i=1; i<3;i++){
-          if (power_mask[i][0] == power_state){
-            assign_mask_value(power_mask[0], power_mask[i], 3);
-          }
-        }
-        assign_mask_value(mode_mask[0], mode_mask[1], 5);
-      }
-
-      void assign_mask_value(int mask_location[], int mask_value[], int mask_length){
-        // first value is control function
-        for (int i = 1; i < mask_length; i++)
-          wave[mask_location[i]] = (mask_value[i])? high:low;
-      }
-
-};
-
 
 IRmonitor ir_monitor;
 

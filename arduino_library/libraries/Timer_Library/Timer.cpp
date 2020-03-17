@@ -6,6 +6,9 @@
 #include "Arduino.h"
 #include "Timer.h"
 
+#define TOTAL_SIGNALS 16
+#define SIGNAL_LENGTH 100
+
 Timer::Timer(){}
 
 void Timer::settimer(long interval){
