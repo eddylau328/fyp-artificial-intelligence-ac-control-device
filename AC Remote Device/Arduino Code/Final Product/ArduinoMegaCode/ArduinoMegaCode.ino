@@ -28,24 +28,47 @@ Adafruit_BMP085 bmp;
 
 BH1750 bh;
 
-// used to check whether need to send data to nodemcu or not
-bool isSendData = false;
-
 Timer nodemcu_sendtimer;
 long int nodemcu_sendtimerInterval = 2000;
 
+class SendAction{
+  public:
+    String name;
+    int id;
+    ControlAction(){}
+    void create(String name, int id){
+      this->name = name;
+      this->id = id;
+    }
+};
+
+#define TOTAL_SEND_FUNCTION 3
+#define SEND_DATA 0
+#define SEND_WIFI_STATUS 1
+#define SEND_IR 2
+
+SendAction send_actions[TOTAL_SEND_FUNCTION];
+
+void control_action_initialize(){
+  send_actions[0].create("data", SEND_DATA);
+  send_actions[1].create("wifi", SEND_WIFI_STATUS);
+  send_actions[2].create("ir", SEND_IR);
+}
+
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(74880);
-  Serial2.begin(74880);
-  Serial3.begin(74880);
-  
+  Serial.begin(115200);
+  Serial2.begin(115200);
+  Serial3.begin(115200);
+  /*
   bmp.begin();
   bh.begin();
   dht.begin();
   
   lcd.begin(16, 2);
   delay(50);
+  */
+  control_action_initialize();
   nodemcu_sendtimer.settimer(nodemcu_sendtimerInterval);
   nodemcu_sendtimer.starttimer();
 }
@@ -128,7 +151,53 @@ void sendIRByCommand(String command){
   }
 }
 
+String serial3_getMessage(){
+  String command;
+  while(Serial3.available()) {
+    command= Serial3.readString();// read the incoming data as string
+    // remove input command possible enter character
+    for (int i = command.length(); i >= 0; i++)
+      if (command[i] == "\n"){
+        command[i] = "\0";
+        break;
+      }
+  }
+  return command;
+}
+
+int check_send_action_id(String command){
+  bool flag = false;
+  for (int i = 0; i < TOTAL_SEND_FUNCTION; i++){
+    flag = true;
+    for (int j = 0; j < send_actions[i].name.length(); j++){
+      if (send_actions[i].name[j] != command[j]){
+        flag = false;
+        break;
+      }
+    }
+    if (flag == true){
+      return i;
+    }
+  }
+  return -1;
+}
+
+String remove_command_name(String command, int command_id){
+  String command_value = "";
+  String temp = "";
+  for (int i = send_actions[command_id].name.length()+1; i < command.length(); i++){
+    temp += command[i];
+  }
+  for (int i = 0; i < temp.length(); i++){
+    if (temp[i] != '\n'){
+      command_value += temp[i];
+    }
+  }
+  return command_value;
+}
+
 void loop() {
+  /*
   // put your main code here, to run repeatedly:
   readEnvironment();
   lcd.clear();
@@ -137,9 +206,23 @@ void loop() {
     nodemcu_sendtimer.resettimer();
     nodemcu_sendtimer.starttimer();
   }
-
+  */
   if (Serial3.available() > 0){
-    
+    String command = serial3_getMessage();
+    int command_id = check_send_action_id(command);
+    String command_value = remove_command_name(command, command_id);
+    switch(command_id)
+    {
+      case(SEND_DATA):
+        Serial.print(command_value);
+        break;
+      case(SEND_WIFI_STATUS):
+        Serial.print(command_value);
+        break;
+      case(SEND_IR):
+        Serial.print(command_value);
+        break;
+    }
   }
 
   lcd_print_environment_data();
