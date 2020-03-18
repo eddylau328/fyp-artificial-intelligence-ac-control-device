@@ -2,9 +2,10 @@
 #include <Adafruit_BMP085.h>
 #include <Adafruit_HTU21DF.h>
 #include <BH1750.h>
-#include <avr/pgmspace.h>
+
 #include <IRremote.h>
 #include "IRmonitor.h"
+
 // Define the switch pin
 const int switchPin = 7;
 const int modePin = 3;
@@ -14,6 +15,7 @@ int modeButtonState = 0;
 int currentMode = 0;
 
 // Define the IR send Object
+// For mega2560 is pin 9 (currently cannot modify)
 IRsend irsend;
 
 // Define the IR sensor pin
@@ -140,7 +142,7 @@ void decodeIR() {
     }
     Serial.println();
     Serial.print("Length = ");
-    Serial.print(results.rawlen);
+    Serial.print(results.rawlen-1);
     Serial.println();
     
     irrecv.resume();
@@ -169,7 +171,6 @@ void sendIR(unsigned int raw[], int rawlen) {
 String command;
 
 void sendIRByCommand(){
-  
   while(Serial.available()) {
     command= Serial.readString();// read the incoming data as string
     // remove input command possible enter character
@@ -179,7 +180,7 @@ void sendIRByCommand(){
         break;
       }
     if (ir_monitor.checkCommand(command)){
-      ir_monitor.sendCommand(irrecv, irsend, command);
+      ir_monitor.sendCommand(irsend, command);
     }
   }
 }

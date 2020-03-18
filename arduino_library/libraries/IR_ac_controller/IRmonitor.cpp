@@ -81,7 +81,7 @@ int IRmonitor::get_command_value(String input_command, int i){
   }
 }
 
-void IRmonitor::sendCommand(IRrecv &irrecv, IRsend &irsend, String input_command){
+void IRmonitor::sendCommand(IRsend &irsend, String input_command){
   int command_num = get_command(input_command);
   int command_value = get_command_value(input_command, command_num);
   unsigned *send_wave = wave;
@@ -103,14 +103,12 @@ void IRmonitor::sendCommand(IRrecv &irrecv, IRsend &irsend, String input_command
   }else{
     send_wave = off_wave;
   }
-  sendIR(irrecv, irsend, send_wave, SIGNAL_LENGTH);
+  sendIR(irsend, send_wave, SIGNAL_LENGTH);
 }
 
-void IRmonitor::sendIR(IRrecv &irrecv, IRsend &irsend, unsigned int raw[], int rawlen) {
+void IRmonitor::sendIR(IRsend &irsend, unsigned int raw[], int rawlen) {
   irsend.sendRaw(raw, rawlen, 38);
   Serial.println("send");
-  // Enable the ir receiver
-  irrecv.enableIRIn();
 }
 
 void IRmonitor::translate_signal(unsigned int *send_wave){

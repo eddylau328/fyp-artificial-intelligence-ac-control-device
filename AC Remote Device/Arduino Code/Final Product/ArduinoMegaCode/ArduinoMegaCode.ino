@@ -6,6 +6,14 @@
 #include <LiquidCrystal.h>
 #include <Timer.h>
 #include "DHT.h"
+// For IR control------------
+#include <IRremote.h>
+#include "IRmonitor.h"
+// Define the IR send Object
+// For mega2560 is pin 9 (currently cannot modify)
+IRsend irsend;
+IRmonitor ir_monitor;
+// --------------------------
 
 #define DHTPIN 8     // Digital pin connected to the DHT sensor
 
@@ -112,6 +120,12 @@ void lcd_print_environment_data(){
   
   LCDprint((int)light_intensity,9,1,false);
   LCDprint("lx",14,1,false);
+}
+
+void sendIRByCommand(String command){
+  if (ir_monitor.checkCommand(command)){
+    ir_monitor.sendCommand(irsend, command);
+  }
 }
 
 void loop() {

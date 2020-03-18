@@ -57,9 +57,9 @@ class IRmonitor{
 
     int get_command_value(String input_command, int i);
 
-    void sendCommand(IRrecv &irrecv, IRsend &irsend, String input_command);
+    void sendCommand(IRsend &irsend, String input_command);
 
-    void sendIR(IRrecv &irrecv, IRsend &irsend, unsigned int raw[], int rawlen);
+    void sendIR(IRsend &irsend, unsigned int raw[], int rawlen);
 
     private:
       void translate_signal(unsigned int *send_wave);
