@@ -29,8 +29,8 @@ float temperature, humidity, light_intensity, pressure;
 SoftwareSerial s(D7,D8);
 
 void setup() {
-  Serial.begin(74880);
-  s.begin(74880);
+  Serial.begin(115200);
+  s.begin(115200);
   
   // connect to wifi.
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -42,6 +42,8 @@ void setup() {
   Serial.println();
   Serial.print("connected: ");
   Serial.println(WiFi.localIP());
+
+  Serial.println("wifi on");
   
   Firebase.begin(FIREBASE_HOST);
 
@@ -92,9 +94,9 @@ void loop()
       pressure = data["press"];
     }
   }
-    
+  
   if (firebase_sendtimer.checkfinish()){
-    send_data_2_firebase();
+    //send_data_2_firebase();
     firebase_sendtimer.resettimer();
     firebase_sendtimer.starttimer();
   }

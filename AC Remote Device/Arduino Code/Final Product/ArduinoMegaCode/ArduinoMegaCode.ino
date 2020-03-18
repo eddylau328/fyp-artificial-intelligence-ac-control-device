@@ -31,6 +31,9 @@ BH1750 bh;
 Timer nodemcu_sendtimer;
 long int nodemcu_sendtimerInterval = 2000;
 
+bool isConnectWifi = false;
+bool isSendData = false;
+
 class SendAction{
   public:
     String name;
@@ -53,24 +56,6 @@ void control_action_initialize(){
   send_actions[0].create("data", SEND_DATA);
   send_actions[1].create("wifi", SEND_WIFI_STATUS);
   send_actions[2].create("ir", SEND_IR);
-}
-
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(115200);
-  Serial2.begin(115200);
-  Serial3.begin(115200);
-  /*
-  bmp.begin();
-  bh.begin();
-  dht.begin();
-  
-  lcd.begin(16, 2);
-  delay(50);
-  */
-  control_action_initialize();
-  nodemcu_sendtimer.settimer(nodemcu_sendtimerInterval);
-  nodemcu_sendtimer.starttimer();
 }
 
 float temperature,pressure,humidity,light_intensity;
@@ -152,16 +137,44 @@ void sendIRByCommand(String command){
 }
 
 String serial3_getMessage(){
-  String command;
+  String command ="", message = "";
   while(Serial3.available()) {
-    command= Serial3.readString();// read the incoming data as string
+    char ch = Serial3.read();
+    message += ch;// read the incoming data as string
     // remove input command possible enter character
-    for (int i = command.length(); i >= 0; i++)
+  }
+
+  bool flag = false;
+  for (int i = 0; i < message.length(); i++){
+    for (int j = 0; j < TOTAL_SEND_FUNCTION; j++){
+      flag = true;
+      for (int k = 0; k < send_actions[k].name.length(); k++){
+        if (send_actions[j].name[k] != message[i+k]){
+          flag = false;
+          break;
+        }
+      }
+      if (flag == true)
+        break;
+    }
+    if (flag == true){
+      for (int k = i; k < message.length(); k++){
+        command += message[k];
+        if (message[k] == '\n')
+          break;
+      }
+      break;
+    }
+  }
+  if (flag == true){
+    for (int i = command.length(); i >= 0; i++){
       if (command[i] == "\n"){
         command[i] = "\0";
         break;
       }
+    }
   }
+
   return command;
 }
 
@@ -189,42 +202,78 @@ String remove_command_name(String command, int command_id){
     temp += command[i];
   }
   for (int i = 0; i < temp.length(); i++){
-    if (temp[i] != '\n'){
+    if (temp[i] != '\n' && temp[i] != '\r'){
       command_value += temp[i];
     }
   }
   return command_value;
 }
 
+void serial3_communication()
+{
+  String command = serial3_getMessage();
+  int command_id = check_send_action_id(command);
+  String command_value = remove_command_name(command, command_id);
+  switch(command_id)
+  {
+    case(SEND_DATA):
+      Serial.print(command_value);
+      break;
+    case(SEND_WIFI_STATUS):
+      if (command_value == "on"){
+        isConnectWifi = true;
+      }else if (command_value == "off"){
+        isConnectWifi = false;
+      }
+      break;
+    case(SEND_IR):
+      Serial.print(command_value);
+      break;
+  }
+  //Serial.println(isConnectWifi);
+}
+
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  Serial2.begin(115200);
+  Serial3.begin(115200);
+  
+  lcd.begin(16, 2);
+
+  LCDprint("Connecting Wifi", 0,0, true);
+  
+  bmp.begin();
+  bh.begin();
+  dht.begin();
+
+  delay(50);
+  
+  control_action_initialize();
+  nodemcu_sendtimer.settimer(nodemcu_sendtimerInterval);
+  nodemcu_sendtimer.starttimer();
+}
+
+
 void loop() {
-  /*
+  
   // put your main code here, to run repeatedly:
   readEnvironment();
-  lcd.clear();
+
   if (nodemcu_sendtimer.checkfinish()){
-    send_data_2_nodemcu();
+    //send_data_2_nodemcu();
     nodemcu_sendtimer.resettimer();
     nodemcu_sendtimer.starttimer();
   }
-  */
+  
   if (Serial3.available() > 0){
-    String command = serial3_getMessage();
-    int command_id = check_send_action_id(command);
-    String command_value = remove_command_name(command, command_id);
-    switch(command_id)
-    {
-      case(SEND_DATA):
-        Serial.print(command_value);
-        break;
-      case(SEND_WIFI_STATUS):
-        Serial.print(command_value);
-        break;
-      case(SEND_IR):
-        Serial.print(command_value);
-        break;
-    }
+    serial3_communication();
   }
-
-  lcd_print_environment_data();
+  
+  if (isConnectWifi){
+    lcd.clear();
+    lcd_print_environment_data();
+  }
   
 }
