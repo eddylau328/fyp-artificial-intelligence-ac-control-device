@@ -169,25 +169,26 @@ void sendIR(unsigned int raw[], int rawlen) {
 String command;
 
 void sendIRByCommand(){
+  
   while(Serial.available()) {
     command= Serial.readString();// read the incoming data as string
-    Serial.print(command);
     // remove input command possible enter character
     for (int i = command.length() - 1; i >= 0; i++)
       if (command[i] == "\n"){
         command[i] = "\0";
         break;
       }
-    if (ir_monitor.checkCommand(command))
+    if (ir_monitor.checkCommand(command)){
       ir_monitor.sendCommand(irrecv, irsend, command);
+    }
   }
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   // readEnvironment(1);
-  decodeIR();
-  //sendIRByCommand();
+  //decodeIR();
+  sendIRByCommand();
   //sendIRByButton(modeList[currentMode],signal_len);
   delay(500);
 }
