@@ -14,7 +14,7 @@
 String serial_num = "fyp0001";
 String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
 String firebase_receive_action = String("/Devices/"+serial_num+"/receive_action");
-
+String firebase_receive_check_action = String("/Devices/"+serial_num+"/is_new_action");
 
 // 60 seconds timer
 Timer firebase_sendtimer;
@@ -77,6 +77,29 @@ void send_data_2_firebase(){
     }  
 }
 
+bool get_is_new_command_from_firebase(){
+  bool isNewCommand = Firebase.getBool(firebase_receive_check_action);
+  return isNewComma
+}
+
+void set_is_new_command_from_firebase(bool flag){
+  Firebase.setBool(flag);
+}
+
+String get_command_from_firebase(){
+  String command = Firebase.getBool(firebase_receive_check_action);
+  return command;
+}
+
+bool send_command_2_mega(String command){
+  if (!Serial.available()){
+    Serial.println(command);
+    return true;
+  }else{
+    return false;
+  }
+}
+
 void loop() 
 {
   
@@ -100,7 +123,13 @@ void loop()
     firebase_sendtimer.resettimer();
     firebase_sendtimer.starttimer();
   }
-  
+
+  if (check_new_command_from_firebase()){
+    String command = get_command_from_firebase();
+    if (send_command_2_mega(command)){
+      set_is_new_command_from_firebase(false);
+    }
+  }
 }
 
   /*
