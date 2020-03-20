@@ -31,8 +31,9 @@ BH1750 bh;
 Timer nodemcu_sendtimer;
 long int nodemcu_sendtimerInterval = 2000;
 
-bool isConnectWifi = false;
-bool isSendData = false;
+// is connected to wifi or not
+bool isConnectedWifi = false;
+bool wifiConnectNotice = true;
 
 class SendAction{
   public:
@@ -45,17 +46,15 @@ class SendAction{
     }
 };
 
-#define TOTAL_SEND_FUNCTION 3
-#define SEND_DATA 0
-#define SEND_WIFI_STATUS 1
-#define SEND_IR 2
+#define TOTAL_SEND_FUNCTION 2
+#define SEND_WIFI_STATUS 0
+#define SEND_IR 1
 
 SendAction send_actions[TOTAL_SEND_FUNCTION];
 
 void control_action_initialize(){
-  send_actions[0].create("data", SEND_DATA);
-  send_actions[1].create("wifi", SEND_WIFI_STATUS);
-  send_actions[2].create("ir", SEND_IR);
+  send_actions[0].create("wifi", SEND_WIFI_STATUS);
+  send_actions[1].create("ir", SEND_IR);
 }
 
 float temperature,pressure,humidity,light_intensity;
@@ -104,13 +103,13 @@ void LCDprint(char ch, int x, int y, bool clearScreen){
 // send json object to nodemcu
 // json object contain the environment data
 void send_data_2_nodemcu(){
-  StaticJsonBuffer<256> doc;
+  StaticJsonBuffer<100> doc;
   JsonObject& data =doc.createObject();
   data["temp"] = temperature;
   data["hum"] = humidity;
   data["light"] = light_intensity;
   data["press"] = pressure;
-  data.prettyPrintTo(Serial2);
+  data.printTo(Serial2);
   data.prettyPrintTo(Serial);
 }
 
@@ -216,21 +215,18 @@ void serial3_communication()
   String command_value = remove_command_name(command, command_id);
   switch(command_id)
   {
-    case(SEND_DATA):
-      Serial.print(command_value);
-      break;
     case(SEND_WIFI_STATUS):
       if (command_value == "on"){
-        isConnectWifi = true;
+        isConnectedWifi = true;
       }else if (command_value == "off"){
-        isConnectWifi = false;
+        isConnectedWifi = false;
+        wifiConnectNotice = true;
       }
       break;
     case(SEND_IR):
-      Serial.print(command_value);
+      ir_monitor.sendCommand(irsend, command_value);
       break;
   }
-  //Serial.println(isConnectWifi);
 }
 
 
@@ -241,8 +237,6 @@ void setup() {
   Serial3.begin(115200);
   
   lcd.begin(16, 2);
-
-  LCDprint("Connecting Wifi", 0,0, true);
   
   bmp.begin();
   bh.begin();
@@ -262,7 +256,7 @@ void loop() {
   readEnvironment();
 
   if (nodemcu_sendtimer.checkfinish()){
-    //send_data_2_nodemcu();
+    send_data_2_nodemcu();
     nodemcu_sendtimer.resettimer();
     nodemcu_sendtimer.starttimer();
   }
@@ -271,9 +265,14 @@ void loop() {
     serial3_communication();
   }
   
-  if (isConnectWifi){
+  if (isConnectedWifi){
     lcd.clear();
     lcd_print_environment_data();
+  }else{
+    if (wifiConnectNotice){
+      LCDprint("Connecting Wifi", 0,0, true);
+      wifiConnectNotice = false;
+    }
   }
   
 }

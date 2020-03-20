@@ -7,14 +7,14 @@
 // Set these to run example.
 #define FIREBASE_HOST "fypacmonitor.firebaseio.com"
 #define FIREBASE_AUTH "jaT833r4mymesl03s37FD9jeV9JnWZzcM1xrnX8d"
-#define WIFI_SSID "Eddy Wifi"
-#define WIFI_PASSWORD "12345678xd"  // hidden for credentials problem
+#define WIFI_SSID "Lau Family"
+#define WIFI_PASSWORD "27050880"  // hidden for credentials problem
 
 //SoftwareSerial s(D7,D8); //D2, D1
 String serial_num = "fyp0001";
-String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
-String firebase_receive_action = String("/Devices/"+serial_num+"/receive_action");
-String firebase_receive_check_action = String("/Devices/"+serial_num+"/is_new_action");
+const String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
+const String firebase_receive_action = String("/Devices/"+serial_num+"/receive_action/command");
+const String firebase_receive_check_action = String("/Devices/"+serial_num+"/receive_action/is_sent");
 
 // 60 seconds timer
 Timer firebase_sendtimer;
@@ -24,9 +24,73 @@ long int firebase_sendtimerInterval = 10000;
 int step_num;
 int action;
 
+// variable to hold the environment data
 float temperature, humidity, light_intensity, pressure;
 
+// state of whether it is connected to wifi or not
+bool isConnectedWifi = false;
+// state that whether it is sending data to firebase or not
+bool isSendData2Firebase = false;
+
 SoftwareSerial s(D7,D8);
+
+void instantiateTimers(){
+  firebase_sendtimer.settimer(firebase_sendtimerInterval);
+  firebase_sendtimer.starttimer();
+}
+
+void send_data_2_firebase(){
+    StaticJsonBuffer<100> doc;
+    JsonObject& data =doc.createObject();
+    data["temp"] = temperature;
+    data["hum"] = humidity;
+    data["light"] = light_intensity;
+    data["press"] = pressure;
+
+    //firebase send sensor data action
+    String name = Firebase.push(firebase_sensor_address, data);
+    /*
+    if (Firebase.failed()) {
+      Serial.print("Firebase Pushing /sensor failed:");
+      Serial.println(Firebase.error()); 
+      return;
+    }else{
+      Serial.print("Firebase Pushed /sensor ");
+      Serial.println(name);
+    }
+    */
+}
+
+bool check_new_command_from_firebase(){
+  bool isNewCommand = Firebase.getBool(firebase_receive_check_action);
+  return isNewCommand;
+}
+
+void set_is_new_command_from_firebase(bool flag){
+  Firebase.setBool(firebase_receive_check_action, flag);
+}
+
+String get_command_from_firebase(){
+  String command = Firebase.getString(firebase_receive_action);
+  return command;
+}
+
+bool send_command_2_mega(String command){
+  if (!Serial.available()){
+    Serial.println(command);
+    return true;
+  }else{
+    return false;
+  }
+}
+
+void send_wifi_status_2_mega(bool status){
+  if (status == true)
+    Serial.println("wifi on");
+  else
+    Serial.println("wifi off");
+}
+
 
 void setup() {
   Serial.begin(115200);
@@ -43,7 +107,8 @@ void setup() {
   Serial.print("connected: ");
   Serial.println(WiFi.localIP());
 
-  Serial.println("wifi on");
+  isConnectedWifi = true;
+  send_wifi_status_2_mega(true);
   
   Firebase.begin(FIREBASE_HOST);
 
@@ -52,59 +117,12 @@ void setup() {
   step_num = 0;
 }
 
-void instantiateTimers(){
-  firebase_sendtimer.settimer(firebase_sendtimerInterval);
-  firebase_sendtimer.starttimer();
-}
-
-void send_data_2_firebase(){
-    StaticJsonBuffer<1000> doc;
-    JsonObject& data =doc.createObject();
-    data["temp"] = temperature;
-    data["hum"] = humidity;
-    data["light"] = light_intensity;
-    data["press"] = pressure;
-
-    //firebase send sensor data action
-    String name = Firebase.push(firebase_sensor_address, data);
-    if (Firebase.failed()) {
-      Serial.print("Firebase Pushing /sensor failed:");
-      Serial.println(Firebase.error()); 
-      return;
-    }else{
-      Serial.print("Firebase Pushed /sensor ");
-      Serial.println(name);
-    }  
-}
-
-bool get_is_new_command_from_firebase(){
-  bool isNewCommand = Firebase.getBool(firebase_receive_check_action);
-  return isNewComma
-}
-
-void set_is_new_command_from_firebase(bool flag){
-  Firebase.setBool(flag);
-}
-
-String get_command_from_firebase(){
-  String command = Firebase.getBool(firebase_receive_check_action);
-  return command;
-}
-
-bool send_command_2_mega(String command){
-  if (!Serial.available()){
-    Serial.println(command);
-    return true;
-  }else{
-    return false;
-  }
-}
 
 void loop() 
 {
   
   if (s.available() > 0){
-    StaticJsonBuffer<256> doc;
+    StaticJsonBuffer<100> doc;
     // deserialize the object
     JsonObject& data = doc.parseObject(s);
     if (!data.success()) {
@@ -119,7 +137,12 @@ void loop()
   }
   
   if (firebase_sendtimer.checkfinish()){
-    //send_data_2_firebase();
+    send_data_2_firebase();
+    if (isConnectedWifi && isSendData2Firebase){
+      Serial.println("pass");
+      send_data_2_firebase();
+    }
+    
     firebase_sendtimer.resettimer();
     firebase_sendtimer.starttimer();
   }
@@ -130,25 +153,17 @@ void loop()
       set_is_new_command_from_firebase(false);
     }
   }
-}
-
   /*
-  // when receiving the data send from the arduino
-  if (s.available() > 0){
-    StaticJsonBuffer<1000> doc;
-    // deserialize the object
-    JsonObject& data = doc.parseObject(s);
-    if (!data.success()) {
-       Serial.println("parseObject() failed");
-       return;
+  if (WiFi.status() != WL_CONNECTED){
+    if (isConnectedWifi){
+      send_wifi_status_2_mega(false);
+      isConnectedWifi = false;
     }
-
-    // save the received data
-    temperature = data["temp"];
-    humidity = data["hum"];
-    light_intensity = data["light"];
-    pressure = data["press"];
-    
-    data.prettyPrintTo(Serial);
+  }else if (WiFi.status() == WL_CONNECTED){
+    if (!isConnectedWifi){
+      send_wifi_status_2_mega(true);
+      isConnectedWifi = true;
+    }
   }
   */
+}
