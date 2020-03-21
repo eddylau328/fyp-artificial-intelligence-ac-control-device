@@ -103,13 +103,13 @@ void LCDprint(char ch, int x, int y, bool clearScreen){
 // send json object to nodemcu
 // json object contain the environment data
 void send_data_2_nodemcu(){
-  StaticJsonBuffer<100> doc;
+  StaticJsonBuffer<256> doc;
   JsonObject& data =doc.createObject();
   data["temp"] = temperature;
   data["hum"] = humidity;
   data["light"] = light_intensity;
   data["press"] = pressure;
-  data.printTo(Serial2);
+  data.prettyPrintTo(Serial2);
   data.prettyPrintTo(Serial);
 }
 
