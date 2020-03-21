@@ -6,6 +6,7 @@
 #include <LiquidCrystal.h>
 #include <Timer.h>
 #include "DHT.h"
+
 // For IR control------------
 #include <IRremote.h>
 #include "IRmonitor.h"
@@ -19,7 +20,10 @@ IRmonitor ir_monitor;
 
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 DHT dht(DHTPIN, DHTTYPE);
+
+
 // LCD 1602 setup
+#define LCD_LIGHT_PIN A4
 LiquidCrystal lcd(12,11,37,35,33,31);
 
 // Setup a communication way between arduino mega and nodemcu
@@ -30,6 +34,13 @@ BH1750 bh;
 
 Timer nodemcu_sendtimer;
 long int nodemcu_sendtimerInterval = 2000;
+
+Timer lcd_on_timer;
+long int lcd_on_timerInterval = 8000;
+
+const int buttonPin = 7;
+int buttonState = 0;
+bool is_on_screen = true;
 
 // is connected to wifi or not
 bool isConnectedWifi = false;
@@ -241,12 +252,17 @@ void setup() {
   bmp.begin();
   bh.begin();
   dht.begin();
-
+  pinMode(buttonPin, INPUT);
+  // Set the LCD display backlight pin as an output.
+  pinMode(LCD_LIGHT_PIN, OUTPUT);
+  
   delay(50);
   
   control_action_initialize();
   nodemcu_sendtimer.settimer(nodemcu_sendtimerInterval);
   nodemcu_sendtimer.starttimer();
+  lcd_on_timer.settimer(lcd_on_timerInterval);
+  lcd_on_timer.starttimer();
 }
 
 
@@ -266,13 +282,37 @@ void loop() {
   }
   
   if (isConnectedWifi){
-    lcd.clear();
-    lcd_print_environment_data();
+    if (is_on_screen){
+      lcd.clear();
+      lcd_print_environment_data();
+    }
   }else{
     if (wifiConnectNotice){
-      LCDprint("Connecting Wifi", 0,0, true);
-      wifiConnectNotice = false;
+      if (is_on_screen){
+        LCDprint("Connecting Wifi", 0,0, true);
+        wifiConnectNotice = false;
+      }
     }
   }
   
+  buttonState = digitalRead(buttonPin);
+  if (buttonState == HIGH){
+    is_on_screen = true;
+    lcd_on_timer.resettimer();
+    lcd_on_timer.starttimer();
+  }
+
+  if (is_on_screen){
+    // Turn the backlight on.
+    digitalWrite(LCD_LIGHT_PIN, HIGH);
+    lcd.display();
+  }else{
+    lcd.noDisplay();
+    digitalWrite(LCD_LIGHT_PIN, LOW);
+  }
+
+  if (lcd_on_timer.checkfinish()){
+    is_on_screen = false;
+    lcd_on_timer.resettimer();
+  }
 }
