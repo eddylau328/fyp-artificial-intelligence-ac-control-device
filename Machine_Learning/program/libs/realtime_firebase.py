@@ -31,6 +31,17 @@ class Realtime_firebase:
             return
 
 
+    def set(self, path, child_name, passin_dict):
+        try:
+            ref = db.reference(path)
+            child = ref.child(child_name)
+            child.update(passin_dict)
+            return True
+        except:
+            print("Failed to set the data ...")
+            return False
+
+
     def check(self, path):
         try:
             ref = db.reference(path)

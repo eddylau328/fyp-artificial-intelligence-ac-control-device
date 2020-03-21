@@ -3,7 +3,7 @@ from libs import realtime_firebase as rt
 
 class AC_remote:
 
-    def __init__(self):
+    def __init__(self, serial_num):
         self.set_temperature = 24
         self.set_fanspeed = 1
         self.power_state = False
@@ -28,4 +28,8 @@ class AC_remote:
 
 
 if (__name__ == '__main__'):
-    r = rt.realtime_firebase()
+    r = rt.Realtime_firebase()
+    remote = AC_remote("fyp0001")
+    if (r.set("/Devices/fyp0001","receive_action",{"command":"ir power off", "is_new_action": True})):
+        print("Sent command to firebase")
+
