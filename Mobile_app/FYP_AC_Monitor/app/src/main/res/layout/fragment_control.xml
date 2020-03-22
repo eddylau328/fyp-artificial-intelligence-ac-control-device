@@ -52,8 +52,10 @@
         android:layout_height="110dp"
         android:layout_alignBottom="@+id/control_fragment_temp_title"
         android:layout_alignParentEnd="true"
-        android:layout_marginEnd="50dp"
-        android:layout_marginBottom="-40dp" />
+        android:layout_marginEnd="65dp"
+        android:layout_marginBottom="-40dp"
+        android:scaleY="0.8"
+        android:scaleX="0.8" />
 
     <TextView
         android:id="@+id/control_fragment_fanspeed_title"
@@ -72,8 +74,10 @@
         android:layout_height="110dp"
         android:layout_alignBottom="@+id/control_fragment_fanspeed_title"
         android:layout_alignParentEnd="true"
-        android:layout_marginEnd="50dp"
-        android:layout_marginBottom="-40dp" />
+        android:layout_marginEnd="65dp"
+        android:layout_marginBottom="-40dp"
+        android:scaleY="0.8"
+        android:scaleX="0.8" />
 
 
 </RelativeLayout>
