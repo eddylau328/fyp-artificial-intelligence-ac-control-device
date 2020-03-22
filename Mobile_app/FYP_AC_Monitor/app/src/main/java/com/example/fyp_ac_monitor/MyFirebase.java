@@ -138,12 +138,10 @@ public class MyFirebase {
             @Override
             public void onCallback_getSerialNum(boolean getSerial, String serial_num) {
                 if (getSerial){
-
                     DatabaseReference commandRef = rt_db.getReference();
                     commandRef.child("Devices").child(serial_num).child("receive_action").child("command").setValue(send_command);
-                    //DatabaseReference is_new_actionRef = rt_db.getReference();
-                    //is_new_actionRef.child("Devices").child(serial_num).child("receive_action").child("is_new_action").setValue(true);
-
+                    DatabaseReference is_new_actionRef = rt_db.getReference();
+                    is_new_actionRef.child("Devices").child(serial_num).child("receive_action").child("is_new_action").setValue(true);
                 }
             }
         });
