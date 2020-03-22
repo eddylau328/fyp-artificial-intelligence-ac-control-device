@@ -3,10 +3,58 @@
     android:layout_width="match_parent" android:layout_height="match_parent">
 
     <TextView
+        android:id="@+id/control_fragment_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
         android:text="Control"
-        android:textSize="36sp"
-        android:layout_centerInParent="true"/>
+        android:textSize="36sp" />
+
+    <TextView
+        android:id="@+id/control_fragment_power_switch_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/control_fragment_title"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="151dp"
+        android:text="Power"
+        android:textSize="24dp" />
+
+    <Switch
+        android:id="@+id/control_fragment_power_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/control_fragment_power_switch_title"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="150dp"
+        android:layout_marginEnd="70dp"
+        android:layout_marginBottom="2.5dp"
+        android:scaleX="1.5"
+        android:scaleY="1.5" />
+
+    <TextView
+        android:id="@+id/control_fragment_temp_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/control_fragment_power_switch"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="50dp"
+        android:text="Temperature"
+        android:textSize="24dp" />
+
+    <TextView
+        android:id="@+id/control_fragment_fanspeed_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/control_fragment_temp_title"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="50dp"
+        android:text="Fanspeed"
+        android:textSize="24dp" />
 
 </RelativeLayout>
