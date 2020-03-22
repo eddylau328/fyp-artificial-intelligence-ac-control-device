@@ -31,7 +31,8 @@ if (__name__ == '__main__'):
     r = rt.Realtime_firebase()
     remote = AC_remote("fyp0001")
     command = ""
+    command = input()
     while (command != "quit"):
-        command = input()
         if (r.set("/Devices/fyp0001","receive_action",{"command":command, "is_new_action": True})):
             print("Sent command to firebase")
+        command = input()
