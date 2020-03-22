@@ -10,6 +10,8 @@ import com.example.fyp_ac_monitor.activity.LoginActivity;
 import com.example.fyp_ac_monitor.utils.PreferenceUtils;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -21,10 +23,12 @@ public class MyFirebase {
     private static final String KEY_USERNAME = "username";
     private static final String KEY_PASSWORD = "password";
     private static final String KEY_EMAIL = "email";
+    private static final String KEY_SERIAL_NUM = "id";
 
     private String TAG = "Firebase";
 
     private FirebaseFirestore db;
+    private FirebaseDatabase rt_db;
 
     public MyFirebase (){
         db = FirebaseFirestore.getInstance();
@@ -32,6 +36,7 @@ public class MyFirebase {
                 .setPersistenceEnabled(false)
                 .build();
         db.setFirestoreSettings(settings);
+        rt_db = FirebaseDatabase.getInstance();
 
     }
 
@@ -96,6 +101,52 @@ public class MyFirebase {
 
     public interface password_callback {
         void onCallback_isPasswordCorrect(boolean isPasswordCorrect);
+    }
+
+
+    private void getUserConnectDeviceSerialNum(final String username, final String device_name, final serial_num_callback serial_num_callback){
+        DocumentReference serial_numRef = db.collection("Users").document(username)
+                .collection("connect_device").document(device_name);
+        serial_numRef.get(Source.SERVER)
+                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                    @Override
+                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                        if (documentSnapshot.exists()){
+                            String serial_num = documentSnapshot.getString(KEY_SERIAL_NUM);
+                            serial_num_callback.onCallback_getSerialNum(true, serial_num);
+                        }else{
+                            serial_num_callback.onCallback_getSerialNum(false, "");
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        serial_num_callback.onCallback_getSerialNum(false, "");
+                        Log.d(TAG, e.toString());
+                    }
+                });
+    }
+
+    public interface  serial_num_callback {
+        void onCallback_getSerialNum(boolean getSerial, String serial_num);
+    }
+
+
+    public void sendControlCommand(final String username, final String send_command) {
+        getUserConnectDeviceSerialNum(username, "ACmonitor", new serial_num_callback() {
+            @Override
+            public void onCallback_getSerialNum(boolean getSerial, String serial_num) {
+                if (getSerial){
+
+                    DatabaseReference commandRef = rt_db.getReference();
+                    commandRef.child("Devices").child(serial_num).child("receive_action").child("command").setValue(send_command);
+                    //DatabaseReference is_new_actionRef = rt_db.getReference();
+                    //is_new_actionRef.child("Devices").child(serial_num).child("receive_action").child("is_new_action").setValue(true);
+
+                }
+            }
+        });
     }
 
 }

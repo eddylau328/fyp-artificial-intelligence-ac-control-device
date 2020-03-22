@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "812687879853-cfbjiiv8f9b0mfc9nanm5u11drh7j4v3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fyp_ac_monitor",
+            "certificate_hash": "67de9c02886c08f388353ab07fe65d77eba41a61"
+          }
+        },
+        {
           "client_id": "812687879853-vr3llanf3a17u0bq70o69kb0ku2b9nbo.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
