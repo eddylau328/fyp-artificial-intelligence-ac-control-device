@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
+import android.widget.NumberPicker;
 import android.widget.Switch;
 import android.widget.Toast;
 
@@ -15,6 +16,8 @@ import androidx.fragment.app.Fragment;
 public class ControlFragment extends Fragment {
 
     Switch _powerSwitch;
+    NumberPicker _tempPicker;
+    NumberPicker _fanspeedPicker;
 
     @Nullable
     @Override
@@ -31,6 +34,16 @@ public class ControlFragment extends Fragment {
                 }
             }
         });
+
+        _tempPicker = (NumberPicker) show_view.findViewById(R.id.control_fragment_temp_picker);
+        _tempPicker.setMinValue(17);
+        _tempPicker.setMaxValue(30);
+        _tempPicker.setWrapSelectorWheel(false);
+
+        _fanspeedPicker = (NumberPicker) show_view.findViewById(R.id.control_fragment_fanspeed_picker);
+        _fanspeedPicker.setMinValue(1);
+        _fanspeedPicker.setMaxValue(3);
+        _fanspeedPicker.setWrapSelectorWheel(false);
 
         return show_view;
     }

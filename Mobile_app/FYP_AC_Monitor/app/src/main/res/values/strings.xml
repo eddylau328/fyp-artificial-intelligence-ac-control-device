@@ -13,4 +13,9 @@
     <string name="nav_chart_title">Analysis</string>
     <string name="nav_control_title">Control</string>
 
+    <string name="control_fragment_title">Control</string>
+    <string name="control_fragment_power_switch_title">Power</string>
+    <string name="control_fragment_temp_title">Temperature</string>
+    <string name="control_fragment_fanspeed_title">Fanspeed</string>
+
 </resources>
