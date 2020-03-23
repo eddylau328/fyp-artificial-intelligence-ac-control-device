@@ -14,6 +14,7 @@
 // For mega2560 is pin 9 (currently cannot modify)
 IRsend irsend;
 IRmonitor ir_monitor;
+bool need_update_ac_status = false;
 // --------------------------
 
 #define DHTPIN 8     // Digital pin connected to the DHT sensor
@@ -32,8 +33,9 @@ Adafruit_BMP085 bmp;
 
 BH1750 bh;
 
-Timer nodemcu_sendtimer;
-long int nodemcu_sendtimerInterval = 2000;
+//Timer nodemcu_sendtimer;
+//long int nodemcu_sendtimerInterval = 5000;
+bool request_data = false;
 
 Timer lcd_on_timer;
 long int lcd_on_timerInterval = 8000;
@@ -57,15 +59,17 @@ class SendAction{
     }
 };
 
-#define TOTAL_SEND_FUNCTION 2
+#define TOTAL_SEND_FUNCTION 3
 #define SEND_WIFI_STATUS 0
 #define SEND_IR 1
+#define SEND_DATA 2
 
 SendAction send_actions[TOTAL_SEND_FUNCTION];
 
 void control_action_initialize(){
   send_actions[0].create("wifi", SEND_WIFI_STATUS);
   send_actions[1].create("ir", SEND_IR);
+  send_actions[2].create("data",SEND_DATA);
 }
 
 float temperature,pressure,humidity,light_intensity;
@@ -116,12 +120,21 @@ void LCDprint(char ch, int x, int y, bool clearScreen){
 void send_data_2_nodemcu(){
   StaticJsonBuffer<256> doc;
   JsonObject& data =doc.createObject();
-  data["temp"] = temperature;
-  data["hum"] = humidity;
-  data["light"] = light_intensity;
-  data["press"] = pressure;
+  if (need_update_ac_status){
+    data["ir_power"] = ir_monitor.power_state;
+    data["ir_temp"] = ir_monitor.temperature;
+    data["ir_fanspeed"] = ir_monitor.fanspeed;
+    data["ir_dummy"] = 0;
+    need_update_ac_status = false;
+  }else{
+    data["temp"] = temperature;
+    data["hum"] = humidity;
+    data["light"] = light_intensity;
+    data["press"] = pressure;
+  }
   data.prettyPrintTo(Serial2);
   data.prettyPrintTo(Serial);
+  request_data = false;
 }
 
 // print the environment data on the LCD1602
@@ -158,7 +171,7 @@ String serial3_getMessage(){
   for (int i = 0; i < message.length(); i++){
     for (int j = 0; j < TOTAL_SEND_FUNCTION; j++){
       flag = true;
-      for (int k = 0; k < send_actions[k].name.length(); k++){
+      for (int k = 0; k < send_actions[j].name.length(); k++){
         if (send_actions[j].name[k] != message[i+k]){
           flag = false;
           break;
@@ -219,11 +232,14 @@ String remove_command_name(String command, int command_id){
   return command_value;
 }
 
+
 void serial3_communication()
 {
   String command = serial3_getMessage();
+  Serial.println(command);
   int command_id = check_send_action_id(command);
   String command_value = remove_command_name(command, command_id);
+  Serial.println(command_id);
   switch(command_id)
   {
     case(SEND_WIFI_STATUS):
@@ -236,6 +252,11 @@ void serial3_communication()
       break;
     case(SEND_IR):
       ir_monitor.sendCommand(irsend, command_value);
+      need_update_ac_status = true;
+      break;
+    case(SEND_DATA):
+      if (command_value == "poll")
+        request_data = true;
       break;
   }
 }
@@ -259,10 +280,11 @@ void setup() {
   delay(50);
   
   control_action_initialize();
-  nodemcu_sendtimer.settimer(nodemcu_sendtimerInterval);
-  nodemcu_sendtimer.starttimer();
+  //nodemcu_sendtimer.settimer(nodemcu_sendtimerInterval);
+  //nodemcu_sendtimer.starttimer();
   lcd_on_timer.settimer(lcd_on_timerInterval);
   lcd_on_timer.starttimer();
+  
 }
 
 
@@ -271,10 +293,11 @@ void loop() {
   // put your main code here, to run repeatedly:
   readEnvironment();
 
-  if (nodemcu_sendtimer.checkfinish()){
+  //if (nodemcu_sendtimer.checkfinish()){
+  if (request_data || need_update_ac_status){
     send_data_2_nodemcu();
-    nodemcu_sendtimer.resettimer();
-    nodemcu_sendtimer.starttimer();
+    //nodemcu_sendtimer.resettimer();
+    //nodemcu_sendtimer.starttimer();
   }
   
   if (Serial3.available() > 0){

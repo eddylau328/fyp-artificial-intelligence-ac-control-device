@@ -22,6 +22,7 @@ public class ControlFragment extends Fragment {
     NumberPicker _fanspeedPicker;
     int previous_temp = 24;
     int previous_fanspeed = 1;
+    boolean previous_power_state = false;
 
     private MyFirebase db;
 

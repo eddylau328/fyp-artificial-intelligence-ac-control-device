@@ -16,7 +16,7 @@ class IRmonitor{
     int fanspeed = 1;
     int temperature = 24;
     int swing_state = 0;
-    int power_state = 1;
+    int power_state = 0;
     const int high = 1600;
     const int low = 500;
 
