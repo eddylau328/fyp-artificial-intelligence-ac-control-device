@@ -198,9 +198,11 @@ void update_firebase_ac_status(){
 
 void setup() {
   // put your setup code here, to run once:
+  delay(3000);
+  
   Serial.begin(115200);
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
-  delay(1000);
+  
   wifi_connect();
   firebase_connect();
   esp32_timer_initialize();
