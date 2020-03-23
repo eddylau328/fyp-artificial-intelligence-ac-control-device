@@ -3,40 +3,22 @@
     android:layout_width="match_parent" android:layout_height="match_parent">
 
     <TextView
+        android:id="@+id/home_fragment_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="100dp"
         android:text="Home"
-        android:textSize="36sp"
-        android:layout_centerInParent="true"/>
+        android:textSize="36sp" />
 
     <Button
-        android:layout_width="wrap_content"
+        android:id="@+id/home_fragment_feedback_popup_button"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
-        android:text="@string/home_fragment_feedback_hot"
-        android:background="@android:color/holo_orange_dark"/>
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/home_fragment_feedback_a_bit_hot"
-        android:background="@android:color/holo_orange_dark"/>
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/home_fragment_feedback_comfy"
-        android:background="@android:color/holo_orange_dark"/>
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/home_fragment_feedback_a_bit_cold"
-        android:background="@android:color/holo_orange_dark"/>
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/home_fragment_feedback_cold"
-        android:background="@android:color/holo_orange_dark"/>
-
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp" />
 
 </RelativeLayout>

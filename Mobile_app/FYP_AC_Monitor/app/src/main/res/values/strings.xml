@@ -23,5 +23,6 @@
     <string name="home_fragment_feedback_comfy">Comfy</string>
     <string name="home_fragment_feedback_a_bit_hot">A Bit Hot</string>
     <string name="home_fragment_feedback_hot">Hot</string>
+    <string name="home_fragment_feedback_default">SELECT...</string>
 
 </resources>

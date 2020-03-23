@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/feedback_hot"
+        android:title="@string/home_fragment_feedback_hot"/>
+
+    <item
+        android:id="@+id/feedback_a_bit_hot"
+        android:title="@string/home_fragment_feedback_a_bit_hot"/>
+
+    <item
+        android:id="@+id/feedback_comfy"
+        android:title="@string/home_fragment_feedback_comfy"/>
+
+    <item
+        android:id="@+id/feedback_a_bit_cold"
+        android:title="@string/home_fragment_feedback_a_bit_cold"/>
+
+    <item
+        android:id="@+id/feedback_cold"
+        android:title="@string/home_fragment_feedback_cold"/>
+
+</menu>

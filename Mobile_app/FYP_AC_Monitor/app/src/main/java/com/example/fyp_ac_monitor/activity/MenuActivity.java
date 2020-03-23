@@ -21,6 +21,7 @@ public class MenuActivity extends AppCompatActivity {
 
 
     public int current_fragment_id;
+    public String feed_back_button_title;
 
 
     @Override
@@ -28,6 +29,8 @@ public class MenuActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
+
+        feed_back_button_title = getResources().getString(R.string.home_fragment_feedback_default);
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation_bar);
 
