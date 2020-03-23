@@ -6,12 +6,14 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.example.fyp_ac_monitor.utils.FeedbackPack;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -179,6 +181,36 @@ public class MyFirebase {
 
     public interface ac_status_callback{
         void onCallback_getACstatus(boolean power_state, int set_temp, int set_fanspeed);
+    }
+
+    public void sendFeedback(final String username, final String feedback_level){
+        getUserConnectDeviceSerialNum(username, "ACmonitor", new serial_num_callback() {
+            @Override
+            public void onCallback_getSerialNum(boolean getSerial, final String serial_num) {
+                if (getSerial) {
+                    DatabaseReference ac_statusRef = rt_db.getReference();
+                    ac_statusRef = ac_statusRef.child("Devices").child(serial_num).child("receive_action");
+                    ac_statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            boolean is_learning = (boolean) dataSnapshot.child("is_learning").getValue();
+                            long current_step = (long) dataSnapshot.child("current_step").getValue();
+                            if (is_learning) {
+                                int step_num = (int) current_step;
+                                DatabaseReference feedbackRef = rt_db.getReference();
+                                feedbackRef = feedbackRef.child("Devices").child(serial_num).child("feedback");
+                                feedbackRef.push().setValue(new FeedbackPack(current_step, feedback_level));
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+            }
+        });
     }
 
 }
