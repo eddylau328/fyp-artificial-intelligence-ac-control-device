@@ -21,7 +21,7 @@
         android:layout_marginStart="50dp"
         android:layout_marginTop="120dp"
         android:text="@string/control_fragment_power_switch_title"
-        android:textSize="24dp" />
+        android:textSize="24sp" />
 
     <Switch
         android:id="@+id/control_fragment_power_switch"
@@ -44,7 +44,7 @@
         android:layout_marginStart="50dp"
         android:layout_marginTop="90dp"
         android:text="@string/control_fragment_temp_title"
-        android:textSize="24dp" />
+        android:textSize="24sp" />
 
     <NumberPicker
         android:id="@+id/control_fragment_temp_picker"
@@ -66,7 +66,7 @@
         android:layout_marginStart="50dp"
         android:layout_marginTop="90dp"
         android:text="@string/control_fragment_fanspeed_title"
-        android:textSize="24dp" />
+        android:textSize="24sp" />
 
     <NumberPicker
         android:id="@+id/control_fragment_fanspeed_picker"

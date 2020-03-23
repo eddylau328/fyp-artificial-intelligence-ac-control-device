@@ -11,13 +11,21 @@ import android.widget.Toast;
 import com.example.fyp_ac_monitor.ChartFragment;
 import com.example.fyp_ac_monitor.ControlFragment;
 import com.example.fyp_ac_monitor.HomeFragment;
+
 import com.example.fyp_ac_monitor.R;
+
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MenuActivity extends AppCompatActivity {
 
+
+
+    public int current_fragment_id;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
 
@@ -27,7 +35,7 @@ public class MenuActivity extends AppCompatActivity {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 Fragment selectedFragment = null;
-
+                current_fragment_id = menuItem.getItemId();
                 switch (menuItem.getItemId()){
                     case R.id.nav_home:
                         selectedFragment = new HomeFragment();

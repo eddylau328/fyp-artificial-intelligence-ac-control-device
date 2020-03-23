@@ -2,6 +2,7 @@ package com.example.fyp_ac_monitor;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
@@ -12,10 +13,16 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import com.example.fyp_ac_monitor.R;
+import com.example.fyp_ac_monitor.MyFirebase;
+import com.example.fyp_ac_monitor.activity.MenuActivity;
 
 import com.example.fyp_ac_monitor.utils.PreferenceUtils;
 
 public class ControlFragment extends Fragment {
+
+    MyFirebase db;
+    String username;
 
     Switch _powerSwitch;
     NumberPicker _tempPicker;
@@ -23,32 +30,44 @@ public class ControlFragment extends Fragment {
     int previous_temp = 24;
     int previous_fanspeed = 1;
     boolean previous_power_state = false;
+    boolean isDefaultCheck = true;
 
-    private MyFirebase db;
+    MenuActivity activity;
+    int fragment_id;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        db = new MyFirebase();
+        activity = (MenuActivity) getActivity();
+        username = PreferenceUtils.loadUsername(activity);
+        fragment_id = R.id.nav_control;
+        if (isDefaultCheck && activity.current_fragment_id == fragment_id)
+            updateToACstatus(username);
+
         View show_view = inflater.inflate(R.layout.fragment_control, container, false);
 
         _powerSwitch = (Switch) show_view.findViewById(R.id.control_fragment_power_switch);
-
+        if (isDefaultCheck)
+            _powerSwitch.setEnabled(false);
         _powerSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked == true){
-                    String save_username = PreferenceUtils.loadUsername(getActivity());
-                    sendControlCommand(save_username, "power", "on");
-                    Toast.makeText(getActivity(), "ON", Toast.LENGTH_SHORT).show();
-                }else{
-                    String save_username = PreferenceUtils.loadUsername(getActivity());
-                    sendControlCommand(save_username, "power", "off");
-                    Toast.makeText(getActivity(), "OFF", Toast.LENGTH_SHORT).show();
+                if (!isDefaultCheck) {
+                    if (isChecked == true) {
+                        sendControlCommand(username, "power", "on");
+                        Toast.makeText(getActivity(), "ON", Toast.LENGTH_SHORT).show();
+                    } else {
+                        sendControlCommand(username, "power", "off");
+                        Toast.makeText(getActivity(), "OFF", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
 
         _tempPicker = (NumberPicker) show_view.findViewById(R.id.control_fragment_temp_picker);
+        if (isDefaultCheck)
+            _tempPicker.setEnabled(false);
         _tempPicker.setMinValue(17);
         _tempPicker.setMaxValue(30);
         _tempPicker.setWrapSelectorWheel(false);
@@ -60,8 +79,7 @@ public class ControlFragment extends Fragment {
             public void onScrollStateChange(NumberPicker view, int scrollState) {
                 if (scrollState == SCROLL_STATE_IDLE){
                     if (previous_temp != _tempPicker.getValue()){
-                        String save_username = PreferenceUtils.loadUsername(getActivity());
-                        sendControlCommand(save_username, "temp", String.valueOf(_tempPicker.getValue()));
+                        sendControlCommand(username, "temp", String.valueOf(_tempPicker.getValue()));
                         Toast.makeText(getActivity(), String.valueOf(_tempPicker.getValue()), Toast.LENGTH_SHORT).show();
                         previous_temp = _tempPicker.getValue();
                     }
@@ -70,6 +88,8 @@ public class ControlFragment extends Fragment {
         });
 
         _fanspeedPicker = (NumberPicker) show_view.findViewById(R.id.control_fragment_fanspeed_picker);
+        if (isDefaultCheck)
+            _fanspeedPicker.setEnabled(false);
         _fanspeedPicker.setMinValue(1);
         _fanspeedPicker.setMaxValue(3);
         _fanspeedPicker.setWrapSelectorWheel(false);
@@ -81,8 +101,7 @@ public class ControlFragment extends Fragment {
             public void onScrollStateChange(NumberPicker view, int scrollState) {
                 if (scrollState == SCROLL_STATE_IDLE){
                     if (previous_fanspeed != _fanspeedPicker.getValue()){
-                        String save_username = PreferenceUtils.loadUsername(getActivity());
-                        sendControlCommand(save_username, "fanspeed", String.valueOf(_fanspeedPicker.getValue()));
+                        sendControlCommand(username, "fanspeed", String.valueOf(_fanspeedPicker.getValue()));
                         Toast.makeText(getActivity(), String.valueOf(_fanspeedPicker.getValue()), Toast.LENGTH_SHORT).show();
                         previous_fanspeed = _fanspeedPicker.getValue();
                     }
@@ -90,13 +109,43 @@ public class ControlFragment extends Fragment {
             }
         });
 
-        db = new MyFirebase();
-
         return show_view;
     }
 
     public void sendControlCommand(final String username, final String function, final String value){
         String send_command = "ir " + function + " " + value;
         db.sendControlCommand(username, send_command);
+    }
+
+    public void updateToACstatus(final String username){
+        db.getACstatus(username, new MyFirebase.ac_status_callback() {
+            @Override
+            public void onCallback_getACstatus(boolean power_state, int set_temp, int set_fanspeed) {
+                if (power_state != _powerSwitch.isChecked()) {
+                    previous_power_state = power_state;
+                }
+                if (set_temp != _tempPicker.getValue()){
+                    previous_temp = set_temp;
+                }
+                if (set_fanspeed != _fanspeedPicker.getValue()){
+                    previous_fanspeed = set_fanspeed;
+                }
+
+                if (_powerSwitch.isEnabled() == false) {
+                    _powerSwitch.setEnabled(true);
+                    _powerSwitch.setChecked(previous_power_state);
+                }
+                if (_tempPicker.isEnabled() == false) {
+                    _tempPicker.setEnabled(true);
+                    _tempPicker.setValue(previous_temp);
+                }
+                if (_fanspeedPicker.isEnabled() == false) {
+                    _fanspeedPicker.setEnabled(true);
+                    _fanspeedPicker.setValue(previous_fanspeed);
+                }
+
+                isDefaultCheck = false;
+            }
+        });
     }
 }

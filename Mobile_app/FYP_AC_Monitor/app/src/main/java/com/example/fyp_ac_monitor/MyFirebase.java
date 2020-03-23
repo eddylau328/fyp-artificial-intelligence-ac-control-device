@@ -6,12 +6,13 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import com.example.fyp_ac_monitor.activity.LoginActivity;
-import com.example.fyp_ac_monitor.utils.PreferenceUtils;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -147,6 +148,37 @@ public class MyFirebase {
         });
     }
 
-    public 
+    public void getACstatus(final String username, final ac_status_callback ac_status_callback){
+        getUserConnectDeviceSerialNum(username, "ACmonitor", new serial_num_callback() {
+            @Override
+            public void onCallback_getSerialNum(boolean getSerial, String serial_num) {
+                if (getSerial) {
+                    DatabaseReference ac_statusRef = rt_db.getReference();
+                    ac_statusRef = ac_statusRef.child("Devices").child(serial_num).child("ac_status");
+                    ac_statusRef.addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            boolean power_state = (boolean) dataSnapshot.child("power_state").getValue();
+                            long set_temp = (long) dataSnapshot.child("set_temp").getValue();
+                            long set_fanspeed = (long) dataSnapshot.child("set_fanspeed").getValue();
+                            Log.d(TAG, String.valueOf(power_state));
+                            Log.d(TAG, String.valueOf(set_temp));
+                            Log.d(TAG, String.valueOf(set_fanspeed));
+                            ac_status_callback.onCallback_getACstatus(power_state, (int) set_temp, (int) set_fanspeed);
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    public interface ac_status_callback{
+        void onCallback_getACstatus(boolean power_state, int set_temp, int set_fanspeed);
+    }
 
 }
