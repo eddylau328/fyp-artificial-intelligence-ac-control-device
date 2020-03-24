@@ -1,14 +1,17 @@
-from libs import realtime_firebase as rt
+#import realtime_firebase as rt
+import enum
 
 class Actions(enum.Enum):
-    Temp_25 = 0
-    Temp_24 = 1
-    Temp_23 = 2
-    Temp_22 = 3
-    Temp_21 = 4
-    Temp_20 = 5
-    Temp_19 = 6
-    Temp_18 = 7
+    temp_25 = 0
+    temp_24 = 1
+    temp_23 = 2
+    temp_22 = 3
+    temp_21 = 4
+    temp_20 = 5
+    temp_19 = 6
+    temp_18 = 7
+
+
 
 class AC_remote:
 
@@ -16,6 +19,11 @@ class AC_remote:
         self.set_temperature = 24
         self.set_fanspeed = 1
         self.power_state = False
+
+
+    def get_value_pair(self, action_value):
+        name = Actions(action_value).name
+        return name.split('_')[0], int(name.split('_')[1])
 
 
     def get_action_command(self, **kwargs):
@@ -36,7 +44,13 @@ class AC_remote:
                     return "ir power off"
 
 
+
 if (__name__ == '__main__'):
+    remote = AC_remote("fyp0001")
+    print(remote.get_value_pair(0))
+    func, value = remote.get_value_pair(0)
+    print(remote.get_action_command(temp=value))
+    '''
     r = rt.Realtime_firebase()
     remote = AC_remote("fyp0001")
     command = ""
@@ -45,3 +59,4 @@ if (__name__ == '__main__'):
         if (r.set("/Devices/fyp0001","receive_action",{"command":command, "is_new_action": True})):
             print("Sent command to firebase")
         command = input()
+    '''
