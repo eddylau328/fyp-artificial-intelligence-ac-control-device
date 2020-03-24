@@ -10,7 +10,7 @@ class Actions(enum.Enum):
     temp_20 = 5
     temp_19 = 6
     temp_18 = 7
-
+    temp_17 = 8
 
 
 class AC_remote:

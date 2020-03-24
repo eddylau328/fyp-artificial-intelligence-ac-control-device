@@ -8,10 +8,10 @@ from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv1D, MaxPooling1
 import sys
 
 class MovementType(Enum):
-    work = 0
-    rest = 1
-    sleep = 2
-    #move = 3
+    work = 1
+    rest = 2
+    sleep = 3
+    move = 3
 
 
 def get_data(path, dataname):
@@ -113,7 +113,7 @@ SAMPLING_HZ = 4
 PERIOD_SIZE = SAMPLING_HZ*PERIOD    # 4Hz => 4Hz * sec = PERIOD_SIZE
 OVERLAP_DATA = False
 OVERLAP_SIZE = 0
-CLASS_SIZE = 3
+CLASS_SIZE = 2
 
 '''
 move_acc = []
@@ -138,6 +138,9 @@ rest_acc = []
 for i in range(REST_DATA_SIZE):
     rest_acc.append(process_data(get_data("smartwatch_data/rest/rest_acc_4hz_"+str(i)+".json", "acc")))
     print("Size of rest_acc data "+str(i) + " is %d" %(len(rest_acc[i])))
+for i in range(SLEEP_DATA_SIZE):
+    rest_acc.append(process_data(get_data("smartwatch_data/sleep/sleep_acc_4hz_"+str(i)+".json", "acc")))
+    print("Size of sleep_acc data "+str(i) + " is %d" %(len(sleep_acc[i])))
 print("-------------------------------------------------")
 
 x_train, y_train = [], []
@@ -166,7 +169,7 @@ for i in range(WORK_DATA_SIZE):
 
 print("Total = %d" %(tmp_total))
 tmp_total = 0
-
+'''
 print("-------------------------------------------------")
 for i in range(SLEEP_DATA_SIZE):
     x_train, y_train = transform_2_train_data(sleep_acc[i], PERIOD_SIZE, MovementType.sleep.value, x_train, y_train, overlap=OVERLAP_DATA, overlap_size=OVERLAP_SIZE)
@@ -177,7 +180,7 @@ for i in range(SLEEP_DATA_SIZE):
 
 print("Total = %d" %(tmp_total))
 tmp_total = 0
-
+'''
 print("-------------------------------------------------")
 for i in range(REST_DATA_SIZE):
     x_train, y_train = transform_2_train_data(rest_acc[i], PERIOD_SIZE, MovementType.rest.value, x_train, y_train, overlap=OVERLAP_DATA, overlap_size=OVERLAP_SIZE)
@@ -207,13 +210,19 @@ for i in range(len(y_train)):
 
 '''
 for i in range(len(y_train)):
-    if y_train[i] is 0:
-        y_train[i] = [1,0,0]
-    elif y_train[i] is 1:
-        y_train[i] = [0,1,0]
+    if y_train[i] is 1:
+        y_train[i] = [1,0]
     elif y_train[i] is 2:
+        y_train[i] = [0,1]
+'''
+for i in range(len(y_train)):
+    if y_train[i] is 1:
+        y_train[i] = [1,0,0]
+    elif y_train[i] is 2:
+        y_train[i] = [0,1,0]
+    elif y_train[i] is 3:
         y_train[i] = [0,0,1]
-
+'''
 '''
 combine = list(zip(x_train, y_train))
 shuffle(combine)
@@ -235,7 +244,7 @@ user_continue = input("Proceed training [y/n]?")
 if (user_continue != 'y'):
     sys.exit()
 
-
+'''
 model = Sequential([
         Conv1D(filters = 32, kernel_size = 5, activation='relu', input_shape=(PERIOD_SIZE,3), padding='same'),
         AveragePooling1D(pool_size=2, strides=None, padding='valid', data_format='channels_last'),
@@ -245,19 +254,21 @@ model = Sequential([
         Dense(128, activation='relu'),
         Dense(3, activation='softmax'),
     ])
-
-
 '''
+
+
 model = Sequential([
-        Conv1D(filters = 32, kernel_size = 5, activation='relu', input_shape=(PERIOD_SIZE,3), padding='same'),
+        Conv1D(filters = 32, kernel_size = 4, activation='relu', input_shape=(PERIOD_SIZE,3), padding='same'),
         MaxPooling1D(pool_size = 2, strides=2, padding='valid'),
-        Conv1D(filters = 64, kernel_size = 4, activation='relu', padding='same'),
+        Conv1D(filters = 16, kernel_size = 2, activation='relu', padding='same'),
+        MaxPooling1D(pool_size = 2, strides=2, padding='valid'),
+        Conv1D(filters = 8, kernel_size = 2, activation='relu', padding='same'),
         MaxPooling1D(pool_size = 2, strides=2, padding='valid'),
         Flatten(),
-        Dense(128, activation='relu'),
+        Dense(64, activation='relu'),
         Dense(CLASS_SIZE, activation='softmax'),
     ])
-'''
+
 
 model.summary()
 

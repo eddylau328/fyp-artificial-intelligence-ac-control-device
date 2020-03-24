@@ -20,11 +20,14 @@ class Realtime_firebase:
 
     # get data from the input path
     # **kwargs give condition
-    def get(self, path):
+    def get(self, path, is_dict=False):
         try:
             ref = db.reference(path)
             # forming a list of data
-            data = [detail for _ , detail in ref.get().items()]
+            if (is_dict):
+                data = {key:detail for key , detail in ref.get().items()}
+            else:
+                data = [detail for _ , detail in ref.get().items()]
             return data
         except:
             print("Failed to get the data ...")
