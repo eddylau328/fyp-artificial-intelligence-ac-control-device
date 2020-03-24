@@ -1,5 +1,14 @@
 from libs import realtime_firebase as rt
 
+class Actions(enum.Enum):
+    Temp_25 = 0
+    Temp_24 = 1
+    Temp_23 = 2
+    Temp_22 = 3
+    Temp_21 = 4
+    Temp_20 = 5
+    Temp_19 = 6
+    Temp_18 = 7
 
 class AC_remote:
 

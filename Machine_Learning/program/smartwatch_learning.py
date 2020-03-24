@@ -11,7 +11,7 @@ class MovementType(Enum):
     work = 0
     rest = 1
     sleep = 2
-    move = 3
+    #move = 3
 
 
 def get_data(path, dataname):
@@ -91,13 +91,13 @@ def num_of_paths(move_type):
     return i
 
 
-MOVE_DATA_SIZE = num_of_paths("move")
+#MOVE_DATA_SIZE = num_of_paths("move")
 WORK_DATA_SIZE = num_of_paths("work")
 SLEEP_DATA_SIZE = num_of_paths("sleep")
 REST_DATA_SIZE = num_of_paths("rest")
 
 print("-------------------------------------------------")
-print("Move data  = %d" %MOVE_DATA_SIZE)
+#print("Move data  = %d" %MOVE_DATA_SIZE)
 print("Work data  = %d" %WORK_DATA_SIZE)
 print("Sleep data = %d" %SLEEP_DATA_SIZE)
 print("Rest data  = %d" %REST_DATA_SIZE)

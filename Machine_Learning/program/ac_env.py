@@ -41,3 +41,6 @@ class AC_Env(gym.Env):
         user_pack = self.database.get(USER_DATA_PATH).pop()
         obs = np.array([env_pack['temp'],env_pack['hum'], user_pack['body'], user_pack['type']])
         return obs
+
+    #def _take_action(self, action):
+

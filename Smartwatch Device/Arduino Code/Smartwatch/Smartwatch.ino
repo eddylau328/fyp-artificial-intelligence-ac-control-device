@@ -17,8 +17,8 @@
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 
-#define WIFI_SSID "Eddy Wifi"
-#define WIFI_PASSWORD "12345678xd"
+#define WIFI_SSID "Lau Family"
+#define WIFI_PASSWORD "27050880"
 #define FIREBASE_HOST "fypacmonitor.firebaseio.com"
 #define FIREBASE_AUTH "jaT833r4mymesl03s37FD9jeV9JnWZzcM1xrnX8d"
 
@@ -38,6 +38,7 @@ void wifi_connect(){
 
 String serial_num = "watch0001";
 String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
+String firebase_body_data_address = String("/Devices/"+serial_num+"/datapack");
 
 void firebase_connect(){
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
@@ -240,7 +241,8 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature bodyTempSensor(&oneWire);
 /********************************************************************/
-float bodyTemp;
+float bodyTemp, avgBodyTemp;
+int bodyTempCount = 0;
 
 float acc[3] = {0,0,0};
 float gyr[3] = {0,0,0};
@@ -248,14 +250,12 @@ float gyr[3] = {0,0,0};
 class DataPack{
   public:
     float acc[3];
-    int type;
+
     void set_acc(float acc[]){
       for (int i = 0 ; i < 3 ; i ++)
         this->acc[i] = acc[i];
     }
-    void set_type(int movement){
-      type = movement;
-    }
+
     void set_json_data(FirebaseJson *json_data){
       json_data->add("acc_x", acc[0]);
       json_data->add("acc_y", acc[1]);
@@ -1247,7 +1247,7 @@ void readTemperature(){
   /********************************************************************/
    //Serial.print("Temperature is: ");
    bodyTemp = bodyTempSensor.getTempCByIndex(0);
-
+   avgBodyTemp += bodyTemp;
    //Serial.print(bodyTemp);
    //Serial.println();
 }
@@ -1263,7 +1263,8 @@ void readMPU6050(){
     acc[1] = mpu6050.getAccY();
     acc[2] = mpu6050.getAccZ();
     if (pack_counter < 4){
-      datapack[pack_counter++].set_acc(acc);
+      datapack[pack_counter].set_acc(acc);
+      pack_counter++;
     }
     //Serial.print("accX : ");Serial.print(acc[0]);
     //Serial.print("\taccY : ");Serial.print(acc[1]);
@@ -1293,6 +1294,23 @@ void readMPU6050(){
 
     mpu6050Timer.resettimer();
     mpu6050Timer.starttimer();
+  }
+}
+
+void send_body_data_2_firebase(){
+  FirebaseJson json_data;
+  json_data.add("body", avgBodyTemp/bodyTempCount);
+  json_data.add("type", "none");
+  if (Firebase.pushJSON(firebaseData, firebase_body_data_address, json_data))
+  {
+    Serial.println("PUSHED body_data");
+  }
+  else
+  {
+    Serial.println("FAILED");
+    Serial.println("REASON: " + firebaseData.errorReason());
+    Serial.println("------------------------------------");
+    Serial.println();
   }
 }
 
@@ -1333,7 +1351,8 @@ void loop()
 
 
   if (tempTimer.checkfinish()){
-  //  readTemperature();
+    readTemperature();
+    bodyTempCount ++;
     tempTimer.resettimer();
     tempTimer.starttimer();
   }
@@ -1358,6 +1377,13 @@ void loop()
     totalInterruptCounter++;
     send_data_2_firebase();
     pack_counter = 0;
+
+    if (totalInterruptCounter % 20 == 0){
+      send_body_data_2_firebase();
+      avgBodyTemp = 0;
+      bodyTempCount = 0;
+      totalInterruptCounter = 0;
+    }
     
     //Serial.print("An interrupt as occurred. Total number: ");
     //Serial.println(totalInterruptCounter);
