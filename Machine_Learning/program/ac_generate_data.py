@@ -5,6 +5,7 @@ import datetime
 import random
 import datetime
 import sys
+import requests
 
 
 class AC_host:
@@ -13,14 +14,14 @@ class AC_host:
         self.db = rt.Realtime_firebase()
         self.remote = ac_remote.AC_remote()
         self.base_ac_path = "Devices/" + ac_serial_num
-        self.base_watch_path = "Devices" + watch_serial_num
+        self.base_watch_path = "Devices/" + watch_serial_num
+        self.weather_api_address = "http://api.openweathermap.org/data/2.5/weather?q=HongKong,hk&appid=2012d486d411dabe6c1e94eeec8eedb6"
         self.period = 6
+        self.data_request_period = 30
         self.reset()
 
     def reset(self):
         self.current_step = 0
-        self.ac_sensor_data_counter = 0
-        self.watch_sensor_data_counter = 0
         self.update_ac_status()
         self.db.set(self.base_ac_path,"receive_action", {'is_new_action': False})
 
@@ -56,10 +57,6 @@ class AC_host:
         self.set_fanspeed = self.remote.set_fanspeed
 
 
-    def set_start_send_data(self, isSendData):
-        self.db.set(self.base_ac_path, "receive_action", {'is_send':True})
-
-
     def check_action_done(self):
         # read the is_new_action
         pack = self.db.get(self.base_ac_path+"/receive_action", is_dict=True)
@@ -81,20 +78,23 @@ class AC_host:
             feedback_data = {'feedback': feedback_data['feedback']}
 
         action_data = {'set_temp':self.set_temperature, 'set_fanspeed':self.set_fanspeed, 'stepNo':self.current_step, 'time':str(datetime.datetime.now())}
-
-        return {**env_data, **body_data, **feedback_data, **action_data}
+        weather_data = get_weather_data()
+        return {**env_data, **body_data, **feedback_data, **action_data, **weather_data}
 
 
     def push_data(self, data):
         self.db.add(self.base_ac_path+"/datapack", data)
 
 
+    def send_new_data_requestion(self):
+        self.db.set(self.base_ac_path, "receive_action", {'is_send' : True})
+        self.db.set(self.base_watch_path, "receive_action", {'is_send' : True})
+
+
     def check_has_new_data(self):
-        env_data = self.db.get(self.base_ac_path+"/sensors")
-        body_data = self.db.get(self.base_watch_path+"/datapack")
-        env_data_size = len(env_data) if (env_data is not None) else 0
-        body_data_size = len(body_data) if (body_data is not None) else 0
-        if (env_data_size > self.ac_sensor_data_counter and body_data_size > self.watch_sensor_data_counter):
+        ac_send = self.db.get(self.base_ac_path+"/receive_action", is_dict=True)['is_send']
+        watch_send = self.db.get(self.base_watch_path+"/receive_action", is_dict=True)['is_send']
+        if (ac_send is False and watch_send is False):
             return True
         else:
             return False
@@ -109,9 +109,19 @@ class AC_host:
         self.send_control_command(command)
 
 
+    def get_weather_data(self):
+        json_data = requests.get(self.weather_api_address).json()
+        weather_pack = {
+                        'outdoor_temp':(json_data['main']['temp']-273.15),
+                        'outdoor_hum':json_data['main']['humidity'],
+                        'outdoor_press':(json_data['main']['pressure']/10),
+                        'outdoor_des':json_data['weather'][0]['description']
+                        }
+        return weather_pack
+
+
 if (__name__ == "__main__"):
     host = AC_host("fyp0001","watch0001")
-
     print("Initiate Data Collection Process [Y/n]?  ", end="")
     decision = input()
     while(decision is not 'y' and decision is not 'Y' and decision is not 'n'):
@@ -132,12 +142,15 @@ if (__name__ == "__main__"):
             print("AC is switched ON")
 
         # Initiating the random action command
-        # Start collecting data
-        host.set_start_send_data(True)
-
+        data_request_timer = Timer()
+        data_request_timer.start()
         while(host.power_state):
+            if (data_request_timer.check() > host.data_request_period):
+                host.send_new_data_requestion()
+                data_request_timer.stop()
+                while (not host.check_has_new_data()):
+                    pass
 
-            if (host.check_has_new_data()):
                 if (host.current_step % host.period == 0):
                     control_pair = host.generate_control_pair()
                     command = host.generate_command('temp', control_pair['temp'])
@@ -148,15 +161,15 @@ if (__name__ == "__main__"):
                     host.send_control_command(command)
                     while (not host.check_action_done()):
                         pass
-
-                host.update_ac_status()
+                    host.update_ac_status()
+                data_request_timer.start()
                 data_pkg = host.collect_data()
                 host.push_data(data_pkg)
                 print(f'Step: {host.current_step+1} {data_pkg}')
                 host.current_step += 1
                 host.update_step_no()
 
-        host.set_start_send_data(False)
+
 
     overall_timer.stop(show=True)
 

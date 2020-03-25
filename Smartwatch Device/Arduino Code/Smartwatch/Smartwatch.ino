@@ -39,12 +39,14 @@ void wifi_connect(){
 String serial_num = "watch0001";
 String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
 String firebase_body_data_address = String("/Devices/"+serial_num+"/datapack");
-String firebase_send_data_period = String("/Devices/fyp0001/receive_action/period");
-String firebase_watch_move_type = String("/Devices/fyp0001/receive_action/move_type");
-String firebase_start_send = String("/Devices/fyp0001/receive_action/is_send");
-int SEND_PERIOD = 30;
+String firebase_send_data_period = String("/Devices/"+serial_num+"/receive_action/period");
+String firebase_watch_move_type = String("/Devices/"+serial_num+"/receive_action/move_type");
+String firebase_start_send = String("/Devices/"+serial_num+"/receive_action/is_send");
+String firebase_start_send_train = String("/Devices/"+serial_num+"/receive_action/is_send_train");
+
 String correct_move_type = "";
 bool isSendData2Firebase = false;
+bool isSendTrainData2Firebase = false;
 
 void firebase_connect(){
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
@@ -1177,7 +1179,6 @@ Timer interactTimer;
 
 // ---------------------------------------------------------------------------
 volatile int interruptCounter;
-int totalInterruptCounter;
  
 hw_timer_t * esp32_timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
@@ -1213,7 +1214,6 @@ void setup()
 
   wifi_connect();
   firebase_connect();
-  Firebase.getInt(firebaseData, firebase_send_data_period, SEND_PERIOD);
   Wire.begin();
   mpu6050.begin();
 
@@ -1322,6 +1322,10 @@ void send_body_data_2_firebase(){
   }
 }
 
+void set_is_send_2_firebase() {
+  Firebase.setBool(firebaseData, firebase_start_send, isSendData2Firebase);
+}
+
 void check_is_send_2_firebase(){
   Firebase.getBool(firebaseData, firebase_start_send, isSendData2Firebase);
 }
@@ -1346,6 +1350,11 @@ void send_data_2_firebase(){
     Serial.println();
   }
 }
+
+void check_is_send_train_data_2_firebase(){
+  Firebase.getBool(firebaseData, firebase_start_send_train, isSendTrainData2Firebase);
+}
+
 
 void loop()
 {
@@ -1383,30 +1392,26 @@ void loop()
 
   check_is_send_2_firebase();
 
+  if (isSendData2Firebase){
+    send_body_data_2_firebase();
+    isSendData2Firebase = false;
+    set_is_send_2_firebase();
+    avgBodyTemp = 0;
+    bodyTempCount = 0;
+  }
+
+  check_is_send_train_data_2_firebase();
+
   if (interruptCounter > 0) {
     portENTER_CRITICAL(&timerMux);
     interruptCounter--;
     portEXIT_CRITICAL(&timerMux);
- 
-    if (isSendData2Firebase)
-      totalInterruptCounter++;
-    else
-      totalInterruptCounter = SEND_PERIOD-3;
 
     Firebase.getString(firebaseData, firebase_watch_move_type, correct_move_type);
-    send_data_2_firebase();
-    pack_counter = 0;
-
-    if (totalInterruptCounter % SEND_PERIOD == 0){
-      if (isSendData2Firebase)
-        send_body_data_2_firebase();
-      avgBodyTemp = 0;
-      bodyTempCount = 0;
-      totalInterruptCounter = 0;
+    if (isSendTrainData2Firebase){
+      send_data_2_firebase();
     }
-    
-    //Serial.print("An interrupt as occurred. Total number: ");
-    //Serial.println(totalInterruptCounter);
+    pack_counter = 0;
   }
 
 }

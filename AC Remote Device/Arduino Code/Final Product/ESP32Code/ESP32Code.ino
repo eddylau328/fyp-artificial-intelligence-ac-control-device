@@ -2,6 +2,7 @@
 #include <FirebaseESP32.h>
 #include <ArduinoJson.h>
 #include <HardwareSerial.h>
+#include <Timer.h>
 
 #define RXD1 9
 #define TXD1 10
@@ -33,6 +34,8 @@ bool request_data = false;
 bool isConnectedWifi = false;
 // state that whether it is sending data to firebase or not
 bool isSendData2Firebase = false;
+bool isReceiveNewData = false;
+Timer resend_timer;
 
 int parse_fail_count = 0;
 
@@ -77,30 +80,6 @@ void send_data_2_firebase(){
   }
 }
 
-// Interrupt Timer
-// ---------------------------------------------------------------------------
-volatile int interruptCounter;
-int totalInterruptCounter;
-int SEND_PERIOD = 30;
-
-hw_timer_t * esp32_timer = NULL;
-portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
- 
-void IRAM_ATTR onTimer() {
-  portENTER_CRITICAL_ISR(&timerMux);
-  interruptCounter++;
-  portEXIT_CRITICAL_ISR(&timerMux);
- 
-}
-
-void esp32_timer_initialize(){
-  esp32_timer = timerBegin(0, 80, true);
-  timerAttachInterrupt(esp32_timer, &onTimer, true);
-  timerAlarmWrite(esp32_timer, 1000000, true);
-  timerAlarmEnable(esp32_timer);
-}
-
-// ---------------------------------------------------------------------------
 
 void receive_json_data(){
   StaticJsonBuffer<256> doc;
@@ -116,6 +95,7 @@ void receive_json_data(){
       humidity = data["hum"];
       light_intensity = data["light"];
       pressure = data["press"];
+      isReceiveNewData = true;
     }else{
       ir_power = data["ir_power"];
       ir_temp = data["ir_temp"];
@@ -160,11 +140,12 @@ bool send_command_2_mega(String command){
 
 
 void check_is_send_2_firebase(){
-  bool temp;
-  Firebase.getBool(firebaseData, firebase_start_send, temp);
-  if (isSendData2Firebase == false && temp == true)
-    totalInterruptCounter = SEND_PERIOD - 3;
-  isSendData2Firebase = temp;
+  Firebase.getBool(firebaseData, firebase_start_send, isSendData2Firebase);
+}
+
+
+void set_is_send_2_firebase(){
+  Firebase.setBool(firebaseData, firebase_start_send, isSendData2Firebase);
 }
 
 // ---------------------------------------------------------------------------
@@ -200,47 +181,44 @@ void update_firebase_ac_status(){
 }
 
 
+
 void setup() {
   // put your setup code here, to run once:
   delay(3000);
   
   Serial.begin(115200);
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
-  
+  resend_timer.settimer(2000);
   wifi_connect();
   firebase_connect();
-  esp32_timer_initialize();
-  Firebase.getInt(firebaseData, firebase_send_data_period, SEND_PERIOD);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  // Interrupt Timer part
-  if (interruptCounter > 0){
-    portENTER_CRITICAL(&timerMux);
-    interruptCounter--;
-    portEXIT_CRITICAL(&timerMux);
-    
-    if (isSendData2Firebase)
-      totalInterruptCounter++;
-    else
-      totalInterruptCounter = 0;
 
-    if ((totalInterruptCounter % SEND_PERIOD) == (SEND_PERIOD - 3)){
-      request_data = true;
-    }
-    
-    if (totalInterruptCounter % SEND_PERIOD == 0){
-      if (isSendData2Firebase)
-        send_data_2_firebase();
-      totalInterruptCounter = 0;
-    }
-  }
 
   if(Serial2.available() > 0)
     receive_json_data();
 
   check_is_send_2_firebase();
+
+  if (isSendData2Firebase && !resend_timer.checkCounting())
+    request_data = true;
+    isReceiveNewData = false;
+
+  if (resend_timer.checkfinish() && resend_timer.checkCounting()){
+    request_data = true;
+    resend_timer.resettimer();
+    resend_timer.starttimer();
+  }
+
+  if (isSendData2Firebase && isReceiveNewData){
+    send_data_2_firebase();
+    isSendData2Firebase = false;
+    set_is_send_2_firebase();
+    isReceiveNewData = false;
+    resend_timer.resettimer();
+  }
   
   if (check_new_command_from_firebase() || request_data){
     if (request_data){
@@ -253,7 +231,7 @@ void loop() {
       }
     }
   }
-
+        
   update_firebase_ac_status();
   update_firebase_error_count();
   
