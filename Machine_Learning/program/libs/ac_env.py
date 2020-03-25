@@ -32,7 +32,7 @@ class AC_Env(gym.Env):
 
         self.df = None
         self.database = rt.Realtime_firebase()
-        self.ac_remote = ac_remote.AC_remote(AC_REMOTE_SERIAL_NUM)
+        self.ac_remote = ac_remote.AC_remote()
         self.reward_range = (0, MAX_REWARD)
         self.reward = 0
         self.action = 0
@@ -41,7 +41,7 @@ class AC_Env(gym.Env):
         obersavtion_high = np.array([40.0, 100.0, 40.0, 3])
         obersavtion_low = np.array([15.0, 0.0, 25.0, 1])
         self.observation_space = spaces.Box(low=obersavtion_low, high=obersavtion_high)
-        self.action_space = spaces.Discrete(n=len(ac_remote.Actions))
+        self.action_space = spaces.Discrete(n=len(ac_remote.Actions_Temp))
 
     def _next_observation(self):
         receive_new_data = False
@@ -59,7 +59,7 @@ class AC_Env(gym.Env):
         return obs
 
     def _take_action(self, action):
-        _ , value = self.AC_remote.get_value_pair(action)
+        _ , value = self.AC_remote.get_temp_value_pair(action)
         self.action = value
         if (self.AC_remote.set_temperature is not value):
             command = self.AC_remote.get_action_command(temp=value)

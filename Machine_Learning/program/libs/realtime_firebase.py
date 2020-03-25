@@ -3,6 +3,8 @@ import json
 import csv
 from firebase_admin import credentials, db
 
+
+
 class Realtime_firebase:
 
     def __init__(self):
@@ -33,7 +35,6 @@ class Realtime_firebase:
             print("Failed to get the data ...")
             return
 
-
     def set(self, path, child_name, passin_dict):
         try:
             ref = db.reference(path)
@@ -43,7 +44,6 @@ class Realtime_firebase:
         except:
             print("Failed to set the data ...")
             return False
-
 
     def check(self, path):
         try:
