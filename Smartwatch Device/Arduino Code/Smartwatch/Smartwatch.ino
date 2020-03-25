@@ -39,6 +39,12 @@ void wifi_connect(){
 String serial_num = "watch0001";
 String firebase_sensor_address = String("/Devices/"+serial_num+"/sensors");
 String firebase_body_data_address = String("/Devices/"+serial_num+"/datapack");
+String firebase_send_data_period = String("/Devices/fyp0001/receive_action/period");
+String firebase_watch_move_type = String("/Devices/fyp0001/receive_action/move_type");
+String firebase_start_send = String("/Devices/fyp0001/receive_action/is_send");
+int SEND_PERIOD = 30;
+String correct_move_type = "";
+bool isSendData2Firebase = false;
 
 void firebase_connect(){
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
@@ -256,10 +262,11 @@ class DataPack{
         this->acc[i] = acc[i];
     }
 
-    void set_json_data(FirebaseJson *json_data){
+    void set_json_data(FirebaseJson *json_data, String type){
       json_data->add("acc_x", acc[0]);
       json_data->add("acc_y", acc[1]);
       json_data->add("acc_z", acc[2]);
+      json_data->add("move_type", type);
     }
 };
 
@@ -1206,7 +1213,7 @@ void setup()
 
   wifi_connect();
   firebase_connect();
-
+  Firebase.getInt(firebaseData, firebase_send_data_period, SEND_PERIOD);
   Wire.begin();
   mpu6050.begin();
 
@@ -1298,9 +1305,10 @@ void readMPU6050(){
 }
 
 void send_body_data_2_firebase(){
+
   FirebaseJson json_data;
   json_data.add("body", avgBodyTemp/bodyTempCount);
-  json_data.add("type", "none");
+  json_data.add("move_type", correct_move_type);
   if (Firebase.pushJSON(firebaseData, firebase_body_data_address, json_data))
   {
     Serial.println("PUSHED body_data");
@@ -1314,11 +1322,15 @@ void send_body_data_2_firebase(){
   }
 }
 
+void check_is_send_2_firebase(){
+  Firebase.getBool(firebaseData, firebase_start_send, isSendData2Firebase);
+}
+
 void send_data_2_firebase(){
   FirebaseJsonArray json_array;
   for (int i = 0 ; i < 4; i++){
     FirebaseJson json_data;
-    datapack[i].set_json_data(&json_data);
+    datapack[i].set_json_data(&json_data, correct_move_type);
     json_array.set(i, json_data);
   }
   
@@ -1369,17 +1381,25 @@ void loop()
     interactTimer.resettimer();
   }
 
+  check_is_send_2_firebase();
+
   if (interruptCounter > 0) {
     portENTER_CRITICAL(&timerMux);
     interruptCounter--;
     portEXIT_CRITICAL(&timerMux);
  
-    totalInterruptCounter++;
+    if (isSendData2Firebase)
+      totalInterruptCounter++;
+    else
+      totalInterruptCounter = SEND_PERIOD-3;
+
+    Firebase.getString(firebaseData, firebase_watch_move_type, correct_move_type);
     send_data_2_firebase();
     pack_counter = 0;
 
-    if (totalInterruptCounter % 20 == 0){
-      send_body_data_2_firebase();
+    if (totalInterruptCounter % SEND_PERIOD == 0){
+      if (isSendData2Firebase)
+        send_body_data_2_firebase();
       avgBodyTemp = 0;
       bodyTempCount = 0;
       totalInterruptCounter = 0;

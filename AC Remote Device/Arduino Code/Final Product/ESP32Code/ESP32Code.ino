@@ -23,7 +23,7 @@ String firebase_ac_status_power = String("/Devices/"+serial_num+"/ac_status/powe
 String firebase_ac_status_temp = String("/Devices/"+serial_num+"/ac_status/set_temp");
 String firebase_ac_status_fanspeed = String("/Devices/"+serial_num+"/ac_status/set_fanspeed");
 String firebase_parse_fail = String("Devices/"+serial_num+"/error/parse_fail");
-
+String firebase_send_data_period = String("/Devices/"+serial_num+"/receive_action/period");
 //Define Firebase Data object
 FirebaseData firebaseData;
 
@@ -81,7 +81,7 @@ void send_data_2_firebase(){
 // ---------------------------------------------------------------------------
 volatile int interruptCounter;
 int totalInterruptCounter;
-const int SEND_PEROID = 10;
+int SEND_PERIOD = 30;
 
 hw_timer_t * esp32_timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
@@ -160,7 +160,11 @@ bool send_command_2_mega(String command){
 
 
 void check_is_send_2_firebase(){
-  Firebase.getBool(firebaseData, firebase_start_send, isSendData2Firebase);
+  bool temp;
+  Firebase.getBool(firebaseData, firebase_start_send, temp);
+  if (isSendData2Firebase == false && temp == true)
+    totalInterruptCounter = SEND_PERIOD - 3;
+  isSendData2Firebase = temp;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +210,7 @@ void setup() {
   wifi_connect();
   firebase_connect();
   esp32_timer_initialize();
+  Firebase.getInt(firebaseData, firebase_send_data_period, SEND_PERIOD);
 }
 
 void loop() {
@@ -221,11 +226,11 @@ void loop() {
     else
       totalInterruptCounter = 0;
 
-    if ((totalInterruptCounter % SEND_PEROID) == (SEND_PEROID - 3)){
+    if ((totalInterruptCounter % SEND_PERIOD) == (SEND_PERIOD - 3)){
       request_data = true;
     }
     
-    if (totalInterruptCounter % SEND_PEROID == 0){
+    if (totalInterruptCounter % SEND_PERIOD == 0){
       if (isSendData2Firebase)
         send_data_2_firebase();
       totalInterruptCounter = 0;

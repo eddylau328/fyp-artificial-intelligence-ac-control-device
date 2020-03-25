@@ -51,20 +51,20 @@ class AC_host:
 
 
     def update_ac_status(self):
-        status = self.db.get(self.base_ac_path+"/ac_status", is_dict=True)
-        self.power_state = status['power_state']
-        self.set_temperature = status['set_temp']
-        self.set_fanspeed = status['set_fanspeed']
+        self.power_state = self.remote.power_state
+        self.set_temperature = self.remote.set_temperature
+        self.set_fanspeed = self.remote.set_fanspeed
 
 
     def set_start_send_data(self, isSendData):
-        self.db.set(self.base_ac_path, "receive_action", {'is_learning':True})
+        self.db.set(self.base_ac_path, "receive_action", {'is_send':True})
 
 
     def check_action_done(self):
         # read the is_new_action
-        pack = self.db.get(self.base_ac_path+"/receive_action", is_dict = True)
-        return not(pack['is_new_action'])
+        pack = self.db.get(self.base_ac_path+"/receive_action", is_dict=True)
+        flag = pack['is_new_action']
+        return not(flag)
 
 
     def collect_data(self):
@@ -100,6 +100,10 @@ class AC_host:
             return False
 
 
+    def update_step_no(self):
+        self.db.set(self.base_ac_path, "receive_action", {'current_step':self.current_step})
+
+
     def ac_power_switch(self, isSwitchOn):
         command = self.remote.get_action_command(power_state=isSwitchOn)
         self.send_control_command(command)
@@ -107,6 +111,7 @@ class AC_host:
 
 if (__name__ == "__main__"):
     host = AC_host("fyp0001","watch0001")
+
     print("Initiate Data Collection Process [Y/n]?  ", end="")
     decision = input()
     while(decision is not 'y' and decision is not 'Y' and decision is not 'n'):
@@ -114,7 +119,6 @@ if (__name__ == "__main__"):
 
     overall_timer = Timer()
     overall_timer.start()
-
     if (decision == "y" or decision == "Y"):
         # if the AC is not yet TURN ON => TURN ON
         # else do nothing
@@ -131,10 +135,10 @@ if (__name__ == "__main__"):
         # Start collecting data
         host.set_start_send_data(True)
 
-        while(self.power_state):
+        while(host.power_state):
 
             if (host.check_has_new_data()):
-                if (self.current_step % self.period == 0):
+                if (host.current_step % host.period == 0):
                     control_pair = host.generate_control_pair()
                     command = host.generate_command('temp', control_pair['temp'])
                     host.send_control_command(command)
@@ -148,9 +152,11 @@ if (__name__ == "__main__"):
                 host.update_ac_status()
                 data_pkg = host.collect_data()
                 host.push_data(data_pkg)
-                print(f'Step: {self.current_step+1} {data_pkg}')
-                self.current_step += 1
+                print(f'Step: {host.current_step+1} {data_pkg}')
+                host.current_step += 1
+                host.update_step_no()
 
+        host.set_start_send_data(False)
 
     overall_timer.stop(show=True)
 

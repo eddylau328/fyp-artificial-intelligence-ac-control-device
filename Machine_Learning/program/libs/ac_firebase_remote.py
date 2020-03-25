@@ -22,7 +22,10 @@ class Actions_Fanspeed(enum.Enum):
 class AC_remote:
 
     def __init__(self):
-        pass
+        self.set_temperature = 24
+        self.set_fanspeed = 1
+        self.power_state = False
+
 
     def get_fanspeed_value_pair(self, fanspeed_action_value):
         name = Actions_Fanspeed(fanspeed_action_value).name
@@ -43,12 +46,15 @@ class AC_remote:
     def get_action_command(self, **kwargs):
         if ('temp' in kwargs):
             if (kwargs['temp'] >= 17 and kwargs['temp'] <= 30):
+                self.set_temperature = kwargs['temp']
                 return "ir temp "+str(kwargs['temp'])
         elif('fanspeed' in kwargs):
             if (kwargs['fanspeed'] >= 1 and kwargs['fanspeed'] <= 4):
+                self.set_fanspeed = kwargs['fanspeed']
                 return "ir fanspeed "+str(kwargs['fanspeed'])
         elif('power_state' in kwargs):
             if (isinstance(kwargs['power_state'], bool)):
+                self.power_state = kwargs['power_state']
                 if (kwargs['power_state'] is True):
                     return "ir power on"
                 else:

@@ -22,7 +22,7 @@ class Realtime_firebase:
 
     # get data from the input path
     # **kwargs give condition
-    def get(self, path, is_dict=False):
+    def get(self, path, is_dict=False, show_error=False):
         try:
             ref = db.reference(path)
             # forming a list of data
@@ -32,7 +32,8 @@ class Realtime_firebase:
                 data = [detail for _ , detail in ref.get().items()]
             return data
         except:
-            print("Failed to get the data ...")
+            if (show_error is True):
+                print("Failed to get the data ...")
             return
 
     def set(self, path, child_name, passin_dict):
