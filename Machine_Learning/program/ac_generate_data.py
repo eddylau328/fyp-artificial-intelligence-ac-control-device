@@ -16,14 +16,14 @@ class AC_host:
         self.base_ac_path = "Devices/" + ac_serial_num
         self.base_watch_path = "Devices/" + watch_serial_num
         self.weather_api_address = "http://api.openweathermap.org/data/2.5/weather?q=HongKong,hk&appid=2012d486d411dabe6c1e94eeec8eedb6"
-        self.period = 6
+        self.period = 10
         self.data_request_period = 30
         self.reset()
 
     def reset(self):
         self.current_step = 0
         self.update_ac_status()
-        self.db.set(self.base_ac_path,"receive_action", {'is_new_action': False})
+        self.db.set(self.base_ac_path,"receive_action", {'is_new_action': False, 'current_step':0})
 
 
     def generate_control_pair(self):
@@ -32,8 +32,9 @@ class AC_host:
             temp_action_value = random.randint(0,len(ac_remote.Actions_Temp)-1)
             fanspeed_action_value = random.randint(0, len(ac_remote.Actions_Fanspeed)-1)
             temp_func, temp, fan_func, fanspeed = self.remote.get_value_pair(temp_action_value, fanspeed_action_value)
-            if (temp != self.set_temperature or fanspeed != self.set_fanspeed):
-                done = True
+            if (temp != self.set_temperature and fanspeed != self.set_fanspeed):
+                if (abs(temp-self.set_temperature) <= 3):
+                    done = True
 
         return {temp_func:temp, fan_func:fanspeed}
 
@@ -57,6 +58,17 @@ class AC_host:
         self.set_fanspeed = self.remote.set_fanspeed
 
 
+    def set_is_learning(self, flag):
+        self.db.set(self.base_ac_path, "receive_action", {'is_learning':flag})
+
+
+    def get_is_learning(self):
+        # read the is_new_action
+        pack = self.db.get(self.base_ac_path+"/receive_action", is_dict=True)
+        flag = pack['is_learning']
+        return flag
+
+
     def check_action_done(self):
         # read the is_new_action
         pack = self.db.get(self.base_ac_path+"/receive_action", is_dict=True)
@@ -72,13 +84,13 @@ class AC_host:
             feedback_data = {'feedback':"acceptable"}
         else:
             feedback_data = feedback_data.pop()
-        if (feedback_data['stepNo'] != self.current_step):
-            feedback_data = {'feedback':"acceptable"}
-        else:
-            feedback_data = {'feedback': feedback_data['feedback']}
+            if (feedback_data['stepNo'] != self.current_step):
+                feedback_data = {'feedback':"acceptable"}
+            else:
+                feedback_data = {'feedback': feedback_data['feedback']}
 
         action_data = {'set_temp':self.set_temperature, 'set_fanspeed':self.set_fanspeed, 'stepNo':self.current_step, 'time':str(datetime.datetime.now())}
-        weather_data = get_weather_data()
+        weather_data = self.get_weather_data()
         return {**env_data, **body_data, **feedback_data, **action_data, **weather_data}
 
 
@@ -144,6 +156,7 @@ if (__name__ == "__main__"):
         # Initiating the random action command
         data_request_timer = Timer()
         data_request_timer.start()
+        host.set_is_learning(True)
         while(host.power_state):
             if (data_request_timer.check() > host.data_request_period):
                 host.send_new_data_requestion()
@@ -169,8 +182,17 @@ if (__name__ == "__main__"):
                 host.current_step += 1
                 host.update_step_no()
 
+                if (host.get_is_learning() is False):
+                    if (host.check_action_done()):
+                        host.ac_power_switch(False)
+                    print("Waiting AC Remote respoonse")
+                    while(not host.check_action_done()):
+                        pass
+                    host.update_ac_status()
+                    print("AC is switched OFF")
 
 
+    print(f"Section has {host.current_step} steps.", end=" ")
     overall_timer.stop(show=True)
 
 

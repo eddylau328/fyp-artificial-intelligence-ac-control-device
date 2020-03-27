@@ -35,7 +35,7 @@ bool isConnectedWifi = false;
 // state that whether it is sending data to firebase or not
 bool isSendData2Firebase = false;
 bool isReceiveNewData = false;
-Timer resend_timer;
+bool isSentRequest = false;
 
 int parse_fail_count = 0;
 
@@ -43,6 +43,8 @@ int parse_fail_count = 0;
 float temperature, humidity, light_intensity, pressure;
 
 int ir_fanspeed=1, ir_temp=24, ir_power=0;
+
+Timer resend_timer;
 
 void wifi_connect(){
   //connect to WiFi
@@ -188,7 +190,8 @@ void setup() {
   
   Serial.begin(115200);
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
-  resend_timer.settimer(2000);
+  resend_timer.settimer(5000);
+  resend_timer.resettimer();
   wifi_connect();
   firebase_connect();
 }
@@ -199,25 +202,23 @@ void loop() {
 
   if(Serial2.available() > 0)
     receive_json_data();
-
-  check_is_send_2_firebase();
-
-  if (isSendData2Firebase && !resend_timer.checkCounting())
-    request_data = true;
-    isReceiveNewData = false;
-
-  if (resend_timer.checkfinish() && resend_timer.checkCounting()){
-    request_data = true;
-    resend_timer.resettimer();
-    resend_timer.starttimer();
-  }
-
+   
   if (isSendData2Firebase && isReceiveNewData){
     send_data_2_firebase();
     isSendData2Firebase = false;
     set_is_send_2_firebase();
     isReceiveNewData = false;
+    isSentRequest = false;
+    request_data = false;
     resend_timer.resettimer();
+  }
+
+  check_is_send_2_firebase();
+
+  if (isSendData2Firebase && !isSentRequest){
+    isSentRequest = true;
+    request_data = true;
+    isReceiveNewData = false;
   }
   
   if (check_new_command_from_firebase() || request_data){
@@ -231,7 +232,19 @@ void loop() {
       }
     }
   }
-        
+
+  if (isSentRequest && !request_data){
+    if (!resend_timer.checkCounting()){
+      resend_timer.starttimer();
+    }
+    else{
+      if (resend_timer.checkfinish()){
+        request_data = true;
+        resend_timer.resettimer();
+      }
+    }
+  }
+  
   update_firebase_ac_status();
   update_firebase_error_count();
   
