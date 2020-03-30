@@ -22,6 +22,7 @@ class AC_host:
 
     def reset(self):
         self.current_step = 0
+        self.override_control = False
         self.update_ac_status()
         self.db.set(self.base_ac_path,"receive_action", {'is_new_action': False, 'current_step':0})
 
@@ -46,6 +47,19 @@ class AC_host:
             return self.remote.get_action_command(fanspeed=value)
         else:
             return None
+
+
+    def check_override_control(self):
+        return self.db.get(self.base_ac_path+"/receive_action", is_dict=True)['override_control']
+
+
+    def set_override_control(self, value):
+        self.db.set(self.base_ac_path, "receive_action", {'override_control': False})
+
+
+    def get_override_control_setting(self):
+        pack = self.db.get(self.base_ac_path+"/receive_action", is_dict=True)
+        return {'temp':pack['override_set_temp'], 'fanspeed':pack['override_set_fanspeed']}
 
 
     def send_control_command(self, command):
@@ -165,7 +179,11 @@ if (__name__ == "__main__"):
                     pass
 
                 if (host.current_step % host.period == 0):
-                    control_pair = host.generate_control_pair()
+                    if (host.check_override_control()):
+                        control_pair = host.get_override_control_setting()
+                        host.set_override_control(False)
+                    else:
+                        control_pair = host.generate_control_pair()
                     command = host.generate_command('temp', control_pair['temp'])
                     host.send_control_command(command)
                     while (not host.check_action_done()):

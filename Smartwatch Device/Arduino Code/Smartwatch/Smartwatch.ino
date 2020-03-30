@@ -249,7 +249,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature bodyTempSensor(&oneWire);
 /********************************************************************/
-float bodyTemp, avgBodyTemp;
+float bodyTemp = 0, avgBodyTemp = 0;
 int bodyTempCount = 0;
 
 float acc[3] = {0,0,0};
@@ -1224,7 +1224,7 @@ void setup()
 
   bodyTempSensor.begin();
 
-  tempTimer.settimer(2000);
+  tempTimer.settimer(5000);
   tempTimer.starttimer();
 
   mpu6050Timer.settimer(250);
@@ -1253,8 +1253,13 @@ void readTemperature(){
    //Serial.println("DONE");
   /********************************************************************/
    //Serial.print("Temperature is: ");
-   bodyTemp = bodyTempSensor.getTempCByIndex(0);
+   float current_temp = bodyTempSensor.getTempCByIndex(0);
+   if (abs(current_temp-bodyTemp) >= 3 && bodyTemp != 0){
+    current_temp = bodyTemp;
+   }
+   bodyTemp = current_temp;
    avgBodyTemp += bodyTemp;
+   bodyTempCount ++;
    //Serial.print(bodyTemp);
    //Serial.println();
 }
@@ -1373,7 +1378,6 @@ void loop()
 
   if (tempTimer.checkfinish()){
     readTemperature();
-    bodyTempCount ++;
     tempTimer.resettimer();
     tempTimer.starttimer();
   }
