@@ -18,11 +18,13 @@
     <string name="control_fragment_temp_title">Temperature</string>
     <string name="control_fragment_fanspeed_title">Fanspeed</string>
 
+    <string name="home_fragment_feedback_very_cold">Very Cold</string>
     <string name="home_fragment_feedback_cold">Cold</string>
     <string name="home_fragment_feedback_a_bit_cold">A Bit Cold</string>
     <string name="home_fragment_feedback_comfy">Comfy</string>
     <string name="home_fragment_feedback_a_bit_hot">A Bit Hot</string>
     <string name="home_fragment_feedback_hot">Hot</string>
+    <string name="home_fragment_feedback_very_hot">Very Hot</string>
     <string name="home_fragment_feedback_default">SELECT...</string>
 
 </resources>

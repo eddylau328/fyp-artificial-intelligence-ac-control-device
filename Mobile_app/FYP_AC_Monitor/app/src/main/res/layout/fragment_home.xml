@@ -12,6 +12,11 @@
         android:text="Home"
         android:textSize="36sp" />
 
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/home_fragment_linechart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <Button
         android:id="@+id/home_fragment_feedback_popup_button"
         android:layout_width="100dp"

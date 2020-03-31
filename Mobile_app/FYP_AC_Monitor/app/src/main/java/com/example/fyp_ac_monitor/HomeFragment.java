@@ -15,11 +15,16 @@ import androidx.fragment.app.Fragment;
 
 import com.example.fyp_ac_monitor.activity.MenuActivity;
 import com.example.fyp_ac_monitor.utils.PreferenceUtils;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.data.Entry;
+
+import java.util.ArrayList;
 
 public class HomeFragment extends Fragment {
 
     MenuActivity activity;
     Button _feedback_popup_button;
+    LineChart chart;
 
     MyFirebase db;
     String username;
@@ -30,6 +35,7 @@ public class HomeFragment extends Fragment {
         db = new MyFirebase();
         activity = (MenuActivity) getActivity();
         username = PreferenceUtils.loadUsername(activity);
+
         View show_view = inflater.inflate(R.layout.fragment_home, container, false);
         _feedback_popup_button = (Button) show_view.findViewById(R.id.home_fragment_feedback_popup_button);
         _feedback_popup_button.setText(activity.feed_back_button_title);
@@ -54,6 +60,13 @@ public class HomeFragment extends Fragment {
                 popup.show();
             }
         });
+
+        chart = (LineChart) show_view.findViewById(R.id.home_fragment_linechart);
+        chart.setDragEnabled(false);
+        chart.setScaleEnabled(false);
+
+        ArrayList<Entry> yvalues = new ArrayList<>();
+
 
         return show_view;
     }
