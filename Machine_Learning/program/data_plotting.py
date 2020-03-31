@@ -82,6 +82,8 @@ print(cold.shape)
 #plt.scatter(hot[:,0], hot[:,1])
 #plt.scatter(a_bit_hot[:,0], a_bit_hot[:,1])
 
+
+
 ax = plt.axes(projection='3d')
 ax.set_xlim(15,30)
 ax.set_ylim(40,100)
