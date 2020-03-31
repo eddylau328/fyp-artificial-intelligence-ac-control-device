@@ -1,6 +1,7 @@
 package com.example.fyp_ac_monitor;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,11 +15,18 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.fyp_ac_monitor.activity.MenuActivity;
+import com.example.fyp_ac_monitor.utils.EnvDataPack;
 import com.example.fyp_ac_monitor.utils.PreferenceUtils;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class HomeFragment extends Fragment {
 
@@ -28,8 +36,8 @@ public class HomeFragment extends Fragment {
 
     MyFirebase db;
     String username;
+    final ArrayList<Entry> entries = new ArrayList<>();
 
-    @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         db = new MyFirebase();
@@ -63,10 +71,23 @@ public class HomeFragment extends Fragment {
 
         chart = (LineChart) show_view.findViewById(R.id.home_fragment_linechart);
         chart.setDragEnabled(false);
-        chart.setScaleEnabled(false);
+        chart.setScaleEnabled(true);
 
-        ArrayList<Entry> yvalues = new ArrayList<>();
-
+        db.getEnvData(username, new MyFirebase.envData_callBack() {
+            @Override
+            public void onCallBack_dataIsLoaded(List<EnvDataPack> dataPacks, List<String> keys) {
+                for (EnvDataPack dataPack: dataPacks) {
+                    entries.add(new Entry(dataPack.getStepNo(), dataPack.getTemp()));
+                }
+                Toast.makeText(activity,String.valueOf(entries.size()), Toast.LENGTH_SHORT).show();
+                LineDataSet set = new LineDataSet(entries, "Temperature");
+                List<ILineDataSet> dataSets = new ArrayList<>();
+                dataSets.add(set);
+                LineData data = new LineData(dataSets);
+                chart.setData(data);
+                chart.invalidate(); // refresh
+            }
+        });
 
         return show_view;
     }

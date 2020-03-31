@@ -5,10 +5,13 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
+import com.example.fyp_ac_monitor.utils.EnvDataPack;
 import com.example.fyp_ac_monitor.utils.FeedbackPack;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -20,6 +23,9 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Source;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MyFirebase {
 
@@ -211,6 +217,41 @@ public class MyFirebase {
                 }
             }
         });
+    }
+
+    public void getEnvData(final String username, final envData_callBack envData_callBack){
+        getUserConnectDeviceSerialNum(username, "ACmonitor", new serial_num_callback() {
+            @Override
+            public void onCallback_getSerialNum(boolean getSerial, final String serial_num) {
+                if (getSerial) {
+                    DatabaseReference dataRef = rt_db.getReference();
+                    dataRef = dataRef.child("Devices").child(serial_num).child("datapack");
+                    dataRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            List<EnvDataPack> datapacks = new ArrayList<>();
+                            datapacks.clear();
+                            List<String> keys = new ArrayList<>();
+                            for (DataSnapshot keyNode: dataSnapshot.getChildren()) {
+                                keys.add(keyNode.getKey());
+                                EnvDataPack datapack = keyNode.getValue(EnvDataPack.class);
+                                datapacks.add(datapack);
+                            }
+                            envData_callBack.onCallBack_dataIsLoaded(datapacks, keys);
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    public interface envData_callBack{
+        void onCallBack_dataIsLoaded(List<EnvDataPack> dataPacks, List<String> keys);
     }
 
 }
