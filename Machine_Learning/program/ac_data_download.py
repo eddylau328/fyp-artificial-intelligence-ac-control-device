@@ -12,4 +12,4 @@ if (__name__ == "__main__"):
     new_data = []
     for i in range(pack.pop(), len(data)):
         new_data.append(data[i])
-    database.export(data=new_data,dataname='datapack',filename='env_training_data/env_data_3')
+    database.export(data=new_data,dataname='datapack',filename='env_training_data/env_data_4')
