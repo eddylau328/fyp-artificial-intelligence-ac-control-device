@@ -9,33 +9,48 @@ def get_data(path, dataname):
         json_file = json.load(file)
     return json_file[dataname]
 
-data = get_data('env_training_data/env_data_1.json', 'datapack')
-data1 = get_data('env_training_data/env_data_2.json', 'datapack')
+data1 = get_data('env_training_data/env_data_1.json', 'datapack')
+data2 = get_data('env_training_data/env_data_2.json', 'datapack')
+data3 = get_data('env_training_data/env_data_3.json', 'datapack')
 
-indoor_temp = [dict_obj['temp'] for dict_obj in data]
+indoor_temp = []
 for dict_obj in data1:
     indoor_temp.append(dict_obj['temp'])
+for dict_obj in data2:
+    indoor_temp.append(dict_obj['temp'])
+for dict_obj in data3:
+    indoor_temp.append(dict_obj['temp'])
 
-indoor_hum = [dict_obj['hum'] for dict_obj in data]
+indoor_hum = []
 for dict_obj in data1:
     indoor_hum.append(dict_obj['hum'])
+for dict_obj in data2:
+    indoor_hum.append(dict_obj['hum'])
+for dict_obj in data3:
+    indoor_hum.append(dict_obj['hum'])
 
-body_temp = [dict_obj['body'] for dict_obj in data]
+body_temp = []
 for dict_obj in data1:
     body_temp.append(dict_obj['body'])
+for dict_obj in data2:
+    body_temp.append(dict_obj['body'])
+for dict_obj in data3:
+    body_temp.append(dict_obj['body'])
 
-outdoor_temp = [dict_obj['outdoor_temp'] for dict_obj in data]
-outdoor_hum = [dict_obj['outdoor_hum'] for dict_obj in data]
 
-feedback = [dict_obj['feedback'] for dict_obj in data]
+feedback = []
 for dict_obj in data1:
+    feedback.append(dict_obj['feedback'])
+for dict_obj in data2:
+    feedback.append(dict_obj['feedback'])
+for dict_obj in data3:
     feedback.append(dict_obj['feedback'])
 
 
 i = 0
 while(i < (len(feedback)-1)):
     if (feedback[i] != "acceptable"):
-        for j in range(1, 4):
+        for j in range(1, 5):
             if (i+j > len(feedback)-1):
                 i = i+j
                 break
