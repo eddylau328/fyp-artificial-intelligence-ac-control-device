@@ -1,10 +1,38 @@
+String send_command = "ping";
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
 }
 
+void readSerialCommand(){
+  String command = "";
+  while (Serial.available()){
+    char ch = Serial.read();
+    command += ch;
+  }
+  for (int i = command.length()-1; i > 0 ; i--){
+    if (command[i] == '\n' or command[i] == '\r'){
+      command[i] = '\0';
+      break;
+    }
+  }
+
+  bool flag = true;
+  for (int i = 0; i < command.length(); i++){
+    if (command[i] != send_command[i]){
+      flag = false;
+      break;
+    }
+  }
+  if (flag == true){
+    Serial.println("pong");
+  }
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
-  Serial.println("hello world");
-  delay(2000);
+  if (Serial.available() > 0){
+    readSerialCommand();
+  }
 }

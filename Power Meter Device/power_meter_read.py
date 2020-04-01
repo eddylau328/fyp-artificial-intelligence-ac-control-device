@@ -1,5 +1,4 @@
 import serial
-import time
 
 ser = serial.Serial(port='/dev/ttyUSB1', baudrate=9600)
 
@@ -12,8 +11,13 @@ except:
 
 if (ser.isOpen()):
     try:
+        userinput = input()
+        ser.write(userinput.encode())
         while(1):
-            print(ser.readline())
+            data = ser.readline()
+            if (data != None):
+                print(data.decode())
+                break
     except Exception:
         print("error")
 else:
