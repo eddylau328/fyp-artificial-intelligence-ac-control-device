@@ -17,16 +17,24 @@ import androidx.fragment.app.Fragment;
 import com.example.fyp_ac_monitor.activity.MenuActivity;
 import com.example.fyp_ac_monitor.utils.EnvDataPack;
 import com.example.fyp_ac_monitor.utils.PreferenceUtils;
+import com.example.fyp_ac_monitor.utils.timeAxisValueFormatter;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class HomeFragment extends Fragment {
 
@@ -37,6 +45,7 @@ public class HomeFragment extends Fragment {
     MyFirebase db;
     String username;
     final ArrayList<Entry> entries = new ArrayList<>();
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -70,21 +79,37 @@ public class HomeFragment extends Fragment {
         });
 
         chart = (LineChart) show_view.findViewById(R.id.home_fragment_linechart);
-        chart.setDragEnabled(false);
+        chart.setDragEnabled(true);
         chart.setScaleEnabled(true);
-
+        chart.getDescription().setEnabled(false);
         db.getEnvData(username, new MyFirebase.envData_callBack() {
             @Override
             public void onCallBack_dataIsLoaded(List<EnvDataPack> dataPacks, List<String> keys) {
-                for (EnvDataPack dataPack: dataPacks) {
-                    entries.add(new Entry(dataPack.getStepNo(), dataPack.getTemp()));
+                int count = 0;
+                long temp = dataPacks.get(dataPacks.size()-1).getStepNo();
+                for (int i=dataPacks.size()-1; i > 0; i--){
+                    if (dataPacks.get(i).getStepNo() == 0){
+                        count = i;
+                        break;
+                    }
+                    if (temp - dataPacks.get(i).getStepNo() >= 120){
+                        count = i;
+                        break;
+                    }
                 }
-                Toast.makeText(activity,String.valueOf(entries.size()), Toast.LENGTH_SHORT).show();
-                LineDataSet set = new LineDataSet(entries, "Temperature");
-                List<ILineDataSet> dataSets = new ArrayList<>();
-                dataSets.add(set);
-                LineData data = new LineData(dataSets);
+                String[] date_str = new String[dataPacks.size()-count];
+                for (int i=count; i < dataPacks.size(); i++) {
+                    date_str[i-count] = dataPacks.get(i).getTime();
+                    entries.add(new Entry((float) (i-count), (float) dataPacks.get(i).getTemp()));
+                }
+                Toast.makeText(activity, date_str[0], Toast.LENGTH_SHORT).show();
+                LineDataSet set = new LineDataSet(entries, "Indoor Temperature");
+                LineData data = new LineData(set);
+
                 chart.setData(data);
+
+                XAxis xAxis = chart.getXAxis();
+                xAxis.setValueFormatter(new timeAxisValueFormatter(date_str));
                 chart.invalidate(); // refresh
             }
         });

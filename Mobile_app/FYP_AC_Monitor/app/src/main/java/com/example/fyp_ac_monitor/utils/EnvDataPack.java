@@ -4,23 +4,13 @@ public class EnvDataPack {
 
     public long stepNo;
     public String feedback;
-    public long temp;
-    public long hum;
-    public long outdoor_temp;
-    public long outdoor_hum;
+    public double temp;
+    public double hum;
+    public double outdoor_temp;
+    public double outdoor_hum;
     public String time;
 
     public EnvDataPack() {
-    }
-
-    public EnvDataPack(long stepNo, String feedback, long temp, long hum, long outdoor_temp, long outdoor_hum, String time) {
-        this.stepNo = stepNo;
-        this.feedback = feedback;
-        this.temp = temp;
-        this.hum = hum;
-        this.outdoor_temp = outdoor_temp;
-        this.outdoor_hum = outdoor_hum;
-        this.time = time;
     }
 
     public long getStepNo() {
@@ -39,35 +29,35 @@ public class EnvDataPack {
         this.feedback = feedback;
     }
 
-    public long getTemp() {
+    public double getTemp() {
         return temp;
     }
 
-    public void setTemp(long temp) {
+    public void setTemp(double temp) {
         this.temp = temp;
     }
 
-    public long getHum() {
+    public double getHum() {
         return hum;
     }
 
-    public void setHum(long hum) {
+    public void setHum(double hum) {
         this.hum = hum;
     }
 
-    public long getOutdoor_temp() {
+    public double getOutdoor_temp() {
         return outdoor_temp;
     }
 
-    public void setOutdoor_temp(long outdoor_temp) {
+    public void setOutdoor_temp(double outdoor_temp) {
         this.outdoor_temp = outdoor_temp;
     }
 
-    public long getOutdoor_hum() {
+    public double getOutdoor_hum() {
         return outdoor_hum;
     }
 
-    public void setOutdoor_hum(long outdoor_hum) {
+    public void setOutdoor_hum(double outdoor_hum) {
         this.outdoor_hum = outdoor_hum;
     }
 
@@ -76,6 +66,16 @@ public class EnvDataPack {
     }
 
     public void setTime(String time) {
+        this.time = time;
+    }
+
+    public EnvDataPack(long stepNo, String feedback, double temp, double hum, double outdoor_temp, double outdoor_hum, String time) {
+        this.stepNo = stepNo;
+        this.feedback = feedback;
+        this.temp = temp;
+        this.hum = hum;
+        this.outdoor_temp = outdoor_temp;
+        this.outdoor_hum = outdoor_hum;
         this.time = time;
     }
 }
