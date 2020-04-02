@@ -4,54 +4,47 @@ import json
 import numpy as np
 from datetime import datetime
 
+def num_of_paths():
+    i = 1
+    found = False
+    while (not found):
+        filepath = 'env_training_data/env_data_'+str(i)
+        try:
+            with open(filepath +'.json', 'r') as file:
+                i += 1
+                # Do something with the file
+        except IOError:
+            found = True
+    return i-1
+
 def get_data(path, dataname):
     with open(path, 'r') as file:
         json_file = json.load(file)
     return json_file[dataname]
 
-data1 = get_data('env_training_data/env_data_1.json', 'datapack')
-data2 = get_data('env_training_data/env_data_2.json', 'datapack')
-data3 = get_data('env_training_data/env_data_3.json', 'datapack')
-data4 = get_data('env_training_data/env_data_4.json', 'datapack')
+datapack = []
+for i in range(1, num_of_paths()+1):
+    datapack.append(get_data('env_training_data/env_data_'+str(i)+'.json', 'datapack'))
+
+data = []
+for pack in datapack:
+    for dict_obj in pack:
+        data.append(dict_obj)
 
 indoor_temp = []
-for dict_obj in data1:
-    indoor_temp.append(dict_obj['temp'])
-for dict_obj in data2:
-    indoor_temp.append(dict_obj['temp'])
-for dict_obj in data3:
-    indoor_temp.append(dict_obj['temp'])
-for dict_obj in data4:
+for dict_obj in data:
     indoor_temp.append(dict_obj['temp'])
 
 indoor_hum = []
-for dict_obj in data1:
-    indoor_hum.append(dict_obj['hum'])
-for dict_obj in data2:
-    indoor_hum.append(dict_obj['hum'])
-for dict_obj in data3:
-    indoor_hum.append(dict_obj['hum'])
-for dict_obj in data4:
+for dict_obj in data:
     indoor_hum.append(dict_obj['hum'])
 
 body_temp = []
-for dict_obj in data1:
-    body_temp.append(dict_obj['body'])
-for dict_obj in data2:
-    body_temp.append(dict_obj['body'])
-for dict_obj in data3:
-    body_temp.append(dict_obj['body'])
-for dict_obj in data4:
+for dict_obj in data:
     body_temp.append(dict_obj['body'])
 
 feedback = []
-for dict_obj in data1:
-    feedback.append(dict_obj['feedback'])
-for dict_obj in data2:
-    feedback.append(dict_obj['feedback'])
-for dict_obj in data3:
-    feedback.append(dict_obj['feedback'])
-for dict_obj in data4:
+for dict_obj in data:
     feedback.append(dict_obj['feedback'])
 
 i = 0
@@ -141,3 +134,9 @@ ax.scatter3D(comfy[:,0], comfy[:,1],comfy[:,2], color='lime', label='comfy')
 plt.show()
 
 
+##########################################
+#
+#   Remarks
+#   env_data_7.json is sleep data, but i forgot to turn off the other fan, with fanspeed 1
+#
+##########################################
