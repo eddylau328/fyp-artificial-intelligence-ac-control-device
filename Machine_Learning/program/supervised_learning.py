@@ -2,8 +2,8 @@ import json
 import numpy as np
 from enum import Enum
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Dense, LeakyReLU
+from tensorflow.keras import optimizers
 from tensorflow.keras.utils import to_categorical
 
 ##############################################################
@@ -37,26 +37,35 @@ def get_data(path, dataname):
         json_file = json.load(file)
     return json_file[dataname]
 
-
+'''
 class Feedback(Enum):
     very_hot = 0
     hot = 1
     a_bit_hot = 2
     comfy = 3
-    acceptable = 4
-    a_bit_cold = 5
-    cold = 6
-    very_cold = 7
+    a_bit_cold = 4
+    cold = 5
+    very_cold = 6
+'''
+
+class Feedback(Enum):
+    hot = 0
+    comfy = 1
+    a_bit_cold = 2
+    cold = 3
+
 
 
 parameters = {
     'input_shape':17,
     'data_name':['temp','hum','outdoor_temp','outdoor_hum','body','set_temp','set_fanspeed','feedback'],
     'one_hot_encode_required':['set_temp','set_fanspeed','feedback'],
-    'x':['temp','hum','outdoor_temp','outdoor_temp','body','set_temp','set_fanspeed'],
+    'x':['temp','hum','outdoor_temp','outdoor_hum','body','set_temp','set_fanspeed'],
     'y':['feedback'],
-    'output_shape': 8,
+    'normalize':['temp','hum','outdoor_temp','outdoor_hum','body'],
+    'output_shape': len(Feedback),
     'feedback_amplifier': 4,
+    'replace_acceptable': True,
     'model_name': "Supervised Learning"
 }
 
@@ -70,6 +79,8 @@ class SupervisedLearning:
         self.data_name = kwargs['data_name']
         self.one_hot_encode_name = kwargs['one_hot_encode_required']
         self.feedback_amplifier = kwargs['feedback_amplifier']
+        self.replace_acceptable = kwargs['replace_acceptable']
+        self.normalize_data_name = kwargs['normalize']
         self.x_field = kwargs['x']
         self.y_field = kwargs['y']
         self.initiate_model()
@@ -78,20 +89,22 @@ class SupervisedLearning:
     # initiate the keras model for supervised learning
     def initiate_model(self):
         self.model = Sequential(name=self.model_name)
-        self.model.add(Dense(64, input_shape=(self.input_shape,), activation='relu'))
-        self.model.add(Dense(520, activation='relu'))
-        self.model.add(Dense(1024, activation='relu'))
-        self.model.add(Dense(1024, activation='relu'))
-        self.model.add(Dense(520, activation='relu'))
+        self.model.add(Dense(64, input_shape=(self.input_shape,), activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.1))
+        self.model.add(Dense(520, activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.1))
+        self.model.add(Dense(520, activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.1))
         self.model.add(Dense(self.output_shape, activation='softmax'))
-        self.model.compile(loss="categorical_crossentropy", optimizer='adam', metrics=['accuracy'])
+        optimizer = optimizers.Adam(lr=0.0001)
+        self.model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
         self.model.summary()
 
 
     def train(self):
         x , y = self.get_data()
-        print(x.shape)
-        print(y.shape)
+        print("x shape = {}".format(x.shape))
+        print("y shape = {}".format(y.shape))
         self.model.fit(x, y, batch_size=32, validation_split = 0.1)
 
 
@@ -121,7 +134,23 @@ class SupervisedLearning:
                     y_data.append(dict_obj[key])
             y.append(y_data)
         # return as numpy array
-        return np.asarray(x, np.float32), np.asarray(y, np.float32)
+        x = np.asarray(x, np.float32)
+        # normalize data
+        x = self.normalize_data(x)
+        y = np.asarray(y, np.float32)
+        print(x)
+        print(y)
+        return x, y
+
+
+    def normalize_data(self, x):
+        for key in self.normalize_data_name:
+            col_index = self.x_field.index(key)
+            max, min = x[:, col_index].max(), x[:, col_index].min()
+            print(max, min)
+            x[:, col_index] = (x[:, col_index]-min)/(max-min)
+        return x
+
 
 
     # decreasing the acceptable feedback
@@ -129,19 +158,44 @@ class SupervisedLearning:
         feedback = []
         for dict_obj in data:
             feedback.append(dict_obj['feedback'])
-        i = 0
-        while(i < (len(feedback)-1)):
-            if (feedback[i] != "acceptable"):
-                for j in range(1, self.feedback_amplifier+1):
-                    if (i+j > len(feedback)-1):
-                        i = i+j
-                        break
-                    if (feedback[i+j] == "acceptable"):
-                        feedback[i+j] = feedback[i]
-                    else:
-                        i = i+j
-                        break
-            i += 1
+
+        if (self.replace_acceptable is True):
+            i = 0
+            while(i < len(feedback)-1):
+                if (feedback[i] != "acceptable"):
+                    break
+                i += 1
+            for j in range(0, i):
+                feedback[j] = feedback[i]
+
+            while(i < (len(feedback)-1)):
+                if (feedback[i] != "acceptable"):
+                    j = i + 1
+                    while (True):
+                        if (j > len(feedback)-1):
+                            i = j
+                            break
+                        if (feedback[j] == "acceptable"):
+                            feedback[j] = feedback[i]
+                        else:
+                            i = j - 1
+                            break
+                        j += 1
+                i += 1
+        else:
+            i = 0
+            while(i < (len(feedback)-1)):
+                if (feedback[i] != "acceptable"):
+                    for j in range(1, self.feedback_amplifier+1):
+                        if (i+j > len(feedback)-1):
+                            i = i+j
+                            break
+                        if (feedback[i+j] == "acceptable"):
+                            feedback[i+j] = feedback[i]
+                        else:
+                            i = i+j
+                            break
+                i += 1
 
         i = 0
         for dict_obj in data:
@@ -178,6 +232,11 @@ class SupervisedLearning:
             str_feedback = dict_obj['feedback']
             str_feedback = str_feedback.lower()
             str_feedback = str_feedback.replace(' ', '_')
+
+            if (str_feedback == "very_cold"):
+                str_feedback = "cold"
+            elif (str_feedback == "very_hot" or str_feedback == "a_bit_hot"):
+                str_feedback = "hot"
             # change feedback name to number
             feedback.append(Feedback[str_feedback].value)
 
