@@ -1,3 +1,4 @@
+from psychrochart import PsychroChart
 import matplotlib.pyplot as plt
 import matplotlib.dates as plt_date
 import json
@@ -17,6 +18,56 @@ def num_of_paths():
             found = True
     return i-1
 
+
+# decreasing the acceptable feedback
+def amplify_feedback(data, replace_acceptable, feedback_amplifier=4):
+    feedback = []
+    for dict_obj in data:
+        feedback.append(dict_obj['feedback'])
+
+    if (replace_acceptable is True):
+        i = 0
+        while(i < len(feedback)-1):
+            if (feedback[i] != "acceptable"):
+                break
+            i += 1
+        for j in range(0, i):
+            feedback[j] = feedback[i]
+        while(i < (len(feedback)-1)):
+            if (feedback[i] != "acceptable"):
+                j = i + 1
+                while (True):
+                    if (j > len(feedback)-1):
+                        i = j
+                        break
+                    if (feedback[j] == "acceptable"):
+                        feedback[j] = feedback[i]
+                    else:
+                        i = j - 1
+                        break
+                    j += 1
+            i += 1
+    else:
+        i = 0
+        while(i < (len(feedback)-1)):
+            if (feedback[i] != "acceptable"):
+                for j in range(1, feedback_amplifier+1):
+                    if (i+j > len(feedback)-1):
+                        i = i+j
+                        break
+                    if (feedback[i+j] == "acceptable"):
+                        feedback[i+j] = feedback[i]
+                    else:
+                        i = i+j
+                        break
+            i += 1
+    i = 0
+    for dict_obj in data:
+        dict_obj['feedback'] = feedback[i]
+        i += 1
+    return data
+
+
 def get_data(path, dataname):
     with open(path, 'r') as file:
         json_file = json.load(file)
@@ -30,6 +81,8 @@ data = []
 for pack in datapack:
     for dict_obj in pack:
         data.append(dict_obj)
+
+data = amplify_feedback(data, True)
 
 indoor_temp = []
 for dict_obj in data:
@@ -46,20 +99,6 @@ for dict_obj in data:
 feedback = []
 for dict_obj in data:
     feedback.append(dict_obj['feedback'])
-
-i = 0
-while(i < (len(feedback)-1)):
-    if (feedback[i] != "acceptable"):
-        for j in range(1, 5):
-            if (i+j > len(feedback)-1):
-                i = i+j
-                break
-            if (feedback[i+j] == "acceptable"):
-                feedback[i+j] = feedback[i]
-            else:
-                i = i+j
-                break
-    i += 1
 
 feedback = np.array(feedback)
 
@@ -119,20 +158,112 @@ ax.scatter3D(very_cold[:,0], very_cold[:,1],very_cold[:,2], color='darkblue', la
 ax.scatter3D(comfy[:,0], comfy[:,1],comfy[:,2], color='lime', label='comfy')
 plt.show()
 
-ax = plt.axes(projection='3d')
-ax.set_xlim(15,30)
-ax.set_ylim(40,100)
-ax.set_zlim(28,38)
-ax.scatter3D(very_hot[:,0], very_hot[:,1],very_hot[:,2], color='darkred', label='very hot')
-ax.scatter3D(hot[:,0], hot[:,1],hot[:,2], color='red', label='hot')
-ax.scatter3D(a_bit_hot[:,0], a_bit_hot[:,1],a_bit_hot[:,2], color='lightcoral', label='a_bit_hot')
-#ax.scatter3D(acceptable[:,0], acceptable[:,1],acceptable[:,2], color='grey', label='acceptable')
-ax.scatter3D(a_bit_cold[:,0], a_bit_cold[:,1],a_bit_cold[:,2], color='lightblue', label='a bit cold')
-ax.scatter3D(cold[:,0], cold[:,1],cold[:,2], color='blue', label='cold')
-ax.scatter3D(very_cold[:,0], very_cold[:,1],very_cold[:,2], color='darkblue', label='very cold')
-ax.scatter3D(comfy[:,0], comfy[:,1],comfy[:,2], color='lime', label='comfy')
-plt.show()
+# Load default style:
+custom_style = {
+    "figure": {
+        "title": "Thermal Comfort Zone",
+    },
+    "limits": {
+        "range_temp_c": [10, 30],
+    },
+    "chart_params": {
+        "with_constant_rh": True,
+        "with_constant_v": False,
+        "with_constant_h": True,
+        "with_constant_wet_temp": False,
+        "with_zones": False
+    }
+}
 
+
+chart = PsychroChart(custom_style)
+chart.plot(ax=plt.gca())
+
+temp_hum_pair = very_hot[:,0:2].tolist()
+points = []
+for pair in temp_hum_pair:
+    point = {'interior': {'label': 'Interior',
+                           'style': {'color': [1.0, 0, 0, 0.9],
+                                     'marker': 'o', 'markersize': 3},
+                           'xy': (pair[0], pair[1])}}
+    points.append(point)
+
+for point in points:
+    chart.plot_points_dbt_rh(point)
+
+temp_hum_pair = hot[:,0:2].tolist()
+points = []
+for pair in temp_hum_pair:
+    point = {'interior': {'label': 'Interior',
+                           'style': {'color': [1.0, 0.4, 0.4, 0.9],
+                                     'marker': 'o', 'markersize': 3},
+                           'xy': (pair[0], pair[1])}}
+    points.append(point)
+
+for point in points:
+    chart.plot_points_dbt_rh(point)
+
+temp_hum_pair = a_bit_hot[:,0:2].tolist()
+points = []
+for pair in temp_hum_pair:
+    point = {'interior': {'label': 'Interior',
+                           'style': {'color': [1.0, 0.8, 0.8, 0.9],
+                                     'marker': 'o', 'markersize': 3},
+                           'xy': (pair[0], pair[1])}}
+    points.append(point)
+
+for point in points:
+    chart.plot_points_dbt_rh(point)
+
+temp_hum_pair = a_bit_cold[:,0:2].tolist()
+points = []
+for pair in temp_hum_pair:
+    point = {'interior': {'label': 'Interior',
+                           'style': {'color': [0.6, 0.8, 1.0, 0.9],
+                                     'marker': 'o', 'markersize': 3},
+                           'xy': (pair[0], pair[1])}}
+    points.append(point)
+
+for point in points:
+    chart.plot_points_dbt_rh(point)
+
+temp_hum_pair = cold[:,0:2].tolist()
+points = []
+for pair in temp_hum_pair:
+    point = {'interior': {'label': 'Interior',
+                           'style': {'color': [0.4, 0.698, 1.0, 0.9],
+                                     'marker': 'o', 'markersize': 3},
+                           'xy': (pair[0], pair[1])}}
+    points.append(point)
+
+for point in points:
+    chart.plot_points_dbt_rh(point)
+
+temp_hum_pair = very_cold[:,0:2].tolist()
+points = []
+for pair in temp_hum_pair:
+    point = {'interior': {'label': 'Interior',
+                           'style': {'color': [0.0, 0.502, 1.0, 0.9],
+                                     'marker': 'o', 'markersize': 3},
+                           'xy': (pair[0], pair[1])}}
+    points.append(point)
+
+for point in points:
+    chart.plot_points_dbt_rh(point)
+
+temp_hum_pair = comfy[:,0:2].tolist()
+points = []
+for pair in temp_hum_pair:
+    point = {'interior': {'label': 'Interior',
+                           'style': {'color': [0.592, 0.745, 0.051, 0.9],
+                                     'marker': 'o', 'markersize': 3},
+                           'xy': (pair[0], pair[1])}}
+    points.append(point)
+
+for point in points:
+    chart.plot_points_dbt_rh(point)
+
+plt.show()
 
 ##########################################
 #
