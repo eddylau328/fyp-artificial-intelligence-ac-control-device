@@ -1234,7 +1234,7 @@ void setup()
   voltTimer.settimer(30000);
   voltTimer.starttimer();
   
-  interactTimer.settimer(5000);
+  interactTimer.settimer(10000);
   interactTimer.starttimer();
 
   page_monitor.show_nav_bar();
@@ -1252,7 +1252,7 @@ void readTemperature(){
    bodyTempSensor.requestTemperatures(); // Send the command to get temperature readings
    //Serial.println("DONE");
   /********************************************************************/
-   //Serial.print("Temperature is: ");
+   Serial.print("Temperature is: ");
    float current_temp = bodyTempSensor.getTempCByIndex(0);
    if (abs(current_temp-bodyTemp) >= 3 && bodyTemp != 0){
     current_temp = bodyTemp;
@@ -1260,8 +1260,8 @@ void readTemperature(){
    bodyTemp = current_temp;
    avgBodyTemp += bodyTemp;
    bodyTempCount ++;
-   //Serial.print(bodyTemp);
-   //Serial.println();
+   Serial.print(bodyTemp);
+   Serial.println();
 }
 
 void readMPU6050(){
