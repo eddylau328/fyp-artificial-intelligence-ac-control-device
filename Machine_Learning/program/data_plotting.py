@@ -96,6 +96,10 @@ body_temp = []
 for dict_obj in data:
     body_temp.append(dict_obj['body'])
 
+set_fanspeed = []
+for dict_obj in data:
+    set_fanspeed.append(dict_obj['set_fanspeed'])
+
 feedback = []
 for dict_obj in data:
     feedback.append(dict_obj['feedback'])
@@ -103,7 +107,12 @@ for dict_obj in data:
 feedback = np.array(feedback)
 
 
-indoor = np.array([indoor_temp,indoor_hum,body_temp]).T
+indoor = np.array([indoor_temp,indoor_hum,body_temp,set_fanspeed]).T
+'''
+fanspeed_1 = np.where(indoor[:,3] == 1)
+indoor = indoor[fanspeed_1]
+feedback = feedback[fanspeed_1]
+'''
 
 print(indoor.shape)
 print(feedback.shape)
@@ -176,94 +185,63 @@ custom_style = {
 }
 
 
+def create_points(temp_hum_pair, color):
+    points = []
+    for pair in temp_hum_pair:
+        point = {'interior': {'label': 'Interior',
+                               'style': {'color': color,
+                                         'marker': 'o', 'markersize': 3},
+                               'xy': (pair[0], pair[1])}}
+        points.append(point)
+    return points
+
 chart = PsychroChart(custom_style)
 chart.plot(ax=plt.gca())
 
 temp_hum_pair = very_hot[:,0:2].tolist()
-points = []
-for pair in temp_hum_pair:
-    point = {'interior': {'label': 'Interior',
-                           'style': {'color': [1.0, 0, 0, 0.9],
-                                     'marker': 'o', 'markersize': 3},
-                           'xy': (pair[0], pair[1])}}
-    points.append(point)
-
+points = create_points(temp_hum_pair, color=[1.0, 0, 0, 0.9])
 for point in points:
     chart.plot_points_dbt_rh(point)
+
 
 temp_hum_pair = hot[:,0:2].tolist()
-points = []
-for pair in temp_hum_pair:
-    point = {'interior': {'label': 'Interior',
-                           'style': {'color': [1.0, 0.4, 0.4, 0.9],
-                                     'marker': 'o', 'markersize': 3},
-                           'xy': (pair[0], pair[1])}}
-    points.append(point)
-
+points = create_points(temp_hum_pair, color=[1.0, 0.4, 0.4, 0.9])
 for point in points:
     chart.plot_points_dbt_rh(point)
+
 
 temp_hum_pair = a_bit_hot[:,0:2].tolist()
-points = []
-for pair in temp_hum_pair:
-    point = {'interior': {'label': 'Interior',
-                           'style': {'color': [1.0, 0.8, 0.8, 0.9],
-                                     'marker': 'o', 'markersize': 3},
-                           'xy': (pair[0], pair[1])}}
-    points.append(point)
-
+points = create_points(temp_hum_pair, color=[1.0, 0.8, 0.8, 0.9])
 for point in points:
     chart.plot_points_dbt_rh(point)
+
 
 temp_hum_pair = a_bit_cold[:,0:2].tolist()
-points = []
-for pair in temp_hum_pair:
-    point = {'interior': {'label': 'Interior',
-                           'style': {'color': [0.6, 0.8, 1.0, 0.9],
-                                     'marker': 'o', 'markersize': 3},
-                           'xy': (pair[0], pair[1])}}
-    points.append(point)
-
+points = create_points(temp_hum_pair, color=[0.6, 0.8, 1.0, 0.9])
 for point in points:
     chart.plot_points_dbt_rh(point)
+
 
 temp_hum_pair = cold[:,0:2].tolist()
-points = []
-for pair in temp_hum_pair:
-    point = {'interior': {'label': 'Interior',
-                           'style': {'color': [0.4, 0.698, 1.0, 0.9],
-                                     'marker': 'o', 'markersize': 3},
-                           'xy': (pair[0], pair[1])}}
-    points.append(point)
-
+points = create_points(temp_hum_pair, color=[0.4, 0.698, 1.0, 0.9])
 for point in points:
     chart.plot_points_dbt_rh(point)
+
 
 temp_hum_pair = very_cold[:,0:2].tolist()
-points = []
-for pair in temp_hum_pair:
-    point = {'interior': {'label': 'Interior',
-                           'style': {'color': [0.0, 0.502, 1.0, 0.9],
-                                     'marker': 'o', 'markersize': 3},
-                           'xy': (pair[0], pair[1])}}
-    points.append(point)
-
+points = create_points(temp_hum_pair, color=[0.0, 0.502, 1.0, 0.9])
 for point in points:
     chart.plot_points_dbt_rh(point)
+
 
 temp_hum_pair = comfy[:,0:2].tolist()
-points = []
-for pair in temp_hum_pair:
-    point = {'interior': {'label': 'Interior',
-                           'style': {'color': [0.592, 0.745, 0.051, 0.9],
-                                     'marker': 'o', 'markersize': 3},
-                           'xy': (pair[0], pair[1])}}
-    points.append(point)
-
+points = create_points(temp_hum_pair, color=[0.592, 0.745, 0.051, 0.9])
 for point in points:
     chart.plot_points_dbt_rh(point)
 
+
 plt.show()
+
 
 ##########################################
 #

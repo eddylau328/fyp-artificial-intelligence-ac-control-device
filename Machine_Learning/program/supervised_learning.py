@@ -2,7 +2,7 @@ import json
 import numpy as np
 from enum import Enum
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, LeakyReLU
+from tensorflow.keras.layers import Dense, LeakyReLU, Dropout
 from tensorflow.keras import optimizers
 from tensorflow.keras.utils import to_categorical
 
@@ -37,7 +37,7 @@ def get_data(path, dataname):
         json_file = json.load(file)
     return json_file[dataname]
 
-'''
+
 class Feedback(Enum):
     very_hot = 0
     hot = 1
@@ -46,14 +46,14 @@ class Feedback(Enum):
     a_bit_cold = 4
     cold = 5
     very_cold = 6
-'''
 
+'''
 class Feedback(Enum):
-    hot = 0
+    a_bit_hot = 0
     comfy = 1
     a_bit_cold = 2
     cold = 3
-
+'''
 
 
 parameters = {
@@ -93,12 +93,16 @@ class SupervisedLearning:
         self.model.add(LeakyReLU(alpha=0.1))
         self.model.add(Dense(520, input_shape=(self.input_shape,), activation='linear'))
         self.model.add(LeakyReLU(alpha=0.3))
+
         self.model.add(Dense(520, activation='linear'))
         self.model.add(LeakyReLU(alpha=0.3))
+
         self.model.add(Dense(520, activation='linear'))
         self.model.add(LeakyReLU(alpha=0.3))
+
         self.model.add(Dense(520, activation='linear'))
         self.model.add(LeakyReLU(alpha=0.1))
+        self.model.add(Dropout(0.2))
         self.model.add(Dense(self.output_shape, activation='softmax'))
         optimizer = optimizers.Adam(lr=0.0001)
         self.model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
@@ -109,7 +113,7 @@ class SupervisedLearning:
         x , y = self.get_data()
         print("x shape = {}".format(x.shape))
         print("y shape = {}".format(y.shape))
-        self.model.fit(x, y, batch_size=32, validation_split = 0.1)
+        self.model.fit(x, y, batch_size=32, validation_split = 0.1, shuffle=True)
 
 
     def get_data(self):
@@ -237,10 +241,12 @@ class SupervisedLearning:
             str_feedback = str_feedback.lower()
             str_feedback = str_feedback.replace(' ', '_')
 
+            '''
             if (str_feedback == "very_cold"):
                 str_feedback = "cold"
-            elif (str_feedback == "very_hot" or str_feedback == "a_bit_hot"):
-                str_feedback = "hot"
+            elif (str_feedback == "very_hot" or str_feedback == "hot"):
+                str_feedback = "a_bit_hot"
+            '''
             # change feedback name to number
             feedback.append(Feedback[str_feedback].value)
 
