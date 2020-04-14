@@ -1,10 +1,13 @@
 import json
 import numpy as np
 from enum import Enum
+from time import time
+from tensorflow.python.keras.callbacks import TensorBoard
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, LeakyReLU, Dropout
 from tensorflow.keras import optimizers
 from tensorflow.keras.utils import to_categorical
+from matplotlib import pyplot
 
 ##############################################################
 #
@@ -47,9 +50,10 @@ class Feedback(Enum):
     cold = 5
     very_cold = 6
 
+
 '''
 class Feedback(Enum):
-    a_bit_hot = 0
+    hot = 0
     comfy = 1
     a_bit_cold = 2
     cold = 3
@@ -90,30 +94,47 @@ class SupervisedLearning:
     def initiate_model(self):
         self.model = Sequential(name=self.model_name)
         self.model.add(Dense(64, input_shape=(self.input_shape,), activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.1))
-        self.model.add(Dense(520, input_shape=(self.input_shape,), activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.3))
+        self.model.add(LeakyReLU(alpha=0.2))
+        self.model.add(Dropout(0.1))
+        #self.model.add(Dense(128, input_shape=(self.input_shape,), activation='linear'))
+        #self.model.add(LeakyReLU(alpha=0.2))
+        #self.model.add(Dropout(0.1))
+        #self.model.add(Dense(512, activation='linear'))
+        #self.model.add(LeakyReLU(alpha=0.2))
+        #self.model.add(Dropout(0.2))
 
-        self.model.add(Dense(520, activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.3))
+        #self.model.add(Dense(128, activation='linear'))
+        #self.model.add(LeakyReLU(alpha=0.2))
+        #self.model.add(Dropout(0.1))
 
-        self.model.add(Dense(520, activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.3))
-
-        self.model.add(Dense(520, activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.1))
-        self.model.add(Dropout(0.2))
+        self.model.add(Dense(64, activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.2))
+        self.model.add(Dropout(0.1))
         self.model.add(Dense(self.output_shape, activation='softmax'))
         optimizer = optimizers.Adam(lr=0.0001)
+        self.tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
         self.model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
         self.model.summary()
 
 
     def train(self):
         x , y = self.get_data()
-        print("x shape = {}".format(x.shape))
-        print("y shape = {}".format(y.shape))
-        self.model.fit(x, y, batch_size=32, validation_split = 0.1, shuffle=True)
+        #print("x shape = {}".format(x.shape))
+        #print("y shape = {}".format(y.shape))
+
+        history = self.model.fit(x, y, batch_size=32, epochs=100, verbose=1, validation_split = 0.1, shuffle=True, callbacks=[self.tensorboard])
+        pyplot.subplot(211)
+        pyplot.title('Loss')
+        pyplot.plot(history.history['loss'], label='train')
+        pyplot.plot(history.history['val_loss'], label='test')
+        pyplot.legend()
+        # plot accuracy during training
+        pyplot.subplot(212)
+        pyplot.title('Accuracy')
+        pyplot.plot(history.history['acc'], label='train')
+        pyplot.plot(history.history['val_acc'], label='test')
+        pyplot.legend()
+        pyplot.show()
 
 
     def get_data(self):
@@ -146,8 +167,8 @@ class SupervisedLearning:
         # normalize data
         x = self.normalize_data(x)
         y = np.asarray(y, np.float32)
-        print(x)
-        print(y)
+        #print(x)
+        #print(y)
         return x, y
 
 
@@ -155,7 +176,7 @@ class SupervisedLearning:
         for key in self.normalize_data_name:
             col_index = self.x_field.index(key)
             max, min = x[:, col_index].max(), x[:, col_index].min()
-            print(max, min)
+            #print(max, min)
             x[:, col_index] = (x[:, col_index]-min)/(max-min)
         return x
 
@@ -187,6 +208,7 @@ class SupervisedLearning:
                             feedback[j] = feedback[i]
                         else:
                             i = j - 1
+                            #feedback[i-1] = feedback[i]
                             break
                         j += 1
                 i += 1
@@ -244,8 +266,8 @@ class SupervisedLearning:
             '''
             if (str_feedback == "very_cold"):
                 str_feedback = "cold"
-            elif (str_feedback == "very_hot" or str_feedback == "hot"):
-                str_feedback = "a_bit_hot"
+            elif (str_feedback == "very_hot" or str_feedback == "a_bit_hot"):
+                str_feedback = "hot"
             '''
             # change feedback name to number
             feedback.append(Feedback[str_feedback].value)

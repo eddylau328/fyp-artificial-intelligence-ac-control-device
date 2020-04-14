@@ -104,6 +104,12 @@ feedback = []
 for dict_obj in data:
     feedback.append(dict_obj['feedback'])
 
+for i in range(len(feedback)):
+    if (feedback[i] == "acceptable"):
+        feedback.pop(i)
+        feedback.append("acceptable")
+        break
+
 feedback = np.array(feedback)
 
 

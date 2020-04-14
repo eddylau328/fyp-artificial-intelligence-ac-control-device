@@ -34,8 +34,9 @@ class AC_host:
             fanspeed_action_value = random.randint(0, len(ac_remote.Actions_Fanspeed)-1)
             temp_func, temp, fan_func, fanspeed = self.remote.get_value_pair(temp_action_value, fanspeed_action_value)
             if (temp != self.set_temperature and fanspeed != self.set_fanspeed):
-                if (abs(temp-self.set_temperature) <= 3):
+                if (abs(temp-self.set_temperature) <= 6):
                     done = True
+                    self.period = 3 * abs(temp-self.set_temperature)
 
         return {temp_func:temp, fan_func:fanspeed}
 
