@@ -2,6 +2,7 @@ import json
 import numpy as np
 from enum import Enum
 from time import time
+from libs import ac_firebase_remote as ac_remote
 from tensorflow.python.keras.callbacks import TensorBoard
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, LeakyReLU, Dropout
@@ -40,7 +41,7 @@ def get_data(path, dataname):
         json_file = json.load(file)
     return json_file[dataname]
 
-
+'''
 class Feedback(Enum):
     very_hot = 0
     hot = 1
@@ -49,26 +50,32 @@ class Feedback(Enum):
     a_bit_cold = 4
     cold = 5
     very_cold = 6
-
-
 '''
+
+class Move(Enum):
+    work = 0
+    rest = 1
+    sleep = 2
+
+
 class Feedback(Enum):
-    hot = 0
-    comfy = 1
-    a_bit_cold = 2
-    cold = 3
-'''
+    comfy = 0
+    a_bit_cold = 1
+    cold = 2
 
+
+# set_temp = 9
+# set_fanspeed = 3
 
 parameters = {
-    'input_shape':17,
-    'data_name':['temp','hum','outdoor_temp','outdoor_hum','body','set_temp','set_fanspeed','feedback'],
-    'one_hot_encode_required':['set_temp','set_fanspeed','feedback'],
-    'x':['temp','hum','outdoor_temp','outdoor_hum','body','set_temp','set_fanspeed'],
+    'input_shape':8,
+    'data_name':['temp','hum','outdoor_temp','outdoor_hum','body','move_type','set_temp','set_fanspeed','feedback'],
+    'one_hot_encode_required':['move_type','set_temp','set_fanspeed','feedback'],
+    'x':['temp','hum','outdoor_temp','outdoor_hum','body','set_fanspeed'],
     'y':['feedback'],
     'normalize':['temp','hum','outdoor_temp','outdoor_hum','body'],
     'output_shape': len(Feedback),
-    'feedback_amplifier': 4,
+    'feedback_amplifier': 5,
     'replace_acceptable': True,
     'model_name': "Supervised Learning"
 }
@@ -93,9 +100,15 @@ class SupervisedLearning:
     # initiate the keras model for supervised learning
     def initiate_model(self):
         self.model = Sequential(name=self.model_name)
-        self.model.add(Dense(64, input_shape=(self.input_shape,), activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.2))
-        self.model.add(Dropout(0.1))
+        self.model.add(Dense(48, input_shape=(self.input_shape,), activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.3))
+        self.model.add(Dropout(0.3))
+        #self.model.add(Dense(128, activation='linear'))
+        #self.model.add(LeakyReLU(alpha=0.4))
+        #self.model.add(Dropout(0.3))
+        self.model.add(Dense(48, activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.3))
+        self.model.add(Dropout(0.3))
         #self.model.add(Dense(128, input_shape=(self.input_shape,), activation='linear'))
         #self.model.add(LeakyReLU(alpha=0.2))
         #self.model.add(Dropout(0.1))
@@ -107,9 +120,9 @@ class SupervisedLearning:
         #self.model.add(LeakyReLU(alpha=0.2))
         #self.model.add(Dropout(0.1))
 
-        self.model.add(Dense(64, activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.2))
-        self.model.add(Dropout(0.1))
+        #self.model.add(Dense(64, activation='linear'))
+        #self.model.add(LeakyReLU(alpha=0.2))
+        #self.model.add(Dropout(0.1))
         self.model.add(Dense(self.output_shape, activation='softmax'))
         optimizer = optimizers.Adam(lr=0.0001)
         self.tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
@@ -121,8 +134,12 @@ class SupervisedLearning:
         x , y = self.get_data()
         #print("x shape = {}".format(x.shape))
         #print("y shape = {}".format(y.shape))
+        for i in range(self.output_shape):
+            print('{:<10} has {} data.'.format(Feedback(i).name,len(np.where(y[:,i] == 1)[0])))
+        print("_________________________________________________________________")
+        print('{:<10} has {} data'.format("Total",y.shape[0]))
 
-        history = self.model.fit(x, y, batch_size=32, epochs=100, verbose=1, validation_split = 0.1, shuffle=True, callbacks=[self.tensorboard])
+        history = self.model.fit(x, y, batch_size=64, epochs=400, verbose=1, validation_split = 0.1, shuffle=True, callbacks=[self.tensorboard])
         pyplot.subplot(211)
         pyplot.title('Loss')
         pyplot.plot(history.history['loss'], label='train')
@@ -135,6 +152,21 @@ class SupervisedLearning:
         pyplot.plot(history.history['val_acc'], label='test')
         pyplot.legend()
         pyplot.show()
+
+
+    '''
+    # predict the feedback the user will give
+    def predict(self, input):
+        x_list = []
+        # input should be a dictionary object
+        for key in self.x_field:
+            if (key in input and key != "set_temp" and key != "set_fanspeed"):
+                x_list.append(input[key])
+
+        size = len(ac_remote.Actions_Temp)*len(ac_remote.Actions_Fanspeed)
+        print(size)
+        #predict_feedback = self.model.predict(X)
+    '''
 
 
     def get_data(self):
@@ -212,25 +244,46 @@ class SupervisedLearning:
                             break
                         j += 1
                 i += 1
+            i = 0
+            for dict_obj in data:
+                dict_obj['feedback'] = feedback[i]
+                i += 1
+            skip_data = [j for j in range(1,len(data),2)]
+            skip_data.reverse()
+            for index in skip_data:
+                data.pop(index)
+
         else:
             i = 0
             while(i < (len(feedback)-1)):
                 if (feedback[i] != "acceptable"):
-                    for j in range(1, self.feedback_amplifier+1):
+                    for j in range(1, (self.feedback_amplifier+1)*2):
                         if (i+j > len(feedback)-1):
                             i = i+j
                             break
-                        if (feedback[i+j] == "acceptable"):
+                        if (feedback[i+j] == "acceptable" and j%2 == 1):
                             feedback[i+j] = feedback[i]
                         else:
                             i = i+j
                             break
                 i += 1
 
-        i = 0
-        for dict_obj in data:
-            dict_obj['feedback'] = feedback[i]
-            i += 1
+            delete_acceptable = []
+            for i in range(0, len(feedback)):
+                if (feedback[i] == "acceptable"):
+                    delete_acceptable.append(i)
+
+            i = 0
+            for dict_obj in data:
+                dict_obj['feedback'] = feedback[i]
+                i+=1
+
+            delete_acceptable.reverse()
+
+            for index in delete_acceptable:
+                data.pop(index)
+            for dict_obj in data:
+                print(dict_obj['feedback'])
         return data
 
     # extract data from the env_training_data folder
@@ -256,25 +309,47 @@ class SupervisedLearning:
     def process_data(self, data):
         # extract feedback and change to Enum name first
         feedback = []
+        move = []
+        previous_move = ""
+
+        record = []
+        i = 0
+        for dict_obj in data:
+            if (dict_obj['feedback'] == "Very Hot" or dict_obj['feedback'] == "Hot" or dict_obj['feedback'] == "A Bit Hot"):
+                record.append(i)
+            i += 1
+
+        record.reverse()
+
+        for index in record:
+            data.pop(index)
+
         for dict_obj in data:
             dict_obj['set_temp'] -= 17
             dict_obj['set_fanspeed'] -= 1
+            str_move = dict_obj['move_type']
+            if (str_move == ""):
+                str_move = previous_move
+            previous_move = str_move
+            move.append(Move[str_move].value)
             str_feedback = dict_obj['feedback']
             str_feedback = str_feedback.lower()
             str_feedback = str_feedback.replace(' ', '_')
 
-            '''
             if (str_feedback == "very_cold"):
                 str_feedback = "cold"
-            elif (str_feedback == "very_hot" or str_feedback == "a_bit_hot"):
-                str_feedback = "hot"
-            '''
+
             # change feedback name to number
             feedback.append(Feedback[str_feedback].value)
 
         i = 0
         for num in feedback:
             data[i]['feedback'] = num
+            i += 1
+
+        i = 0
+        for num in move:
+            data[i]['move_type'] = num
             i += 1
 
         for encode_name in self.one_hot_encode_name:
@@ -299,3 +374,4 @@ class SupervisedLearning:
 if (__name__ == '__main__'):
     model = SupervisedLearning(**parameters)
     model.train()
+    #model.predict({'temp':12})
