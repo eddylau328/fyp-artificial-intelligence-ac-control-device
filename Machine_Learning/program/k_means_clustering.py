@@ -1,8 +1,10 @@
 import json
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from psychrochart import PsychroChart
 from sklearn.decomposition import PCA
+from sklearn import preprocessing
 from enum import Enum
 from sklearn import metrics
 from sklearn.cluster import KMeans
@@ -81,7 +83,7 @@ def get_x_y():
     # return as numpy array
     x = np.asarray(x, np.float32)
     # normalize data
-    x = normalize_data(x)
+    #x = normalize_data(x)
     y = np.asarray(y, np.float32)
     #print(x)
     #print(y)
@@ -172,7 +174,7 @@ def process_data(data):
     feedback = []
     for dict_obj in data:
         dict_obj['set_temp'] -= 17
-        dict_obj['set_fanspeed'] -= 1
+        #dict_obj['set_fanspeed'] -= 1
         str_feedback = dict_obj['feedback']
         str_feedback = str_feedback.lower()
         str_feedback = str_feedback.replace(' ', '_')
@@ -261,18 +263,46 @@ def my_clustering_mnist(X, y, n_clusters):
 
 def main():
     X, y = get_x_y()
+    data = pd.DataFrame(columns=['temp','hum','body','outdoor_temp','outdoor_hum','set_fanspeed'], index=[i for i in range(len(X))])
+    i = 0
+    for row in data.index:
+        data.loc[row, 'temp':'set_fanspeed'] = X[i,:]
+        i += 1
+    print(data)
     print("x shape = {}".format(X.shape))
     y = y[:,0]
     print("y shape = {}".format(y.shape))
+    scaled_data = preprocessing.scale(data.T)
+    pca = PCA()
+    pca.fit(scaled_data)
+    pca_data = pca.transform(scaled_data)
+    per_var = np.round(pca.explained_variance_ratio_*100, decimals=1)
+    labels = ['PC'+str(x) for x in range(1, len(per_var)+1)]
 
-    pca = PCA(n_components=0.9)
-    pca.fit(X)
-    print('We need', pca.n_components_, 'dimensions to preserve 0.9 POV')
-    print(pca.explained_variance_ratio_)
+    plt.bar(x=range(1, len(per_var)+1), height=per_var, tick_label=labels)
+    plt.ylabel('Percentage of Explained Variance')
+    plt.xlabel('Principal Component')
+    plt.title('Screen Plot')
+    plt.show()
+
+    pca_df = pd.DataFrame(pca_data, index=['temp','hum','body','outdoor_temp','outdoor_hum','set_fanspeed'], columns=labels)
+
+    plt.scatter(pca_df.PC1, pca_df.PC2)
+    plt.title('PCA Graph')
+    plt.xlabel('PC1 - {0}%'.format(per_var[0]))
+    plt.ylabel('PC2 - {0}%'.format(per_var[1]))
+
+    for sample in pca_df.index:
+        plt.annotate(sample, (pca_df.PC1.loc[sample], pca_df.PC2.loc[sample]))
+
+    plt.show()
+
+#    print('We need', pca.n_components_, 'dimensions to preserve 0.9 POV')
+#    print(pca.explained_variance_)
     # Clustering
 
-    range_n_clusters = [2,3,4,5,6,7]
-    #range_n_clusters = []
+    #range_n_clusters = [2,3,4,5,6,7]
+    range_n_clusters = []
     ari_score = [None] * len(range_n_clusters)
     mri_score = [None] * len(range_n_clusters)
     v_measure_score = [None] * len(range_n_clusters)
@@ -292,7 +322,7 @@ def main():
     v_measure_score_plot = plt.plot(range_n_clusters, v_measure_score,label="v_measure_score")
     silhouette_avg_plot = plt.plot(range_n_clusters, silhouette_avg,label="silhouette_avg")
     plt.legend()
-    plt.show()
+#    plt.show()
 
 
 if (__name__ == '__main__'):
