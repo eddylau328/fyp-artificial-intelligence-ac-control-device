@@ -229,20 +229,30 @@ public class MyFirebase {
                     dataRef.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            List<EnvDataPack> datapacks = new ArrayList<>();
-                            datapacks.clear();
-                            List<String> keys = new ArrayList<>();
-                            for (DataSnapshot keyNode: dataSnapshot.getChildren()) {
-                                keys.add(keyNode.getKey());
-                                EnvDataPack datapack = keyNode.getValue(EnvDataPack.class);
-                                datapacks.add(datapack);
+                            if (!dataSnapshot.exists()){
+                                List<EnvDataPack> datapacks = new ArrayList<>();
+                                datapacks.clear();
+                                List<String> keys = new ArrayList<>();
+                                envData_callBack.onCallBack_dataIsLoaded(datapacks, keys, false);
+                            }else {
+                                List<EnvDataPack> datapacks = new ArrayList<>();
+                                datapacks.clear();
+                                List<String> keys = new ArrayList<>();
+                                for (DataSnapshot keyNode : dataSnapshot.getChildren()) {
+                                    keys.add(keyNode.getKey());
+                                    EnvDataPack datapack = keyNode.getValue(EnvDataPack.class);
+                                    datapacks.add(datapack);
+                                }
+                                envData_callBack.onCallBack_dataIsLoaded(datapacks, keys, true);
                             }
-                            envData_callBack.onCallBack_dataIsLoaded(datapacks, keys);
                         }
 
                         @Override
                         public void onCancelled(@NonNull DatabaseError databaseError) {
-
+                            List<EnvDataPack> datapacks = new ArrayList<>();
+                            datapacks.clear();
+                            List<String> keys = new ArrayList<>();
+                            envData_callBack.onCallBack_dataIsLoaded(datapacks, keys, false);
                         }
                     });
                 }
@@ -251,7 +261,7 @@ public class MyFirebase {
     }
 
     public interface envData_callBack{
-        void onCallBack_dataIsLoaded(List<EnvDataPack> dataPacks, List<String> keys);
+        void onCallBack_dataIsLoaded(List<EnvDataPack> dataPacks, List<String> keys, Boolean success);
     }
 
 }

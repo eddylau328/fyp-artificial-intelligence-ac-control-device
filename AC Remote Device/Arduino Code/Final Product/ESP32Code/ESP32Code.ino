@@ -9,8 +9,8 @@
 #define RXD2 16
 #define TXD2 17
 
-#define WIFI_SSID "Lau Family"
-#define WIFI_PASSWORD "27050880"
+#define WIFI_SSID "Eddy Wifi"
+#define WIFI_PASSWORD "12345678xd"
 #define FIREBASE_HOST "fypacmonitor.firebaseio.com"
 #define FIREBASE_AUTH "jaT833r4mymesl03s37FD9jeV9JnWZzcM1xrnX8d"
 

@@ -82,35 +82,38 @@ public class HomeFragment extends Fragment {
         chart.setDragEnabled(true);
         chart.setScaleEnabled(true);
         chart.getDescription().setEnabled(false);
+        chart.setNoDataText("Air Conditioner is not turn on. No data available");
         db.getEnvData(username, new MyFirebase.envData_callBack() {
             @Override
-            public void onCallBack_dataIsLoaded(List<EnvDataPack> dataPacks, List<String> keys) {
-                int count = 0;
-                long temp = dataPacks.get(dataPacks.size()-1).getStepNo();
-                for (int i=dataPacks.size()-1; i > 0; i--){
-                    if (dataPacks.get(i).getStepNo() == 0){
-                        count = i;
-                        break;
+            public void onCallBack_dataIsLoaded(List<EnvDataPack> dataPacks, List<String> keys, Boolean success) {
+                if (success) {
+                    int count = 0;
+                    long temp = dataPacks.get(dataPacks.size() - 1).getStepNo();
+                    for (int i = dataPacks.size() - 1; i > 0; i--) {
+                        if (dataPacks.get(i).getStepNo() == 0) {
+                            count = i;
+                            break;
+                        }
+                        if (temp - dataPacks.get(i).getStepNo() >= 120) {
+                            count = i;
+                            break;
+                        }
                     }
-                    if (temp - dataPacks.get(i).getStepNo() >= 120){
-                        count = i;
-                        break;
+                    String[] date_str = new String[dataPacks.size() - count];
+                    for (int i = count; i < dataPacks.size(); i++) {
+                        date_str[i - count] = dataPacks.get(i).getTime();
+                        entries.add(new Entry((float) (i - count), (float) dataPacks.get(i).getTemp()));
                     }
-                }
-                String[] date_str = new String[dataPacks.size()-count];
-                for (int i=count; i < dataPacks.size(); i++) {
-                    date_str[i-count] = dataPacks.get(i).getTime();
-                    entries.add(new Entry((float) (i-count), (float) dataPacks.get(i).getTemp()));
-                }
-                Toast.makeText(activity, date_str[0], Toast.LENGTH_SHORT).show();
-                LineDataSet set = new LineDataSet(entries, "Indoor Temperature");
-                LineData data = new LineData(set);
+                    Toast.makeText(activity, date_str[0], Toast.LENGTH_SHORT).show();
+                    LineDataSet set = new LineDataSet(entries, "Indoor Temperature");
+                    LineData data = new LineData(set);
 
-                chart.setData(data);
+                    chart.setData(data);
 
-                XAxis xAxis = chart.getXAxis();
-                xAxis.setValueFormatter(new timeAxisValueFormatter(date_str));
-                chart.invalidate(); // refresh
+                    XAxis xAxis = chart.getXAxis();
+                    xAxis.setValueFormatter(new timeAxisValueFormatter(date_str));
+                    chart.invalidate(); // refresh
+                }
             }
         });
 
