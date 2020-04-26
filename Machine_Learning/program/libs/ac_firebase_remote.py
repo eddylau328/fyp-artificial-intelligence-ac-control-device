@@ -2,15 +2,15 @@
 import enum
 
 class Actions_Temp(enum.Enum):
-    temp_25 = 0
-    temp_24 = 1
-    temp_23 = 2
-    temp_22 = 3
+    temp_17 = 0
+    temp_18 = 1
+    temp_19 = 2
+    temp_20 = 3
     temp_21 = 4
-    temp_20 = 5
-    temp_19 = 6
-    temp_18 = 7
-    temp_17 = 8
+    temp_22 = 5
+    temp_23 = 6
+    temp_24 = 7
+    temp_25 = 8
 
 
 class Actions_Fanspeed(enum.Enum):

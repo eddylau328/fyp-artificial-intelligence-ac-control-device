@@ -18,7 +18,6 @@ def num_of_paths():
             found = True
     return i-1
 
-
 # decreasing the acceptable feedback
 def amplify_feedback(data, replace_acceptable, feedback_amplifier=4):
     feedback = []
@@ -100,6 +99,15 @@ set_fanspeed = []
 for dict_obj in data:
     set_fanspeed.append(dict_obj['set_fanspeed'])
 
+move = []
+for dict_obj in data:
+    if (dict_obj['move_type'] == "work"):
+        move.append(0)
+    elif (dict_obj['move_type'] == "rest"):
+        move.append(1)
+    else:
+        move.append(2)
+
 feedback = []
 for dict_obj in data:
     feedback.append(dict_obj['feedback'])
@@ -113,8 +121,7 @@ for i in range(len(feedback)):
 total_feedback = np.array(feedback)
 
 
-total_indoor = np.array([indoor_temp,indoor_hum,body_temp,set_fanspeed]).T
-
+total_indoor = np.array([indoor_temp,indoor_hum,body_temp,set_fanspeed,move]).T
 indoor = np.copy(total_indoor)
 feedback = np.copy(total_feedback)
 
@@ -166,6 +173,30 @@ ax.scatter3D(a_bit_cold[:,0], a_bit_cold[:,1],a_bit_cold[:,2], color='lightblue'
 ax.scatter3D(cold[:,0], cold[:,1],cold[:,2], color='blue', label='cold')
 ax.scatter3D(very_cold[:,0], very_cold[:,1],very_cold[:,2], color='darkblue', label='very cold')
 ax.scatter3D(comfy[:,0], comfy[:,1],comfy[:,2], color='lime', label='comfy')
+plt.show()
+
+def normalize_data(x):
+    max, min = x[:].max(), x[:].min()
+    #print(max, min)
+    x[:] = (x[:]-min)/(max-min)
+    return x
+
+norm_indoor = normalize_data(np.array(indoor_temp))
+norm_hum = normalize_data(np.array(indoor_hum))
+
+plt.plot([i for i in range(len(indoor_temp))], norm_indoor, label="temp")
+plt.plot([i for i in range(len(indoor_temp))], norm_hum, label="hum")
+plt.legend()
+plt.show()
+
+plt.scatter(very_hot[:,2], very_hot[:,0], color='darkred', label='very hot')
+plt.scatter(hot[:,2],hot[:,0], color='red', label='hot')
+plt.scatter(a_bit_hot[:,2], a_bit_hot[:,0], color='lightcoral', label='a_bit_hot')
+plt.scatter(acceptable[:,2], acceptable[:,0], color='grey', label='acceptable')
+plt.scatter(a_bit_cold[:,2], a_bit_cold[:,0], color='lightblue', label='a bit cold')
+plt.scatter(cold[:,2], cold[:,0], color='blue', label='cold')
+plt.scatter(very_cold[:,2], very_cold[:,0], color='darkblue', label='very cold')
+plt.scatter(comfy[:,2], comfy[:,0], color='lime', label='comfy')
 plt.show()
 
 # Load default style:

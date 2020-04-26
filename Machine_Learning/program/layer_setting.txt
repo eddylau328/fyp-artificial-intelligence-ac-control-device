@@ -1,0 +1,155 @@
+########################################################################################
+
+For 4 outputs
+
+class Feedback(Enum):
+    hot = 0
+    comfy = 1
+    a_bit_cold = 2
+    cold = 3
+
+self.model.add(Dense(48, input_shape=(self.input_shape,), activation='linear'))
+self.model.add(LeakyReLU(alpha=0.2))
+self.model.add(Dropout(0.3))
+
+self.model.add(Dense(48, activation='linear'))
+self.model.add(LeakyReLU(alpha=0.2))
+self.model.add(Dropout(0.3))
+
+self.model.add(Dense(self.output_shape, activation='softmax'))
+optimizer = optimizers.Adam(lr=0.0002, decay=1e-6)
+self.tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
+self.model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
+history = self.model.fit(x, y, batch_size=32, epochs=200, verbose=1, validation_split = 0.2, shuffle=True, callbacks=[self.tensorboard])
+
+if (str_feedback == "very_cold"):
+    str_feedback = "cold"
+if (str_feedback == "very_hot" or str_feedback == "hot" or str_feedback == "a_bit_hot"):
+    str_feedback = "hot"
+
+########################################################################################
+
+For 7 outputs
+
+parameters = {
+    'input_shape':17,
+    'data_name':['temp','hum','outdoor_temp','outdoor_hum','body','move_type','outdoor_des','set_temp','set_fanspeed','feedback'],
+    'one_hot_encode_required':['move_type','outdoor_des','set_temp','set_fanspeed','feedback'],
+    'x':['temp','hum','outdoor_temp','outdoor_hum','body','set_temp','set_fanspeed'],
+    'y':['feedback'],
+    'normalize':['temp','hum','outdoor_temp','outdoor_hum','body'],
+    'output_shape': len(Feedback),
+    'feedback_amplifier': 5,
+    'replace_acceptable': True,
+    'model_name': "Supervised Learning"
+}
+
+
+class SupervisedLearning:
+
+    def __init__(self, **kwargs):
+        self.input_shape = kwargs['input_shape']
+        self.output_shape = kwargs['output_shape']
+        self.model_name = kwargs['model_name']
+        self.data_name = kwargs['data_name']
+        self.one_hot_encode_name = kwargs['one_hot_encode_required']
+        self.feedback_amplifier = kwargs['feedback_amplifier']
+        self.replace_acceptable = kwargs['replace_acceptable']
+        self.normalize_data_name = kwargs['normalize']
+        self.x_field = kwargs['x']
+        self.y_field = kwargs['y']
+        self.initiate_model()
+
+
+    # initiate the keras model for supervised learning
+    def initiate_model(self):
+        self.model = Sequential(name=self.model_name)
+        self.model.add(Dense(48, input_shape=(self.input_shape,), activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.3))
+        self.model.add(Dropout(0.4))
+
+        self.model.add(Dense(48, activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.3))
+        self.model.add(Dropout(0.4))
+
+        self.model.add(Dense(self.output_shape, activation='softmax'))
+        optimizer = optimizers.Adam(lr=0.0002, decay=1e-6)
+        self.tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
+        self.model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
+        self.model.summary()
+
+
+    def train(self):
+        x , y = self.get_data()
+
+        #print("x shape = {}".format(x.shape))
+        #print("y shape = {}".format(y.shape))
+        for i in range(self.output_shape):
+            print('{:<10} has {} data.'.format(Feedback(i).name,len(np.where(y[:,i] == 1)[0])))
+        print("_________________________________________________________________")
+        print('{:<10} has {} data'.format("Total",y.shape[0]))
+
+        history = self.model.fit(x, y, batch_size=32, epochs=250, verbose=1, validation_split = 0.2, shuffle=True, callbacks=[self.tensorboard])
+#########################################################################
+
+For input ignoring set_temp and set_fanspeed
+
+parameters = {
+    'input_shape':5,
+    'data_name':['temp','hum','outdoor_temp','outdoor_hum','body','move_type','outdoor_des','set_temp','set_fanspeed','feedback'],
+    'one_hot_encode_required':['move_type','outdoor_des','set_temp','set_fanspeed','feedback'],
+    'x':['temp','hum','outdoor_temp','outdoor_hum','body'],
+    'y':['feedback'],
+    'normalize':['temp','hum','outdoor_temp','outdoor_hum','body'],
+    'output_shape': len(Feedback),
+    'feedback_amplifier': 5,
+    'replace_acceptable': True,
+    'model_name': "Supervised Learning"
+}
+
+
+class SupervisedLearning:
+
+    def __init__(self, **kwargs):
+        self.input_shape = kwargs['input_shape']
+        self.output_shape = kwargs['output_shape']
+        self.model_name = kwargs['model_name']
+        self.data_name = kwargs['data_name']
+        self.one_hot_encode_name = kwargs['one_hot_encode_required']
+        self.feedback_amplifier = kwargs['feedback_amplifier']
+        self.replace_acceptable = kwargs['replace_acceptable']
+        self.normalize_data_name = kwargs['normalize']
+        self.x_field = kwargs['x']
+        self.y_field = kwargs['y']
+        self.initiate_model()
+
+
+    # initiate the keras model for supervised learning
+    def initiate_model(self):
+        self.model = Sequential(name=self.model_name)
+        self.model.add(Dense(32, input_shape=(self.input_shape,), activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.4))
+        self.model.add(Dropout(0.3))
+
+        self.model.add(Dense(48, activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.4))
+        self.model.add(Dropout(0.3))
+
+        self.model.add(Dense(self.output_shape, activation='softmax'))
+        optimizer = optimizers.Adam(lr=0.0002, decay=1e-6)
+        self.tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
+        self.model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
+        self.model.summary()
+
+
+    def train(self):
+        x , y = self.get_data()
+
+        #print("x shape = {}".format(x.shape))
+        #print("y shape = {}".format(y.shape))
+        for i in range(self.output_shape):
+            print('{:<10} has {} data.'.format(Feedback(i).name,len(np.where(y[:,i] == 1)[0])))
+        print("_________________________________________________________________")
+        print('{:<10} has {} data'.format("Total",y.shape[0]))
+
+        history = self.model.fit(x, y, batch_size=32, epochs=250, verbose=1, validation_split = 0.2, shuffle=True, callbacks=[self.tensorboard])

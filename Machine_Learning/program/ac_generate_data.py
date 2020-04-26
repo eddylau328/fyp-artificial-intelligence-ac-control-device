@@ -1,12 +1,13 @@
 from libs import realtime_firebase as rt
 from libs import ac_firebase_remote as ac_remote
 from libs.timer import Timer
+import supervised_learning as supervised_model
 import datetime
 import random
 import datetime
 import sys
 import requests
-
+import argparse
 
 class AC_host:
 
@@ -27,17 +28,22 @@ class AC_host:
         self.db.set(self.base_ac_path,"receive_action", {'is_new_action': False, 'current_step':0})
 
 
-    def generate_control_pair(self):
+    def generate_control_pair(self, input_temp=None, input_fanspeed=None):
         done = False
         while (not done):
-            temp_action_value = random.randint(0,len(ac_remote.Actions_Temp)-1)
-            fanspeed_action_value = random.randint(0, len(ac_remote.Actions_Fanspeed)-1)
-            temp_func, temp, fan_func, fanspeed = self.remote.get_value_pair(temp_action_value, fanspeed_action_value)
-            if (temp != self.set_temperature and fanspeed != self.set_fanspeed):
-                if (abs(temp-self.set_temperature) <= 6):
-                    done = True
-                    multiplier = max(4, abs(temp-self.set_temperature))
-                    self.period = random.randint(3, multiplier) * abs(temp-self.set_temperature)
+            if (input_temp == None and input_fanspeed == None):
+                temp_action_value = random.randint(0,len(ac_remote.Actions_Temp)-1)
+                fanspeed_action_value = random.randint(0, len(ac_remote.Actions_Fanspeed)-1)
+                temp_func, temp, fan_func, fanspeed = self.remote.get_value_pair(temp_action_value, fanspeed_action_value)
+                if (temp != self.set_temperature and fanspeed != self.set_fanspeed):
+                    if (abs(temp-self.set_temperature) <= 6):
+                        done = True
+                        multiplier = max(4, abs(temp-self.set_temperature))
+                        self.period = random.randint(3, multiplier) * abs(temp-self.set_temperature)
+            else:
+                done = True
+                temp_func, temp, fan_func, fanspeed = self.remote.get_value_pair(input_temp, input_fanspeed)
+                self.period = 10
 
         return {temp_func:temp, fan_func:fanspeed}
 
@@ -149,8 +155,31 @@ class AC_host:
 
 
 if (__name__ == "__main__"):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--random", default=True, help="Generate sample data for training")
+    parser.add_argument("--predict",default=None, help="Control air conditioner by prediction")
+    args = parser.parse_args()
+    is_predict = False
+    filepath = ""
     host = AC_host("fyp0001","watch0001")
-    print("Initiate Data Collection Process [Y/n]?  ", end="")
+    if (args.random == True and args.predict == None):
+        print("Initiate Data Collection Process [Y/n]?  ", end="")
+        is_predict = False
+    elif (args.predict != None):
+        print("Input Thermal Comfort Prediction Model : <{}>".format(args.predict))
+        filepath = 'trained_models/'+args.predict
+        try:
+            with open(filepath, 'r') as file:
+                print("filepath <{}> is exist".format(filepath))
+                # Do something with the file
+        except IOError:
+            print("filepath <{}> is not exist".format(filepath))
+            sys.exit()
+        print("Initiate Thermal Comfort Prediction Process [Y/n]?  ", end="")
+        is_predict = True
+    else:
+        sys.exit()
+
     decision = input()
     while(decision is not 'y' and decision is not 'Y' and decision is not 'n'):
         decision = input()
@@ -158,8 +187,12 @@ if (__name__ == "__main__"):
     overall_timer = Timer()
     overall_timer.start()
     if (decision == "y" or decision == "Y"):
+        if (is_predict):
+            model = supervised_model.create_model()
+            model.load_model(filepath)
         # if the AC is not yet TURN ON => TURN ON
         # else do nothing
+
         if (host.power_state is False):
             if (host.check_action_done()):
                 host.ac_power_switch(True)
@@ -180,23 +213,41 @@ if (__name__ == "__main__"):
                 while (not host.check_has_new_data()):
                     pass
 
+                data_pkg = host.collect_data()
                 if (host.current_step % host.period == 0):
+                    is_pass = False
                     if (host.check_override_control()):
                         control_pair = host.get_override_control_setting()
                         host.set_override_control(False)
                     else:
-                        control_pair = host.generate_control_pair()
-                    command = host.generate_command('temp', control_pair['temp'])
-                    host.send_control_command(command)
-                    while (not host.check_action_done()):
-                        pass
-                    command = host.generate_command('fanspeed', control_pair['fanspeed'])
-                    host.send_control_command(command)
-                    while (not host.check_action_done()):
-                        pass
-                    host.update_ac_status()
+                        if (is_predict):
+                            sorted_list = model.predict(data_pkg)
+                            index = random.randint(0, 2)
+                            print("Top 3 actions: {},{},{}".format(
+                                (sorted_list[0][0]+17,sorted_list[0][1]+1),
+                                (sorted_list[1][0]+17,sorted_list[1][1]+1),
+                                (sorted_list[2][0]+17,sorted_list[2][1]+1)))
+                            print("selection: {}".format((sorted_list[index][0]+17,sorted_list[index][1]+1)))
+                            if (sorted_list[index][0]+17 == host.set_temperature and sorted_list[index][1]+1 == host.set_fanspeed):
+                                is_pass = True
+                            else:
+                                is_pass = False
+                            control_pair = host.generate_control_pair(input_temp=sorted_list[index][0], input_fanspeed=sorted_list[index][1])
+                        else:
+                            control_pair = host.generate_control_pair()
+                    if (is_pass == False):
+                        command = host.generate_command('temp', control_pair['temp'])
+                        host.send_control_command(command)
+                        while (not host.check_action_done()):
+                            pass
+                        command = host.generate_command('fanspeed', control_pair['fanspeed'])
+                        host.send_control_command(command)
+                        while (not host.check_action_done()):
+                            pass
+                        host.update_ac_status()
+                    data_pkg['set_temp'], data_pkg['set_fanspeed'] = control_pair['temp'], control_pair['fanspeed']
+
                 data_request_timer.start()
-                data_pkg = host.collect_data()
                 host.push_data(data_pkg)
                 print(f'Step: {host.current_step+1} {data_pkg}')
                 host.current_step += 1
