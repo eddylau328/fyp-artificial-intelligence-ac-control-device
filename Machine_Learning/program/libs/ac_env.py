@@ -1,14 +1,15 @@
 import gym
 import numpy as np
+import enum
 from libs import realtime_firebase as rt
 from libs import ac_firebase_remote as ac_remote
 from gym import spaces
 
 MAX_REWARD = 100
-ENVIRONMENT_DATA_PATH = "Devices/fyp0001/sensors"
 FEEDBACK_PATH = "Devices/fyp0001/feedback"
 CHECK_FINISH_ACTION = "Devices/fyp0001/receive_action"
-USER_DATA_PATH = "Devices/watch0001/datapack"
+DATA_PACK = "Devices/fyp0001/datapack"
+
 AC_REMOTE_SERIAL_NUM = "fyp0001"
 MAX_STEPS = 10    # for 10 minutes section, 1 min each step, total 10 steps
 
@@ -22,6 +23,35 @@ def feedback_mark(feeback):
     else:
         return -20
 
+
+class Actions(enum.Enum):
+    temp_17_fanspeed_1 = 0
+    temp_17_fanspeed_2 = 1
+    temp_17_fanspeed_3 = 2
+    temp_18_fanspeed_1 = 3
+    temp_18_fanspeed_2 = 4
+    temp_18_fanspeed_3 = 5
+    temp_19_fanspeed_1 = 6
+    temp_19_fanspeed_2 = 7
+    temp_19_fanspeed_3 = 8
+    temp_20_fanspeed_1 = 9
+    temp_20_fanspeed_2 = 10
+    temp_20_fanspeed_3 = 11
+    temp_21_fanspeed_1 = 12
+    temp_21_fanspeed_2 = 13
+    temp_21_fanspeed_3 = 14
+    temp_22_fanspeed_1 = 15
+    temp_22_fanspeed_2 = 16
+    temp_22_fanspeed_3 = 17
+    temp_23_fanspeed_1 = 18
+    temp_23_fanspeed_2 = 19
+    temp_23_fanspeed_3 = 20
+    temp_24_fanspeed_1 = 21
+    temp_24_fanspeed_2 = 22
+    temp_24_fanspeed_3 = 23
+    temp_25_fanspeed_1 = 24
+    temp_25_fanspeed_2 = 25
+    temp_25_fanspeed_3 = 26
 
 class AC_Env(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -37,19 +67,18 @@ class AC_Env(gym.Env):
         self.reward = 0
         self.action = 0
         self.total_reward = 0
-        #temperature, humidity, body temperature, type_of_move
-        obersavtion_high = np.array([40.0, 100.0, 40.0, 3])
-        obersavtion_low = np.array([15.0, 0.0, 25.0, 1])
+        #temperature, humidity,outdoor temp, outdoor humidity, body temperature
+        obersavtion_high = np.array([30.0, 100.0, 30.0, 100.0, 35.0])
+        obersavtion_low  = np.array([15.0, 30.0,  15.0, 20.0,  29.0])
         self.observation_space = spaces.Box(low=obersavtion_low, high=obersavtion_high)
-        self.action_space = spaces.Discrete(n=len(ac_remote.Actions_Temp))
+        self.action_space = spaces.Discrete(n=len(Actions))
 
     def _next_observation(self):
         receive_new_data = False
         env_pack = dict()
         user_pack = dict()
         while (not receive_new_data):
-            env_list = self.database.get(ENVIRONMENT_DATA_PATH)
-            user_list = self.database.get(USER_DATA_PATH)
+            env_list = self.database.get(DATA_PACK)
             if ((len(env_list)-1) % MAX_STEPS == self.current_step and (len(user_list)-1) % MAX_STEPS == self.current_step):
                 env_pack = env_list.pop()
                 user_pack = user_list.pop()
