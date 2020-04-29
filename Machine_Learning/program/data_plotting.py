@@ -99,6 +99,25 @@ set_fanspeed = []
 for dict_obj in data:
     set_fanspeed.append(dict_obj['set_fanspeed'])
 
+stepNo = []
+for dict_obj in data:
+    stepNo.append(dict_obj['stepNo'])
+
+time = []
+for dict_obj in data:
+    time.append(dict_obj['time'])
+
+temp_hum_list = []
+for i in range(len(stepNo)):
+    pair = []
+    if(stepNo[i] < 5):
+        pair.append([indoor_temp[i],indoor_hum[i],body_temp[i],time[i]])
+        pair.append([indoor_temp[i+1],indoor_hum[i+1],body_temp[i+1],time[i+1]])
+        temp_hum_list.append(pair)
+temp_hum_list = np.array(temp_hum_list)
+selection = np.random.choice(temp_hum_list.shape[0], 1)
+print(temp_hum_list[selection].reshape(2,4).tolist())
+
 move = []
 for dict_obj in data:
     if (dict_obj['move_type'] == "work"):

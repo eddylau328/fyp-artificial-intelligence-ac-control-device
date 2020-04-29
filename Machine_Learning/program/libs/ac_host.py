@@ -57,7 +57,7 @@ class AC_host:
             else:
                 done = True
                 temp_func, temp, fan_func, fanspeed = self.remote.get_value_pair(input_temp, input_fanspeed)
-                self.period = self.current_step + random.randint(15, 20)
+                self.period = self.current_step + 10
                 print("The Next action will be after {} steps".format(self.period))
 
         return {temp_func:temp, fan_func:fanspeed}
@@ -116,6 +116,14 @@ class AC_host:
     def collect_data(self):
         env_data = self.db.get(self.base_ac_path+"/sensors").pop()
         body_data = self.db.get(self.base_watch_path+"/datapack").pop()
+        feedback_data = self.get_feedback()
+
+        action_data = {'set_temp':self.set_temperature, 'set_fanspeed':self.set_fanspeed, 'stepNo':self.current_step, 'time':str(datetime.datetime.now())}
+        weather_data = self.get_weather_data()
+        return {**env_data, **body_data, **feedback_data, **action_data, **weather_data}
+
+
+    def get_feedback(self):
         feedback_data = self.db.get(self.base_ac_path+"/feedback")
         if (feedback_data is None):
             feedback_data = {'feedback':"acceptable"}
@@ -125,10 +133,7 @@ class AC_host:
                 feedback_data = {'feedback':"acceptable"}
             else:
                 feedback_data = {'feedback': feedback_data['feedback']}
-
-        action_data = {'set_temp':self.set_temperature, 'set_fanspeed':self.set_fanspeed, 'stepNo':self.current_step, 'time':str(datetime.datetime.now())}
-        weather_data = self.get_weather_data()
-        return {**env_data, **body_data, **feedback_data, **action_data, **weather_data}
+        return feedback_data
 
 
     def push_data(self, data):

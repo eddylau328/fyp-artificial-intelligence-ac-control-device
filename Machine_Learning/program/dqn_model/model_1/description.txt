@@ -1,0 +1,338 @@
+Parameter = {
+    'MODEL_NAME' : 'AC Control Q Value Predict',
+    'GAMMA' : 0.7,
+    'EPISODES' : 300,
+    'TEST_EPISODES': 100,
+    'BATCH_SIZE' : 32,
+    'REPLAY_SIZE' : 2000,
+    'LEARNING_RATE' : 0.00025,
+    'SYNC_TARGET_STEPS' : 1000,
+    'REPLAY_START_SIZE' : 1000,
+    'EPSILON_DECAY' : 0.9997,
+    'EPSILON_START' : 1.0,
+    'EPSILON_FINAL' : 0.001,
+}
+
+def DQNModel(input_shape, action_space, model_name, learning_rate ):
+    X_input = Input(input_shape)
+
+    # 'Dense' is the basic form of a neural network layer
+    # Input Layer of state size(4) and Hidden Layer with 1028 nodes
+    X = Dense(512, input_shape=input_shape, activation="relu", kernel_initializer='he_uniform')(X_input)
+
+    # Hidden layer with 512 nodes
+    X = Dense(256, activation="relu", kernel_initializer='he_uniform')(X)
+
+    # Hidden layer with 128 nodes
+    X = Dense(64, activation="relu", kernel_initializer='he_uniform')(X)
+
+    # Output Layer with # of actions: 27 nodes
+    X = Dense(action_space, activation="linear", kernel_initializer='he_uniform')(X)
+
+    model = Model(inputs = X_input, outputs = X, name=model_name)
+    model.compile(loss="mse", optimizer=RMSprop(lr=learning_rate, rho=0.95, epsilon=0.01), metrics=["accuracy"])
+
+    model.summary()
+    return model
+
+
+episode: 0/300, score: -3608.5208333333335, e: 1.0
+episode: 1/300, score: -3601.1666666666665, e: 1.0
+episode: 2/300, score: -3789.145833333334, e: 1.0
+episode: 3/300, score: -3261.541666666666, e: 1.0
+episode: 4/300, score: -3860.5, e: 1.0
+episode: 5/300, score: -4373.895833333332, e: 1.0
+episode: 6/300, score: -4130.75, e: 1.0
+episode: 7/300, score: -3255.916666666667, e: 1.0
+episode: 8/300, score: -3671.0000000000005, e: 1.0
+episode: 9/300, score: -3328.6666666666665, e: 1.0
+episode: 10/300, score: -3507.0208333333326, e: 1.0
+episode: 11/300, score: -3194.395833333333, e: 1.0
+episode: 12/300, score: -3689.25, e: 1.0
+episode: 13/300, score: -3908.395833333333, e: 1.0
+episode: 14/300, score: -3392.3125000000005, e: 1.0
+episode: 15/300, score: -3590.020833333333, e: 1.0
+episode: 16/300, score: -3897.5208333333335, e: 1.0
+episode: 17/300, score: -3051.5208333333335, e: 1.0
+episode: 18/300, score: -3246.270833333334, e: 1.0
+episode: 19/300, score: -3423.9375000000005, e: 1.0
+episode: 20/300, score: -3261.8541666666665, e: 0.99
+episode: 21/300, score: -3628.395833333333, e: 0.98
+episode: 22/300, score: -4041.9791666666665, e: 0.96
+episode: 23/300, score: -3994.333333333333, e: 0.95
+episode: 24/300, score: -4279.479166666667, e: 0.93
+episode: 25/300, score: -3678.916666666666, e: 0.92
+episode: 26/300, score: -3143.458333333333, e: 0.91
+episode: 27/300, score: -3977.4166666666665, e: 0.89
+episode: 28/300, score: -3746.125, e: 0.88
+episode: 29/300, score: -3752.3958333333326, e: 0.87
+episode: 30/300, score: -3453.0833333333335, e: 0.86
+episode: 31/300, score: -3715.270833333334, e: 0.84
+episode: 32/300, score: -3660.3958333333344, e: 0.83
+episode: 33/300, score: -3827.416666666666, e: 0.82
+episode: 34/300, score: -3885.5, e: 0.81
+episode: 35/300, score: -3970.8125, e: 0.8
+episode: 36/300, score: -3957.25, e: 0.78
+episode: 37/300, score: -3787.8124999999995, e: 0.77
+episode: 38/300, score: -3830.4791666666674, e: 0.76
+episode: 39/300, score: -3239.666666666666, e: 0.75
+episode: 40/300, score: -3567.4374999999995, e: 0.74
+episode: 41/300, score: -3791.3125000000005, e: 0.73
+episode: 42/300, score: -3306.3333333333335, e: 0.72
+episode: 43/300, score: -3376.4375000000005, e: 0.71
+episode: 44/300, score: -4286.604166666667, e: 0.7
+episode: 45/300, score: -3775.9791666666674, e: 0.69
+episode: 46/300, score: -3557.2708333333335, e: 0.68
+episode: 47/300, score: -3415.375, e: 0.67
+episode: 48/300, score: -4274.041666666667, e: 0.66
+episode: 49/300, score: -3456.333333333333, e: 0.65
+episode: 50/300, score: -3080.5000000000005, e: 0.64
+episode: 51/300, score: -3267.0, e: 0.63
+episode: 52/300, score: -3747.166666666667, e: 0.62
+episode: 53/300, score: -3498.75, e: 0.61
+episode: 54/300, score: -3818.2499999999995, e: 0.6
+episode: 55/300, score: -3808.1041666666674, e: 0.59
+episode: 56/300, score: -3438.833333333333, e: 0.58
+episode: 57/300, score: -3683.416666666667, e: 0.58
+episode: 58/300, score: -2911.250000000001, e: 0.57
+episode: 59/300, score: -2515.7083333333335, e: 0.56
+episode: 60/300, score: -3006.3125, e: 0.55
+episode: 61/300, score: -2524.166666666667, e: 0.54
+episode: 62/300, score: -2888.8125, e: 0.53
+episode: 63/300, score: -3034.5, e: 0.53
+episode: 64/300, score: -2807.8125, e: 0.52
+episode: 65/300, score: -3544.1875, e: 0.51
+episode: 66/300, score: -2778.6458333333335, e: 0.5
+episode: 67/300, score: -1967.6874999999998, e: 0.5
+episode: 68/300, score: -3271.520833333333, e: 0.49
+episode: 69/300, score: -3230.916666666667, e: 0.48
+episode: 70/300, score: -2746.3333333333335, e: 0.48
+episode: 71/300, score: -3430.9166666666665, e: 0.47
+episode: 72/300, score: -3297.416666666667, e: 0.46
+episode: 73/300, score: -2164.0625, e: 0.45
+episode: 74/300, score: -2584.708333333333, e: 0.45
+episode: 75/300, score: -2700.0625, e: 0.44
+episode: 76/300, score: -2489.083333333333, e: 0.44
+episode: 77/300, score: -3370.0625000000005, e: 0.43
+episode: 78/300, score: -2396.4166666666665, e: 0.42
+episode: 79/300, score: -3390.645833333334, e: 0.42
+episode: 80/300, score: -2449.2291666666665, e: 0.41
+episode: 81/300, score: -3452.1666666666665, e: 0.4
+episode: 82/300, score: -2467.1041666666665, e: 0.4
+episode: 83/300, score: -3178.2083333333335, e: 0.39
+episode: 84/300, score: -2347.583333333333, e: 0.39
+episode: 85/300, score: -2467.1041666666665, e: 0.38
+episode: 86/300, score: -1980.8125000000002, e: 0.38
+episode: 87/300, score: -2379.5833333333335, e: 0.37
+episode: 88/300, score: -2380.5208333333335, e: 0.36
+episode: 89/300, score: -3509.3541666666665, e: 0.36
+episode: 90/300, score: -3364.145833333333, e: 0.35
+episode: 91/300, score: -2739.291666666667, e: 0.35
+episode: 92/300, score: -2477.25, e: 0.34
+episode: 93/300, score: -1963.625, e: 0.34
+episode: 94/300, score: -2554.895833333333, e: 0.33
+episode: 95/300, score: -1245.5, e: 0.33
+episode: 96/300, score: -1613.145833333333, e: 0.32
+episode: 97/300, score: -2640.8541666666665, e: 0.32
+episode: 98/300, score: -2684.354166666667, e: 0.31
+episode: 99/300, score: -2232.7708333333335, e: 0.31
+episode: 100/300, score: -2298.0, e: 0.31
+episode: 101/300, score: -1923.0833333333335, e: 0.3
+episode: 102/300, score: -2585.0625000000005, e: 0.3
+episode: 103/300, score: -2995.479166666667, e: 0.29
+episode: 104/300, score: -1307.6458333333335, e: 0.29
+episode: 105/300, score: -2248.4166666666665, e: 0.28
+episode: 106/300, score: -2290.8125, e: 0.28
+episode: 107/300, score: -1812.2708333333335, e: 0.28
+episode: 108/300, score: -2311.729166666667, e: 0.27
+episode: 109/300, score: -2427.2708333333335, e: 0.27
+episode: 110/300, score: -1741.3125000000005, e: 0.26
+episode: 111/300, score: -2063.666666666667, e: 0.26
+episode: 112/300, score: -2093.1875, e: 0.26
+episode: 113/300, score: -1717.6875, e: 0.25
+episode: 114/300, score: -1599.0416666666665, e: 0.25
+episode: 115/300, score: -1937.9374999999998, e: 0.25
+episode: 116/300, score: -1498.0, e: 0.24
+episode: 117/300, score: -1908.6458333333333, e: 0.24
+episode: 118/300, score: -1155.4791666666665, e: 0.23
+episode: 119/300, score: -2268.8333333333335, e: 0.23
+episode: 120/300, score: -1267.6458333333337, e: 0.23
+episode: 121/300, score: -2164.5625, e: 0.22
+episode: 122/300, score: -2384.6666666666665, e: 0.22
+episode: 123/300, score: -1583.8333333333333, e: 0.22
+episode: 124/300, score: -2195.083333333333, e: 0.21
+episode: 125/300, score: -1987.270833333333, e: 0.21
+episode: 126/300, score: -1073.8958333333335, e: 0.21
+episode: 127/300, score: -1774.3958333333337, e: 0.21
+episode: 128/300, score: -1319.1666666666667, e: 0.2
+episode: 129/300, score: -505.95833333333337, e: 0.2
+episode: 130/300, score: -1613.4791666666667, e: 0.2
+episode: 131/300, score: -2080.229166666666, e: 0.19
+episode: 132/300, score: -1475.1875000000002, e: 0.19
+episode: 133/300, score: -1237.0625, e: 0.19
+episode: 134/300, score: -2067.7916666666665, e: 0.19
+episode: 135/300, score: -1119.4791666666667, e: 0.18
+episode: 136/300, score: -623.8958333333334, e: 0.18
+episode: 137/300, score: -2290.3333333333335, e: 0.18
+episode: 138/300, score: -1520.0833333333335, e: 0.17
+episode: 139/300, score: -1844.1875000000002, e: 0.17
+episode: 140/300, score: -1880.4791666666665, e: 0.17
+episode: 141/300, score: -1120.1875, e: 0.17
+episode: 142/300, score: -1355.9166666666667, e: 0.16
+episode: 143/300, score: -2572.208333333333, e: 0.16
+episode: 144/300, score: -1554.9166666666667, e: 0.16
+episode: 145/300, score: -1906.6666666666667, e: 0.16
+episode: 146/300, score: -1330.7291666666665, e: 0.16
+episode: 147/300, score: -1235.479166666667, e: 0.15
+episode: 148/300, score: -1794.5416666666667, e: 0.15
+episode: 149/300, score: -1353.0625, e: 0.15
+episode: 150/300, score: -1412.5833333333337, e: 0.15
+episode: 151/300, score: -1505.9166666666665, e: 0.14
+episode: 152/300, score: -1913.3541666666665, e: 0.14
+episode: 153/300, score: -592.6875, e: 0.14
+episode: 154/300, score: -1202.4166666666665, e: 0.14
+episode: 155/300, score: -978.1041666666665, e: 0.14
+episode: 156/300, score: -848.7291666666666, e: 0.13
+episode: 157/300, score: -934.7708333333333, e: 0.13
+episode: 158/300, score: -840.3124999999999, e: 0.13
+episode: 159/300, score: -1327.5208333333335, e: 0.13
+episode: 160/300, score: -986.25, e: 0.13
+episode: 161/300, score: -1212.0, e: 0.12
+episode: 162/300, score: -1073.2499999999998, e: 0.12
+episode: 163/300, score: -1139.083333333333, e: 0.12
+episode: 164/300, score: -596.25, e: 0.12
+episode: 165/300, score: -562.2083333333333, e: 0.12
+episode: 166/300, score: -452.5, e: 0.12
+episode: 167/300, score: -638.1875, e: 0.11
+episode: 168/300, score: -873.4166666666667, e: 0.11
+episode: 169/300, score: -1365.8958333333333, e: 0.11
+episode: 170/300, score: -1402.875, e: 0.11
+episode: 171/300, score: -1245.3125000000002, e: 0.11
+episode: 172/300, score: -1298.6666666666665, e: 0.11
+episode: 173/300, score: -925.4375000000002, e: 0.1
+episode: 174/300, score: -588.75, e: 0.1
+episode: 175/300, score: -738.4791666666666, e: 0.1
+episode: 176/300, score: -1355.5, e: 0.1
+episode: 177/300, score: -1364.5625, e: 0.099
+episode: 178/300, score: -416.3333333333333, e: 0.097
+episode: 179/300, score: -490.9166666666666, e: 0.096
+episode: 180/300, score: -1547.1041666666663, e: 0.094
+episode: 181/300, score: -973.75, e: 0.093
+episode: 182/300, score: -602.1666666666666, e: 0.092
+episode: 183/300, score: -938.8125, e: 0.09
+episode: 184/300, score: -925.8125, e: 0.089
+episode: 185/300, score: -1011.0, e: 0.088
+episode: 186/300, score: -2008.666666666667, e: 0.086
+episode: 187/300, score: -1640.375, e: 0.085
+episode: 188/300, score: -533.6666666666667, e: 0.084
+episode: 189/300, score: -1097.5833333333333, e: 0.083
+episode: 190/300, score: -1049.1875, e: 0.081
+episode: 191/300, score: -843.0, e: 0.08
+episode: 192/300, score: -1174.5625, e: 0.079
+episode: 193/300, score: -1112.0625, e: 0.078
+episode: 194/300, score: -540.7708333333333, e: 0.077
+episode: 195/300, score: -1021.2499999999998, e: 0.076
+episode: 196/300, score: -1321.8125, e: 0.075
+episode: 197/300, score: -545.9166666666667, e: 0.073
+episode: 198/300, score: -629.75, e: 0.072
+episode: 199/300, score: -917.9999999999998, e: 0.071
+episode: 200/300, score: -255.3958333333333, e: 0.07
+episode: 201/300, score: -1342.1666666666665, e: 0.069
+episode: 202/300, score: -595.3125, e: 0.068
+episode: 203/300, score: -992.0833333333335, e: 0.067
+episode: 204/300, score: -816.375, e: 0.066
+episode: 205/300, score: -1754.5416666666665, e: 0.065
+episode: 206/300, score: -676.125, e: 0.064
+episode: 207/300, score: -582.8333333333333, e: 0.063
+episode: 208/300, score: -673.4166666666666, e: 0.062
+episode: 209/300, score: -813.8125, e: 0.062
+episode: 210/300, score: -751.5625, e: 0.061
+episode: 211/300, score: -600.4166666666667, e: 0.06
+episode: 212/300, score: -390.97916666666663, e: 0.059
+episode: 213/300, score: -820.9166666666666, e: 0.058
+episode: 214/300, score: -1250.7916666666665, e: 0.057
+episode: 215/300, score: -583.0000000000001, e: 0.056
+episode: 216/300, score: -907.8125, e: 0.056
+episode: 217/300, score: -160.60416666666666, e: 0.055
+episode: 218/300, score: -456.3333333333332, e: 0.054
+episode: 219/300, score: -587.0, e: 0.053
+episode: 220/300, score: -568.0625, e: 0.052
+episode: 221/300, score: -632.8125, e: 0.052
+episode: 222/300, score: -346.9583333333333, e: 0.051
+episode: 223/300, score: -343.41666666666663, e: 0.05
+episode: 224/300, score: -1280.5, e: 0.049
+episode: 225/300, score: -529.9166666666667, e: 0.049
+episode: 226/300, score: -353.66666666666663, e: 0.048
+episode: 227/300, score: -518.1875, e: 0.047
+episode: 228/300, score: -685.1249999999999, e: 0.047
+episode: 229/300, score: -1060.0625, e: 0.046
+episode: 230/300, score: -495.3958333333333, e: 0.045
+episode: 231/300, score: -521.25, e: 0.045
+episode: 232/300, score: -701.7291666666667, e: 0.044
+episode: 233/300, score: -697.1666666666666, e: 0.043
+episode: 234/300, score: -819.2500000000001, e: 0.043
+episode: 235/300, score: -711.9375000000001, e: 0.042
+episode: 236/300, score: -805.1458333333334, e: 0.041
+episode: 237/300, score: -319.25, e: 0.041
+episode: 238/300, score: -1315.0, e: 0.04
+episode: 239/300, score: -1443.1041666666665, e: 0.04
+episode: 240/300, score: -1223.4166666666667, e: 0.039
+episode: 241/300, score: -365.89583333333337, e: 0.038
+episode: 242/300, score: -689.2916666666667, e: 0.038
+episode: 243/300, score: -770.3333333333333, e: 0.037
+episode: 244/300, score: -76.22916666666666, e: 0.037
+episode: 245/300, score: -237.77083333333331, e: 0.036
+episode: 246/300, score: -536.7291666666666, e: 0.036
+episode: 247/300, score: -620.0833333333334, e: 0.035
+episode: 248/300, score: -391.75, e: 0.035
+episode: 249/300, score: -1475.0833333333333, e: 0.034
+episode: 250/300, score: -556.5416666666666, e: 0.034
+episode: 251/300, score: -897.1458333333333, e: 0.033
+episode: 252/300, score: -423.9375, e: 0.033
+episode: 253/300, score: -227.27083333333334, e: 0.032
+episode: 254/300, score: -1435.6875000000002, e: 0.032
+episode: 255/300, score: -561.7291666666667, e: 0.031
+episode: 256/300, score: -307.7291666666667, e: 0.031
+episode: 257/300, score: -678.3958333333334, e: 0.03
+episode: 258/300, score: -1167.6875, e: 0.03
+episode: 259/300, score: -817.9999999999999, e: 0.03
+episode: 260/300, score: -1035.8333333333333, e: 0.029
+episode: 261/300, score: -568.0208333333333, e: 0.029
+episode: 262/300, score: -919.1666666666667, e: 0.028
+episode: 263/300, score: -353.2083333333333, e: 0.028
+episode: 264/300, score: -1571.1666666666665, e: 0.027
+episode: 265/300, score: -446.25, e: 0.027
+episode: 266/300, score: -332.9375, e: 0.027
+episode: 267/300, score: -980.3333333333333, e: 0.026
+episode: 268/300, score: -630.7291666666666, e: 0.026
+episode: 269/300, score: -332.89583333333337, e: 0.025
+episode: 270/300, score: -181.68750000000003, e: 0.025
+episode: 271/300, score: -878.8124999999999, e: 0.025
+episode: 272/300, score: -561.7291666666667, e: 0.024
+episode: 273/300, score: -772.1458333333334, e: 0.024
+episode: 274/300, score: -340.70833333333337, e: 0.024
+episode: 275/300, score: -193.0, e: 0.023
+episode: 276/300, score: -795.9166666666667, e: 0.023
+episode: 277/300, score: -697.1666666666667, e: 0.023
+episode: 278/300, score: -680.6041666666667, e: 0.022
+episode: 279/300, score: -341.375, e: 0.022
+episode: 280/300, score: -779.6666666666666, e: 0.022
+episode: 281/300, score: -926.7916666666667, e: 0.021
+episode: 282/300, score: -441.72916666666663, e: 0.021
+episode: 283/300, score: -504.24999999999994, e: 0.021
+episode: 284/300, score: -719.5833333333333, e: 0.02
+episode: 285/300, score: -524.4375, e: 0.02
+episode: 286/300, score: -328.0625, e: 0.02
+episode: 287/300, score: -1091.75, e: 0.02
+episode: 288/300, score: -149.4375, e: 0.019
+episode: 289/300, score: -140.77083333333334, e: 0.019
+episode: 290/300, score: -936.3958333333334, e: 0.019
+episode: 291/300, score: -950.7499999999998, e: 0.018
+episode: 292/300, score: -732.5625000000001, e: 0.018
+episode: 293/300, score: -970.5, e: 0.018
+episode: 294/300, score: -282.5, e: 0.018
+episode: 295/300, score: -152.72916666666669, e: 0.017
+episode: 296/300, score: -413.8125, e: 0.017
+episode: 297/300, score: -805.5208333333333, e: 0.017
+episode: 298/300, score: -211.54166666666666, e: 0.017
+episode: 299/300, score: -222.58333333333334, e: 0.016
