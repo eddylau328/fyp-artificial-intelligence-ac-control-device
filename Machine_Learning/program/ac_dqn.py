@@ -18,19 +18,19 @@ from libs import humidity_prediction_model as humidity_model
 from libs import skin_temp_prediction_model as skin_temp_model
 from libs.timer import Timer
 
-
+best_episodes = []
 MEAN_REWARD_BOUND = 80
 Parameter = {
     'MODEL_NAME' : 'AC Control Q Value Predict',
-    'GAMMA' : 0.7,
+    'GAMMA' : 0.9,
     'EPISODES' : 1000,
     'TEST_EPISODES': 10,
     'BATCH_SIZE' : 32,
-    'REPLAY_SIZE' : 1000,
-    'LEARNING_RATE' : 0.00025,
-    'SYNC_TARGET_STEPS' : 500,
-    'REPLAY_START_SIZE' : 500,
-    'EPSILON_DECAY' : 0.99975,
+    'REPLAY_SIZE' : 2000,
+    'LEARNING_RATE' : 0.0001,
+    'SYNC_TARGET_STEPS' : 1000,
+    'REPLAY_START_SIZE' : 1000,
+    'EPSILON_DECAY' : 0.9996,
     'EPSILON_START' : 1.0,
     'EPSILON_FINAL' : 0.001,
 }
@@ -67,7 +67,10 @@ class DQNAgent:
         self.action_size = self.env.action_space.n
         self.EPISODES = kwargs.get('EPISODES', 1000)
         self.TEST_EPISODES = kwargs.get('TEST_EPISODES', 10)
+        self.replay_size = kwargs.get('REPLAY_SIZE', 2000)
         self.memory = deque(maxlen=kwargs.get('REPLAY_SIZE', 2000))
+
+        self.permanent_data_head = 0
 
         self.gamma = kwargs.get('GAMMA', 0.95)    # discount rate
         self.epsilon = kwargs.get('EPSILON_START', 1.0)  # exploration rate
@@ -84,8 +87,23 @@ class DQNAgent:
             model_name=kwargs.get('MODEL_NAME', 'DQN_model'), learning_rate=kwargs.get('LEARNING_RATE', 0.0001))
 
 
+    def update_permanent_memory(self):
+        for episode in best_episodes:
+            state = np.array(episode[0]).reshape((1, agent.state_size))
+            action = episode[1]
+            reward = episode[2]
+            next_state = np.array(episode[3]).reshape((1, agent.state_size))
+            done = episode[4]
+            self.memory.append((state, action, reward, next_state, done))
+
+
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
+        #if (len(self.memory) - self.permanent_data_head == self.replay_size and self.permanent_data_head == 0):
+        #    self.update_permanent_memory()
+        #    self.permanent_data_head = self.replay_size - len(best_episodes)
+        #if (self.permanent_data_head != 0):
+        #    self.permanent_data_head -= 1
         if len(self.memory) > self.train_start:
             if self.epsilon > self.epsilon_min:
                 self.epsilon *= self.epsilon_decay
@@ -230,6 +248,39 @@ if __name__ == "__main__":
             host.update_ac_status()
             print("AC is switched ON")
     agent = DQNAgent(env, **Parameter)
+    '''
+    with open('dqn_model/model_3/best_episodes.csv', 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            modify_row = row
+            modify_row[0] = modify_row[0].replace('[', '')
+            modify_row[0] = modify_row[0].replace(']', '')
+            modify_row[3] = modify_row[3].replace('[', '')
+            modify_row[3] = modify_row[3].replace(']', '')
+            modify_row[0] = modify_row[0].split(' ')
+            while (len(modify_row[0]) != 5):
+                for i in range(len(modify_row[0])):
+                    if (modify_row[0][i] == ''):
+                        modify_row[0].pop(i)
+                        break
+            for i in range(len(modify_row[0])):
+                modify_row[0][i] = float(modify_row[0][i])
+            modify_row[3] = modify_row[3].split(' ')
+            while (len(modify_row[3]) != 5):
+                for i in range(len(modify_row[3])):
+                    if (modify_row[3][i] == ''):
+                        modify_row[3].pop(i)
+                        break
+            for i in range(len(modify_row[3])):
+                modify_row[3][i] = float(modify_row[3][i])
+            modify_row[0], modify_row[3] = np.array(modify_row[0]), np.array(modify_row[3])
+            modify_row[1], modify_row[2] = int(float(modify_row[1])), float(modify_row[2])
+            if (modify_row[4] == 'True'):
+                modify_row[4] = True
+            else:
+                modify_row[4] = False
+            best_episodes.append(modify_row)
+    '''
     #agent.load('dqn_model/ac-control-dqn.h5')
     agent.run()
     #agent.test()

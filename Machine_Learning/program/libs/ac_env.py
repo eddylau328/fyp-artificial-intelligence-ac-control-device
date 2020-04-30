@@ -7,7 +7,7 @@ from gym import spaces
 import json
 from datetime import datetime
 
-MAX_REWARD = 96
+MAX_REWARD = 120
 MAX_STEPS = 24   # for 5 minutes section, 5 min each step, total 24 steps, 2 hours
 MAX_MIN = (28.600000381, 23.399999619, 85.300003052, 43.200000763, 34.259998322, 30.6875)
 
@@ -45,7 +45,7 @@ def get_data(path, dataname):
 def feedback_mark(feedback,set_temp,set_fanspeed,isChangeTemp,isChangeFan,indoor_temp,previous_temp):
     mark = 0
     if (feedback == "comfy"):
-        mark += 5
+        mark += 6
     elif (feedback == "a bit hot" or feedback == "a bit cold"):
         mark -= 1
     elif (feedback == "hot" or feedback == "cold"):
@@ -79,15 +79,6 @@ def feedback_mark(feedback,set_temp,set_fanspeed,isChangeTemp,isChangeFan,indoor
     # prevent no using all the cooling power
     if (isChangeTemp and indoor_temp > MAX_TEMP_DROP[str(previous_temp)]):
         mark -= 2*(indoor_temp-MAX_TEMP_DROP[str(previous_temp)])
-
-    # don't want it to rely on low temperature cooling
-    if (isChangeTemp):
-        if (set_temp - previous_temp >= 6):
-            mark -= 6
-        elif (set_temp - previous_temp >= 4):
-            mark -= 4
-        elif (set_temp - previous_temp >= 2):
-            mark -= 2
 
     return mark
 
@@ -242,6 +233,10 @@ class AC_Env(gym.Env):
                     predict_body = self.skin_temperature_prediction_model.predict(pkg, predict_delta_time)
                     outdoor_temp, outdoor_hum = self.current_data_pkg['outdoor_temp'], self.current_data_pkg['outdoor_hum']
                     self.previous_data_pkg = self.current_data_pkg
+                    print(self.current_data_pkg['temp'],predict_temp)
+                    print(self.current_data_pkg['hum'], predict_hum)
+                    print(self.current_data_pkg['body'], predict_body)
+                    print(self.current_data_pkg['set_temp'], self.current_data_pkg['set_fanspeed'])
                     self.current_data_pkg = {
                         'temp': predict_temp,
                         'hum': predict_hum,
@@ -268,7 +263,12 @@ class AC_Env(gym.Env):
             self.host.send_control_command(command)
             while (not self.host.check_action_done()):
                 pass
-        self.host.update_ac_status()
+            self.host.update_ac_status()
+        else:
+            action_name = Actions(action).name.split('_')
+            temp, fanspeed = int(action_name[1]), int(action_name[3])
+            self.host.set_temperature = temp
+            self.host.set_fanspeed = fanspeed
 
 
     def step(self, action):

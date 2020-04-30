@@ -12,9 +12,10 @@ from sklearn.utils.class_weight import compute_class_weight
 from matplotlib import pyplot
 
 MAX_MIN_TABLE = {
-    'outdoor_temp' : (22.242342, 2.3410769),
-    'outdoor_hum' : (70.54831, 21.51363),
-    'delta_time' : (77.47866, 31.67345)
+    'outdoor_temp' : (22.254541, 2.3447716),
+    'outdoor_hum' : (70.558945, 21.4994),
+    'delta_time' : (76.91057, 33.42745),
+    'time' : (37.865852, 13.623056)
 }
 
 
@@ -79,7 +80,7 @@ class Env_Des(Enum):
 # set_fanspeed = 3
 
 parameters = {
-    'input_shape':17,
+    'input_shape':18,
     'data_name':['temp','hum','outdoor_temp','outdoor_hum','outdoor_des','set_temp','set_fanspeed','time'],
     'output_shape': 1,
     'model_name': "Humidity Prediction"
@@ -99,15 +100,10 @@ class HumidityPredictionModel:
     # initiate the keras model for supervised learning
     def initiate_model(self):
         self.model = Sequential(name=self.model_name)
-        self.model.add(Dense(64, input_shape=(self.input_shape,), kernel_initializer='he_uniform',
+        self.model.add(Dense(18, input_shape=(self.input_shape,), kernel_initializer='he_uniform',
                 bias_initializer='zeros', activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.01))
-        self.model.add(Dropout(0.1))
-
-        self.model.add(Dense(64, kernel_initializer='he_uniform',
-                bias_initializer='zeros',  activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.01))
-        self.model.add(Dropout(0.1))
+        #self.model.add(LeakyReLU(alpha=0.01))
+        #self.model.add(Dropout(0.1))
 
         self.model.add(Dense(self.output_shape, activation='linear'))
         optimizer = optimizers.Adam(lr=0.0002, decay=1e-6)
@@ -125,7 +121,7 @@ class HumidityPredictionModel:
         #print("x shape = {}".format(x.shape))
         #print("y shape = {}".format(y.shape))
 
-        history = self.model.fit(x, y, batch_size=32, epochs=200, verbose=1, validation_split = 0.3, shuffle=True, callbacks=[self.tensorboard])
+        history = self.model.fit(x, y, batch_size=32, epochs=300, verbose=1, validation_split = 0.3, shuffle=True, callbacks=[self.tensorboard])
         pyplot.subplot(211)
         pyplot.title('Loss')
         pyplot.plot(history.history['loss'], label='train')
@@ -153,7 +149,7 @@ class HumidityPredictionModel:
         self.model = load_model(path)
 
     # predict the feedback the user will give
-    def predict(self, inputs, delta_time):
+    def predict(self, inputs, delta_time, time):
         package = []
         # input should be a dictionary object
         for data in inputs:
@@ -168,6 +164,7 @@ class HumidityPredictionModel:
             'outdoor_temp'  : package[1]['outdoor_temp'],
             'outdoor_hum'   : package[1]['outdoor_hum'],
             'delta_time'    : delta_time,
+            'time'          : time,
             'set_temp'      : package[1]['set_temp']-17,
             'set_fanspeed'  : package[1]['set_fanspeed']-1,
             }
@@ -180,7 +177,7 @@ class HumidityPredictionModel:
         seperate_data['set_temp'] = one_hot_set_temp.reshape(-1).tolist()
         seperate_data['set_fanspeed'] = one_hot_set_fanspeed.reshape(-1).tolist()
         x = []
-        for key in ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','set_temp','set_fanspeed']:
+        for key in ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','time','set_temp','set_fanspeed']:
             if (key in ['set_temp','set_fanspeed']):
                 for num in seperate_data[key]:
                     x.append(num)
@@ -199,7 +196,7 @@ class HumidityPredictionModel:
         x = []
         for dict_obj in data:
             x_data = []
-            for key in ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','set_temp','set_fanspeed']:
+            for key in ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','time','set_temp','set_fanspeed']:
                 if (key in ['set_temp','set_fanspeed']):
                     for num in dict_obj[key]:
                         x_data.append(num)
@@ -221,8 +218,8 @@ class HumidityPredictionModel:
 
 
     def normalize_data(self, x, max_min_dict=None):
-        x_field = ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','set_temp','set_fanspeed']
-        for key in ['outdoor_temp','outdoor_hum','delta_time']:
+        x_field = ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','time','set_temp','set_fanspeed']
+        for key in ['outdoor_temp','outdoor_hum','delta_time','time']:
             col_index = x_field.index(key)
             if (max_min_dict == None):
                 mean, std = np.mean(x[:, col_index]), np.std(x[:, col_index])
@@ -259,8 +256,9 @@ class HumidityPredictionModel:
             count = 0
             while(not isFinish):
                 if (count <= len(package)-3):
-                    str_pre_time, str_curr_time = package[count]['time'], package[count+2]['time']
+                    str_pre_time, str_mid_time, str_curr_time = package[count]['time'], package[count+1]['time'], package[count+2]['time']
                     pre_time = datetime.strptime(str_pre_time, '%Y-%m-%d %H:%M:%S.%f')
+                    mid_time = datetime.strptime(str_mid_time, '%Y-%m-%d %H:%M:%S.%f')
                     curr_time = datetime.strptime(str_curr_time, '%Y-%m-%d %H:%M:%S.%f')
                     pack = {
                         'delta_temp'    : package[count]['temp'] - package[count+1]['temp'],
@@ -270,11 +268,12 @@ class HumidityPredictionModel:
                         'outdoor_temp'  : package[count+1]['outdoor_temp'],
                         'outdoor_hum'   : package[count+1]['outdoor_hum'],
                         'delta_time'    : (curr_time-pre_time).seconds,
+                        'time'          : (mid_time-pre_time).seconds,
                         'set_temp'      : package[count+1]['set_temp']-17,
                         'set_fanspeed'  : package[count+1]['set_fanspeed']-1,
                     }
                     seperate_data.append(pack)
-                    count += 1
+                    count += 3
                 else:
                     isFinish = True
 
@@ -304,8 +303,8 @@ def create_model():
 if (__name__ == '__main__'):
     model = create_model()
     model.show_model()
-    #model.train()
-
+    model.train()
+'''
     model.load_model(path="../humidity_prediction_models/prediction_model_1.h5")
     inputs = [{
            "body": 32.59375,
@@ -365,3 +364,4 @@ if (__name__ == '__main__'):
     delta_time = (curr_time-pre_time).seconds
     print(model.predict(inputs, delta_time), test['hum'])
 
+'''

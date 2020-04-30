@@ -12,9 +12,10 @@ from sklearn.utils.class_weight import compute_class_weight
 from matplotlib import pyplot
 
 MAX_MIN_TABLE = {
-    'outdoor_temp' : (22.242342, 2.3410769),
-    'outdoor_hum' : (70.54831, 21.51363),
-    'delta_time' : (77.47866, 31.67345)
+    'outdoor_temp' : (22.254541, 2.3447716),
+    'outdoor_hum' : (70.558945, 21.4994),
+    'delta_time' : (76.91057, 33.42745),
+    'time' : (37.865852, 13.623056)
 }
 
 
@@ -79,7 +80,7 @@ class Env_Des(Enum):
 # set_fanspeed = 3
 
 parameters = {
-    'input_shape':17,
+    'input_shape':18,
     'data_name':['temp','hum','outdoor_temp','outdoor_hum','outdoor_des','set_temp','set_fanspeed','time'],
     'output_shape': 1,
     'model_name': "Temperature Prediction"
@@ -101,14 +102,12 @@ class TemperaturePredictionModel:
         self.model = Sequential(name=self.model_name)
         self.model.add(Dense(64, input_shape=(self.input_shape,), kernel_initializer='he_uniform',
                 bias_initializer='zeros', activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.1))
-        self.model.add(Dropout(0.3))
-
-        self.model.add(Dense(64, kernel_initializer='he_uniform',
-                bias_initializer='zeros',  activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.1))
-        self.model.add(Dropout(0.3))
-
+        self.model.add(LeakyReLU(alpha=0.01))
+        self.model.add(Dropout(0.2))
+        self.model.add(Dense(64, input_shape=(self.input_shape,), kernel_initializer='he_uniform',
+                bias_initializer='zeros', activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.01))
+        self.model.add(Dropout(0.2))
         self.model.add(Dense(self.output_shape, activation='linear'))
         optimizer = optimizers.Adam(lr=0.0004, decay=1e-6)
         self.tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
@@ -125,7 +124,7 @@ class TemperaturePredictionModel:
         #print("x shape = {}".format(x.shape))
         #print("y shape = {}".format(y.shape))
 
-        history = self.model.fit(x, y, batch_size=32, epochs=100, verbose=1, validation_split = 0.3, shuffle=True, callbacks=[self.tensorboard])
+        history = self.model.fit(x, y, batch_size=32, epochs=200, verbose=1, validation_split = 0.3, shuffle=True, callbacks=[self.tensorboard])
         pyplot.subplot(211)
         pyplot.title('Loss')
         pyplot.plot(history.history['loss'], label='train')
@@ -153,7 +152,7 @@ class TemperaturePredictionModel:
         self.model = load_model(path)
 
     # predict the feedback the user will give
-    def predict(self, inputs, delta_time):
+    def predict(self, inputs, delta_time, time):
         package = []
         # input should be a dictionary object
         for data in inputs:
@@ -167,6 +166,7 @@ class TemperaturePredictionModel:
             'delta_hum'     : package[0]['hum'] - package[1]['hum'],
             'outdoor_temp'  : package[1]['outdoor_temp'],
             'outdoor_hum'   : package[1]['outdoor_hum'],
+            'time'          : time,
             'delta_time'    : delta_time,
             'set_temp'      : package[1]['set_temp']-17,
             'set_fanspeed'  : package[1]['set_fanspeed']-1,
@@ -180,7 +180,7 @@ class TemperaturePredictionModel:
         seperate_data['set_temp'] = one_hot_set_temp.reshape(-1).tolist()
         seperate_data['set_fanspeed'] = one_hot_set_fanspeed.reshape(-1).tolist()
         x = []
-        for key in ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','set_temp','set_fanspeed']:
+        for key in ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','time','set_temp','set_fanspeed']:
             if (key in ['set_temp','set_fanspeed']):
                 for num in seperate_data[key]:
                     x.append(num)
@@ -199,7 +199,7 @@ class TemperaturePredictionModel:
         x = []
         for dict_obj in data:
             x_data = []
-            for key in ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','set_temp','set_fanspeed']:
+            for key in ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','time','set_temp','set_fanspeed']:
                 if (key in ['set_temp','set_fanspeed']):
                     for num in dict_obj[key]:
                         x_data.append(num)
@@ -221,8 +221,8 @@ class TemperaturePredictionModel:
 
 
     def normalize_data(self, x, max_min_dict=None):
-        x_field = ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','set_temp','set_fanspeed']
-        for key in ['outdoor_temp','outdoor_hum','delta_time']:
+        x_field = ['delta_temp','delta_hum','outdoor_temp','outdoor_hum','delta_time','time','set_temp','set_fanspeed']
+        for key in ['outdoor_temp','outdoor_hum','delta_time', 'time']:
             col_index = x_field.index(key)
             if (max_min_dict == None):
                 mean, std = np.mean(x[:, col_index]), np.std(x[:, col_index])
@@ -259,8 +259,9 @@ class TemperaturePredictionModel:
             count = 0
             while(not isFinish):
                 if (count <= len(package)-3):
-                    str_pre_time, str_curr_time = package[count]['time'], package[count+2]['time']
+                    str_pre_time, str_mid_time, str_curr_time = package[count]['time'], package[count+1]['time'], package[count+2]['time']
                     pre_time = datetime.strptime(str_pre_time, '%Y-%m-%d %H:%M:%S.%f')
+                    mid_time = datetime.strptime(str_mid_time, '%Y-%m-%d %H:%M:%S.%f')
                     curr_time = datetime.strptime(str_curr_time, '%Y-%m-%d %H:%M:%S.%f')
                     pack = {
                         'delta_temp'    : package[count]['temp'] - package[count+1]['temp'],
@@ -269,12 +270,13 @@ class TemperaturePredictionModel:
                         'output_hum'    : package[count+1]['hum'] - package[count+2]['hum'],
                         'outdoor_temp'  : package[count+1]['outdoor_temp'],
                         'outdoor_hum'   : package[count+1]['outdoor_hum'],
+                        'time'          : (mid_time-pre_time).seconds,
                         'delta_time'    : (curr_time-pre_time).seconds,
                         'set_temp'      : package[count+1]['set_temp']-17,
                         'set_fanspeed'  : package[count+1]['set_fanspeed']-1,
                     }
                     seperate_data.append(pack)
-                    count += 1
+                    count += 3
                 else:
                     isFinish = True
 
@@ -304,42 +306,42 @@ def create_model():
 if (__name__ == '__main__'):
     model = create_model()
     model.show_model()
-    #model.train()
-
+    model.train()
+'''
     model.load_model(path="../temperature_prediction_models/prediction_model_1.h5")
     inputs = [{
-           "body": 32.59375,
+           "body": 30.895833969,
            "feedback": "acceptable",
-           "hum": 63.799999237,
-           "light": 29.166671753,
+           "hum": 81.400001526,
+           "light": 34.166660309,
            "move_type": "work",
            "outdoor_des": "few clouds",
-           "outdoor_hum": 69,
-           "outdoor_press": 101.7,
-           "outdoor_temp": 23.410000000000025,
-           "press": 101.700004578,
+           "outdoor_hum": 51,
+           "outdoor_press": 101.5,
+           "outdoor_temp": 25.430000000000007,
+           "press": 101.5,
            "set_fanspeed": 1,
-           "set_temp": 22,
-           "stepNo": 28,
-           "temp": 23.899999619,
-           "time": "2020-04-26 22:13:22.965329"
+           "set_temp": 24,
+           "stepNo": 57,
+           "temp": 24.700000763,
+           "time": "2020-04-26 17:35:09.581632"
           },
           {
-           "body": 32.5625,
+           "body": 30.8125,
            "feedback": "acceptable",
-           "hum": 68.099998474,
-           "light": 29.166671753,
+           "hum": 81.300003052,
+           "light": 34.166660309,
            "move_type": "work",
            "outdoor_des": "few clouds",
-           "outdoor_hum": 69,
-           "outdoor_press": 101.7,
-           "outdoor_temp": 23.420000000000016,
-           "press": 101.700004578,
+           "outdoor_hum": 51,
+           "outdoor_press": 101.5,
+           "outdoor_temp": 25.430000000000007,
+           "press": 101.5,
            "set_fanspeed": 1,
-           "set_temp": 22,
-           "stepNo": 29,
-           "temp": 23.899999619,
-           "time": "2020-04-26 22:14:00.620303"
+           "set_temp": 24,
+           "stepNo": 58,
+           "temp": 24.800001144,
+           "time": "2020-04-26 17:35:45.160479"
           }]
     test = {
            "body": 32.5,
@@ -364,3 +366,90 @@ if (__name__ == '__main__'):
     curr_time = datetime.strptime(str_curr_time, '%Y-%m-%d %H:%M:%S.%f')
     delta_time = (curr_time-pre_time).seconds
     print(model.predict(inputs, delta_time), test['temp'])
+
+          {
+           "body": 30.833333969,
+           "feedback": "acceptable",
+           "hum": 81.200004578,
+           "light": 34.166660309,
+           "move_type": "work",
+           "outdoor_des": "few clouds",
+           "outdoor_hum": 51,
+           "outdoor_press": 101.5,
+           "outdoor_temp": 25.430000000000007,
+           "press": 101.5,
+           "set_fanspeed": 1,
+           "set_temp": 24,
+           "stepNo": 59,
+           "temp": 24.800001144,
+           "time": "2020-04-26 17:36:21.463537"
+          },
+          {
+           "body": 30.864583969,
+           "feedback": "acceptable",
+           "hum": 81,
+           "light": 34.166660309,
+           "move_type": "work",
+           "outdoor_des": "few clouds",
+           "outdoor_hum": 51,
+           "outdoor_press": 101.5,
+           "outdoor_temp": 25.430000000000007,
+           "press": 101.5,
+           "set_fanspeed": 1,
+           "set_temp": 24,
+           "stepNo": 60,
+           "temp": 24.899999619,
+           "time": "2020-04-26 17:36:57.215000"
+          },
+          {
+           "body": 30.854166031,
+           "feedback": "acceptable",
+           "hum": 80.700004578,
+           "light": 35,
+           "move_type": "work",
+           "outdoor_des": "few clouds",
+           "outdoor_hum": 51,
+           "outdoor_press": 101.5,
+           "outdoor_temp": 25.430000000000007,
+           "press": 101.5,
+           "set_fanspeed": 1,
+           "set_temp": 24,
+           "stepNo": 61,
+           "temp": 24.899999619,
+           "time": "2020-04-26 17:37:33.572143"
+          },
+          {
+           "body": 30.825000763,
+           "feedback": "Comfy",
+           "hum": 80.400001526,
+           "light": 35,
+           "move_type": "work",
+           "outdoor_des": "few clouds",
+           "outdoor_hum": 51,
+           "outdoor_press": 101.5,
+           "outdoor_temp": 25.430000000000007,
+           "press": 101.5,
+           "set_fanspeed": 1,
+           "set_temp": 24,
+           "stepNo": 62,
+           "temp": 24.899999619,
+           "time": "2020-04-26 17:38:09.021226"
+          },
+          {
+           "body": 30.8125,
+           "feedback": "acceptable",
+           "hum": 80.200004578,
+           "light": 35,
+           "move_type": "work",
+           "outdoor_des": "few clouds",
+           "outdoor_hum": 51,
+           "outdoor_press": 101.5,
+           "outdoor_temp": 25.430000000000007,
+           "press": 101.5,
+           "set_fanspeed": 1,
+           "set_temp": 24,
+           "stepNo": 63,
+           "temp": 25,
+           "time": "2020-04-26 17:38:46.444827"
+          }
+'''
