@@ -17,11 +17,14 @@ classDiagram
         +List<Feedback> feedbacks
         +List<Env_Sensors> sensors_data
         +List<Package> datapack
+        +Control_Action control_center
     }
     
-    AC_Remote <|-- 
-    AC_Remote <|-- 
-    AC_Remote <|-- 
+    AC_Remote <|-- Remote_Status
+    AC_Remote <|-- Feedback
+    AC_Remote <|-- Env_Sensors
+    AC_Remote <|-- Package
+    AC_Remote <|-- Control_Action
     
     class Remote_Status{
         +Boolean power_state
@@ -52,8 +55,18 @@ classDiagram
         +Time record_time
     }
     
+    class Control_Action{
+        +Boolean send_data
+        +Boolean is_new_action
+        +String control_command
+        +Int Step_No
+        +Boolean override_control
+        +Int override_set_temperature
+        +Int override_set_fanspeed
+    }
+    
     class Wrist_Band{
-        +Wrist_Band_Status status
+        +Boolean send_data
         +List<Skin_Temp_Sensors> sensors_data
     }
     
