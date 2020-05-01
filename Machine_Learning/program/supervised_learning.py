@@ -9,7 +9,7 @@ from tensorflow.keras.layers import Dense, LeakyReLU, Dropout
 from tensorflow.keras import optimizers
 from tensorflow.keras.utils import to_categorical
 from sklearn.utils.class_weight import compute_class_weight
-from matplotlib import pyplot
+from matplotlib import pyplot as plt
 
 MAX_MIN_TABLE = {
     'temp' : (28.6, 19.0),
@@ -111,7 +111,7 @@ parameters = {
     'y':['feedback'],
     'normalize':['temp','hum','outdoor_temp','outdoor_hum','body'],
     'output_shape': len(Feedback),
-    'feedback_amplifier': 5,
+    'feedback_amplifier': 7,
     'replace_acceptable': True,
     'model_name': "Supervised Learning"
 }
@@ -139,20 +139,20 @@ class SupervisedLearning:
         self.model.add(Dense(128, input_shape=(self.input_shape,), kernel_initializer='random_uniform',
                 bias_initializer='zeros', activation='linear'))
         self.model.add(LeakyReLU(alpha=0.1))
-        self.model.add(Dropout(0.8))
+        #self.model.add(Dropout(0.2))
 
-        self.model.add(Dense(256, kernel_initializer='random_uniform',
+        self.model.add(Dense(512, kernel_initializer='random_uniform',
                 bias_initializer='zeros',  activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.1))
-        self.model.add(Dropout(0.7))
+        self.model.add(LeakyReLU(alpha=0.05))
+        #self.model.add(Dropout(0.2))
 
         self.model.add(Dense(128, kernel_initializer='random_uniform',
                 bias_initializer='zeros',  activation='linear'))
         self.model.add(LeakyReLU(alpha=0.05))
-        self.model.add(Dropout(0.4))
+        #self.model.add(Dropout(0.2))
 
         self.model.add(Dense(self.output_shape, activation='softmax'))
-        optimizer = optimizers.Adam(lr=0.0004, decay=1e-6)
+        optimizer = optimizers.Adam(lr=0.00003, decay=1e-6)
         self.tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
         self.model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
         self.model.summary()
@@ -168,19 +168,27 @@ class SupervisedLearning:
         print("_________________________________________________________________")
         print('{:<10} has {} data'.format("Total",y.shape[0]))
 
-        history = self.model.fit(x, y, batch_size=32, epochs=120, verbose=1, validation_split = 0.2, shuffle=True, callbacks=[self.tensorboard])
-        pyplot.subplot(211)
-        pyplot.title('Loss')
-        pyplot.plot(history.history['loss'], label='train')
-        pyplot.plot(history.history['val_loss'], label='test')
-        pyplot.legend()
+        history = self.model.fit(x, y, batch_size=24, epochs=150, verbose=1, validation_split = 0.2, shuffle=True, callbacks=[self.tensorboard])
+
+
+        fig = plt.figure()
+        fig.subplots_adjust(hspace=.5)
+        ax1 = fig.add_subplot(2,1,1)
+        ax1.set_title('Categorical Crossentropy Loss per Epoch')
+        ax1.set_ylabel('Loss')
+        ax1.set_xlabel('Epoch')
+        ax1.plot(history.history['loss'], label='train')
+        ax1.plot(history.history['val_loss'], label='test')
+        ax1.legend()
         # plot accuracy during training
-        pyplot.subplot(212)
-        pyplot.title('Accuracy')
-        pyplot.plot(history.history['acc'], label='train')
-        pyplot.plot(history.history['val_acc'], label='test')
-        pyplot.legend()
-        pyplot.show()
+        ax2 = fig.add_subplot(2,1,2)
+        ax2.set_title('Accuracy per Epoch')
+        ax2.set_ylabel('Accuracy')
+        ax2.set_xlabel('Epoch')
+        ax2.plot(history.history['acc'], label='train')
+        ax2.plot(history.history['val_acc'], label='test')
+        ax2.legend()
+        plt.show()
 
         print("Save the trained model_name [Y/n]?  ", end="")
         decision = input()
@@ -475,369 +483,82 @@ if (__name__ == '__main__'):
     model = SupervisedLearning(**parameters)
 
     model.train()
-    '''
-    inputs = [
-        {
-           "body": 31.8125,
-           "feedback": "Comfy",
-           "hum": 77.800003052,
-           "light": 29.166671753,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.599998474,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 0,
-           "temp": 25.899999619,
-           "time": "2020-04-22 19:50:42.652505"
-          },
-          {
-           "body": 31.84375,
-           "feedback": "acceptable",
-           "hum": 74,
-           "light": 28.333330154,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.599998474,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 1,
-           "temp": 25.700000763,
-           "time": "2020-04-22 19:51:22.991086"
-          },
-          {
-           "body": 31.8125,
-           "feedback": "Comfy",
-           "hum": 69.400001526,
-           "light": 27.5,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.599998474,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 2,
-           "temp": 25.399999619,
-           "time": "2020-04-22 19:52:00.217387"
-          },
-          {
-           "body": 31.75,
-           "feedback": "acceptable",
-           "hum": 66.700004578,
-           "light": 27.5,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.5,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 3,
-           "temp": 25,
-           "time": "2020-04-22 19:52:35.720795"
-          },
-          {
-           "body": 31.677083969,
-           "feedback": "A Bit Cold",
-           "hum": 64.200004578,
-           "light": 27.5,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.599998474,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 4,
-           "temp": 24.700000763,
-           "time": "2020-04-22 19:53:13.666051"
-          },
-          {
-           "body": 31.583333969,
-           "feedback": "acceptable",
-           "hum": 62.200000763,
-           "light": 27.5,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.5,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 5,
-           "temp": 24.5,
-           "time": "2020-04-22 19:53:51.472277"
-          },
-          {
-           "body": 31.510416031,
-           "feedback": "acceptable",
-           "hum": 60,
-           "light": 26.666671753,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.5,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 6,
-           "temp": 24.300001144,
-           "time": "2020-04-22 19:54:29.860500"
-          },
-          {
-           "body": 31.4375,
-           "feedback": "A Bit Cold",
-           "hum": 58.5,
-           "light": 26.666671753,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.5,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 7,
-           "temp": 24.200000763,
-           "time": "2020-04-22 19:55:06.435042"
-          },
-          {
-           "body": 31.375,
-           "feedback": "acceptable",
-           "hum": 57,
-           "light": 26.666671753,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.5,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 8,
-           "temp": 24,
-           "time": "2020-04-22 19:55:42.263007"
-          },
-          {
-           "body": 31.291666031,
-           "feedback": "Cold",
-           "hum": 56.5,
-           "light": 27.5,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.5,
-           "set_fanspeed": 1,
-           "set_temp": 18,
-           "stepNo": 9,
-           "temp": 23.800001144,
-           "time": "2020-04-22 19:56:18.623746"
-          },
-          {
-           "body": 31.25,
-           "feedback": "acceptable",
-           "hum": 55.299999237,
-           "light": 26.666671753,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 10,
-           "temp": 23.800001144,
-           "time": "2020-04-22 19:56:54.265844"
-          },
-          {
-           "body": 31.1875,
-           "feedback": "acceptable",
-           "hum": 58.200000763,
-           "light": 26.666671753,
-           "move_type": "work",
-           "outdoor_des": "light rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.5,
-           "outdoor_temp": 20.180000000000007,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 11,
-           "temp": 23.600000381,
-           "time": "2020-04-22 19:57:35.135466"
-          },
-          {
-           "body": 31.125,
-           "feedback": "acceptable",
-           "hum": 64.300003052,
-           "light": 27.5,
-           "move_type": "work",
-           "outdoor_des": "light intensity shower rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.6,
-           "outdoor_temp": 20.260000000000048,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 12,
-           "temp": 23.5,
-           "time": "2020-04-22 19:58:10.967110"
-          },
-          {
-           "body": 31.137500763,
-           "feedback": "Comfy",
-           "hum": 68,
-           "light": 28.333330154,
-           "move_type": "work",
-           "outdoor_des": "light intensity shower rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.6,
-           "outdoor_temp": 20.260000000000048,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 13,
-           "temp": 23.600000381,
-           "time": "2020-04-22 19:58:46.793764"
-          },
-          {
-           "body": 31.145833969,
-           "feedback": "acceptable",
-           "hum": 71.300003052,
-           "light": 29.166671753,
-           "move_type": "work",
-           "outdoor_des": "light intensity shower rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.6,
-           "outdoor_temp": 20.260000000000048,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 14,
-           "temp": 23.800001144,
-           "time": "2020-04-22 19:59:20.974444"
-          },
-          {
-           "body": 31.1875,
-           "feedback": "acceptable",
-           "hum": 73.5,
-           "light": 30,
-           "move_type": "work",
-           "outdoor_des": "light intensity shower rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.6,
-           "outdoor_temp": 20.260000000000048,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 15,
-           "temp": 23.899999619,
-           "time": "2020-04-22 19:59:56.031476"
-          },
-          {
-           "body": 31.1875,
-           "feedback": "acceptable",
-           "hum": 74.900001526,
-           "light": 30,
-           "move_type": "work",
-           "outdoor_des": "light intensity shower rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.6,
-           "outdoor_temp": 20.260000000000048,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 16,
-           "temp": 24,
-           "time": "2020-04-22 20:00:32.156757"
-          },
-          {
-           "body": 31.237499237,
-           "feedback": "acceptable",
-           "hum": 76.800003052,
-           "light": 30,
-           "move_type": "work",
-           "outdoor_des": "light intensity shower rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.6,
-           "outdoor_temp": 20.260000000000048,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 17,
-           "temp": 24.100000381,
-           "time": "2020-04-22 20:01:07.077881"
-          },
-          {
-           "body": 31.270833969,
-           "feedback": "acceptable",
-           "hum": 77.800003052,
-           "light": 30,
-           "move_type": "work",
-           "outdoor_des": "light intensity shower rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.6,
-           "outdoor_temp": 20.260000000000048,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 18,
-           "temp": 24.300001144,
-           "time": "2020-04-22 20:01:41.390763"
-          },
-          {
-           "body": 31.3125,
-           "feedback": "Comfy",
-           "hum": 78.700004578,
-           "light": 29.166671753,
-           "move_type": "work",
-           "outdoor_des": "light intensity shower rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.6,
-           "outdoor_temp": 20.260000000000048,
-           "press": 101.599998474,
-           "set_fanspeed": 3,
-           "set_temp": 24,
-           "stepNo": 19,
-           "temp": 24.300001144,
-           "time": "2020-04-22 20:02:16.593057"
-          },
-          {
-           "body": 31.3125,
-           "feedback": "acceptable",
-           "hum": 79.400001526,
-           "light": 29.166671753,
-           "move_type": "work",
-           "outdoor_des": "light intensity shower rain",
-           "outdoor_hum": 88,
-           "outdoor_press": 101.6,
-           "outdoor_temp": 20.260000000000048,
-           "press": 101.599998474,
-           "set_fanspeed": 1,
-           "set_temp": 24,
-           "stepNo": 20,
-           "temp": 24.399999619,
-           "time": "2020-04-22 20:02:52.418591"
-          }]
+    inputs = [  {
+       "body": 33.3125,
+       "feedback": "acceptable",
+       "hum": 74,
+       "light": 26.666671753,
+       "move_type": "work",
+       "outdoor_des": "scattered clouds",
+       "outdoor_hum": 88,
+       "outdoor_press": 101.6,
+       "outdoor_temp": 20.25,
+       "press": 101.5,
+       "set_fanspeed": 1,
+       "set_temp": 24,
+       "stepNo": 86,
+       "temp": 21.700000763,
+       "time": "2020-04-23 00:02:45.125860"
+      },
+      {
+       "body": 33.3125,
+       "feedback": "acceptable",
+       "hum": 75.200004578,
+       "light": 26.666671753,
+       "move_type": "work",
+       "outdoor_des": "scattered clouds",
+       "outdoor_hum": 88,
+       "outdoor_press": 101.6,
+       "outdoor_temp": 20.260000000000048,
+       "press": 101.5,
+       "set_fanspeed": 1,
+       "set_temp": 24,
+       "stepNo": 87,
+       "temp": 21.899999619,
+       "time": "2020-04-23 00:03:20.983475"
+      },
+      {
+       "body": 33.3125,
+       "feedback": "acceptable",
+       "hum": 77,
+       "light": 26.666671753,
+       "move_type": "work",
+       "outdoor_des": "scattered clouds",
+       "outdoor_hum": 88,
+       "outdoor_press": 101.6,
+       "outdoor_temp": 20.25,
+       "press": 101.5,
+       "set_fanspeed": 1,
+       "set_temp": 24,
+       "stepNo": 88,
+       "temp": 22.100000381,
+       "time": "2020-04-23 00:03:57.864873"
+      },
+      {
+       "body": 33.333332062,
+       "feedback": "acceptable",
+       "hum": 77.800003052,
+       "light": 26.666671753,
+       "move_type": "work",
+       "outdoor_des": "scattered clouds",
+       "outdoor_hum": 88,
+       "outdoor_press": 101.6,
+       "outdoor_temp": 20.25,
+       "press": 101.5,
+       "set_fanspeed": 1,
+       "set_temp": 24,
+       "stepNo": 89,
+       "temp": 22.200000763,
+       "time": "2020-04-23 00:04:34.403887"
+      }]
 
+    '''
     model.load_model()
-    for input in inputs:
-        pairs, prob_comfy = model.predict(input)
+    i = 1
+    for data in inputs:
+        print(i)
+        i+= 1
+        pairs, prob_comfy = model.predict(data)
         pairs, prob_comfy = np.array(pairs), np.array(prob_comfy)*100
         pairs[:, 0] = pairs[:, 0] + 17
         pairs[:, 1] = pairs[:, 1] + 1

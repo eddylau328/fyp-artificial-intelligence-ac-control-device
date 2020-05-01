@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as plt_date
 import json
 import numpy as np
+import pandas as pd
+import seaborn as sn
 from datetime import datetime
 
 def num_of_paths():
@@ -66,6 +68,16 @@ def amplify_feedback(data, replace_acceptable, feedback_amplifier=4):
         i += 1
     return data
 
+def normalize_data(x, method):
+    if (method == "min_max"):
+        max, min = x[:].max(), x[:].min()
+        #print(max, min)
+        x[:] = (x[:]-min)/(max-min)
+    elif(method == "mean_std"):
+        mean, std = np.mean(x[:]), np.std(x[:])
+        x[:] = (x[:]-mean)/std
+    return x
+
 
 def get_data(path, dataname):
     with open(path, 'r') as file:
@@ -81,7 +93,7 @@ for pack in datapack:
     for dict_obj in pack:
         data.append(dict_obj)
 
-data = amplify_feedback(data, True)
+data = amplify_feedback(data, True, feedback_amplifier=4)
 
 indoor_temp = []
 for dict_obj in data:
@@ -95,6 +107,30 @@ body_temp = []
 for dict_obj in data:
     body_temp.append(dict_obj['body'])
 
+outdoor_temp = []
+for dict_obj in data:
+    outdoor_temp.append(dict_obj['outdoor_temp'])
+
+outdoor_hum = []
+for dict_obj in data:
+    outdoor_hum.append(dict_obj['outdoor_hum'])
+
+outdoor_press = []
+for dict_obj in data:
+    outdoor_press.append(dict_obj['outdoor_press'])
+
+indoor_press = []
+for dict_obj in data:
+    indoor_press.append(dict_obj['press'])
+
+light_intensity = []
+for dict_obj in data:
+    light_intensity.append(dict_obj['light'])
+
+set_temp = []
+for dict_obj in data:
+    set_temp.append(dict_obj['set_temp'])
+
 set_fanspeed = []
 for dict_obj in data:
     set_fanspeed.append(dict_obj['set_fanspeed'])
@@ -106,17 +142,6 @@ for dict_obj in data:
 time = []
 for dict_obj in data:
     time.append(dict_obj['time'])
-
-temp_hum_list = []
-for i in range(len(stepNo)):
-    pair = []
-    if(stepNo[i] < 5):
-        pair.append([indoor_temp[i],indoor_hum[i],body_temp[i],time[i]])
-        pair.append([indoor_temp[i+1],indoor_hum[i+1],body_temp[i+1],time[i+1]])
-        temp_hum_list.append(pair)
-temp_hum_list = np.array(temp_hum_list)
-selection = np.random.choice(temp_hum_list.shape[0], 1)
-print(temp_hum_list[selection].reshape(2,4).tolist())
 
 move = []
 for dict_obj in data:
@@ -131,18 +156,14 @@ feedback = []
 for dict_obj in data:
     feedback.append(dict_obj['feedback'])
 
-for i in range(len(feedback)):
-    if (feedback[i] == "acceptable"):
-        feedback.pop(i)
-        feedback.append("acceptable")
-        break
-
 total_feedback = np.array(feedback)
 
-
-total_indoor = np.array([indoor_temp,indoor_hum,body_temp,set_fanspeed,move]).T
+total_indoor = np.array([indoor_temp,indoor_hum,body_temp,set_fanspeed,set_temp, move, outdoor_temp, outdoor_hum, outdoor_press, indoor_press, light_intensity]).T
 indoor = np.copy(total_indoor)
 feedback = np.copy(total_feedback)
+
+#for i in range(0, 3):
+#    indoor[:,i] = normalize_data(indoor[:,i], method="mean_std")
 
 print(indoor.shape)
 print(feedback.shape)
@@ -181,25 +202,25 @@ print(very_cold.shape)
 #plt.scatter(hot[:,0], hot[:,1])
 #plt.scatter(a_bit_hot[:,0], a_bit_hot[:,1])
 ax = plt.axes(projection='3d')
-ax.set_xlim(15,30)
-ax.set_ylim(40,100)
-ax.set_zlim(28,38)
+plt.title("Indoor Temperature vs Indoor Humidity vs Skin Temperature")
+ax.set_xlabel('Indoor Temperature')
+ax.set_ylabel('Indoor Humidity')
+ax.set_zlabel('Skin Temperature')
+#ax.set_xlim(15,30)
+#ax.set_ylim(40,100)
+#ax.set_zlim(28,38)
 ax.scatter3D(very_hot[:,0], very_hot[:,1],very_hot[:,2], color='darkred', label='very hot')
 ax.scatter3D(hot[:,0], hot[:,1],hot[:,2], color='red', label='hot')
-ax.scatter3D(a_bit_hot[:,0], a_bit_hot[:,1],a_bit_hot[:,2], color='lightcoral', label='a_bit_hot')
-ax.scatter3D(acceptable[:,0], acceptable[:,1],acceptable[:,2], color='grey', label='acceptable')
+ax.scatter3D(a_bit_hot[:,0], a_bit_hot[:,1],a_bit_hot[:,2], color='lightcoral', label='a bit hot')
+#ax.scatter3D(acceptable[:,0], acceptable[:,1],acceptable[:,2], color='grey', label='acceptable')
 ax.scatter3D(a_bit_cold[:,0], a_bit_cold[:,1],a_bit_cold[:,2], color='lightblue', label='a bit cold')
 ax.scatter3D(cold[:,0], cold[:,1],cold[:,2], color='blue', label='cold')
 ax.scatter3D(very_cold[:,0], very_cold[:,1],very_cold[:,2], color='darkblue', label='very cold')
 ax.scatter3D(comfy[:,0], comfy[:,1],comfy[:,2], color='lime', label='comfy')
+plt.legend()
 plt.show()
 
-def normalize_data(x):
-    max, min = x[:].max(), x[:].min()
-    #print(max, min)
-    x[:] = (x[:]-min)/(max-min)
-    return x
-
+'''
 norm_indoor = normalize_data(np.array(indoor_temp))
 norm_hum = normalize_data(np.array(indoor_hum))
 
@@ -207,17 +228,296 @@ plt.plot([i for i in range(len(indoor_temp))], norm_indoor, label="temp")
 plt.plot([i for i in range(len(indoor_temp))], norm_hum, label="hum")
 plt.legend()
 plt.show()
+'''
 
+fig = plt.figure()
+plt.subplot(1, 3, 1)
+plt.title("Skin Temperature vs Indoor Temperature")
+plt.xlabel("Skin Temperature")
+plt.ylabel("Indoor Temperature")
 plt.scatter(very_hot[:,2], very_hot[:,0], color='darkred', label='very hot')
 plt.scatter(hot[:,2],hot[:,0], color='red', label='hot')
-plt.scatter(a_bit_hot[:,2], a_bit_hot[:,0], color='lightcoral', label='a_bit_hot')
-plt.scatter(acceptable[:,2], acceptable[:,0], color='grey', label='acceptable')
+plt.scatter(a_bit_hot[:,2], a_bit_hot[:,0], color='lightcoral', label='a bit hot')
+#plt.scatter(acceptable[:,2], acceptable[:,0], color='grey', label='acceptable')
 plt.scatter(a_bit_cold[:,2], a_bit_cold[:,0], color='lightblue', label='a bit cold')
 plt.scatter(cold[:,2], cold[:,0], color='blue', label='cold')
 plt.scatter(very_cold[:,2], very_cold[:,0], color='darkblue', label='very cold')
 plt.scatter(comfy[:,2], comfy[:,0], color='lime', label='comfy')
+plt.subplot(1, 3, 2)
+plt.title("Skin Temperature vs Indoor Humidity")
+plt.xlabel("Skin Temperature")
+plt.ylabel("Indoor Humidity")
+plt.scatter(very_hot[:,2], very_hot[:,1], color='darkred', label='very hot')
+plt.scatter(hot[:,2],hot[:,1], color='red', label='hot')
+plt.scatter(a_bit_hot[:,2], a_bit_hot[:,1], color='lightcoral', label='a bit hot')
+#plt.scatter(acceptable[:,2], acceptable[:,0], color='grey', label='acceptable')
+plt.scatter(a_bit_cold[:,2], a_bit_cold[:,1], color='lightblue', label='a bit cold')
+plt.scatter(cold[:,2], cold[:,1], color='blue', label='cold')
+plt.scatter(very_cold[:,2], very_cold[:,1], color='darkblue', label='very cold')
+plt.scatter(comfy[:,2], comfy[:,1], color='lime', label='comfy')
+
+plt.subplot(1, 3, 3)
+plt.title("Indoor Temperature vs Indoor Humidity")
+plt.xlabel("Indoor Temperature")
+plt.ylabel("Indoor Humidity")
+plt.scatter(very_hot[:,0], very_hot[:,1], color='darkred', label='very hot')
+plt.scatter(hot[:,0],hot[:,1], color='red', label='hot')
+plt.scatter(a_bit_hot[:,0], a_bit_hot[:,1], color='lightcoral', label='a bit hot')
+#plt.scatter(acceptable[:,2], acceptable[:,0], color='grey', label='acceptable')
+plt.scatter(a_bit_cold[:,0], a_bit_cold[:,1], color='lightblue', label='a bit cold')
+plt.scatter(cold[:,0], cold[:,1], color='blue', label='cold')
+plt.scatter(very_cold[:,0], very_cold[:,1], color='darkblue', label='very cold')
+plt.scatter(comfy[:,0], comfy[:,1], color='lime', label='comfy')
+plt.legend()
 plt.show()
 
+BINS = 25
+SKIN_TEMP_RANGE = [29,35]
+
+fig = plt.figure()
+fig.subplots_adjust(hspace=0.7, wspace=0.08)
+ax1 = fig.add_subplot(4,2,1)
+ax1.set_title("Distribution of Very Hot Data")
+ax1.set_xlabel("Skin Temperature")
+ax1.set_ylabel("No. of Feedback")
+ax1.hist(very_hot[:,2],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='darkred', label='very hot')
+ax1.legend()
+ax2 = fig.add_subplot(4,2,3)
+ax2.set_title("Distribution of Hot Data")
+ax2.set_xlabel("Skin Temperature")
+ax2.set_ylabel("No. of Feedback")
+ax2.hist(hot[:,2],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='red', label='hot')
+ax2.legend()
+ax3 = fig.add_subplot(4,2,5)
+ax3.set_title("Distribution of A Bit Hot Data")
+ax3.set_xlabel("Skin Temperature")
+ax3.set_ylabel("No. of Feedback")
+ax3.hist(a_bit_hot[:,2],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='lightcoral', label='a bit hot')
+ax3.legend()
+ax4 = fig.add_subplot(4,2,2)
+ax4.set_title("Distribution of Very Cold Data")
+ax4.set_xlabel("Skin Temperature")
+#ax4.set_ylabel("No. of Feedback")
+ax4.hist(very_cold[:,2],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='darkblue', label='very cold')
+ax4.legend()
+ax5 = fig.add_subplot(4,2,4)
+ax5.set_title("Distribution of Cold Data")
+ax5.set_xlabel("Skin Temperature")
+#ax5.set_ylabel("No. of Feedback")
+ax5.hist(cold[:,2],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='blue', label='cold')
+ax5.legend()
+ax6 = fig.add_subplot(4,2,6)
+ax6.set_title("Distribution of A Bit Cold Data")
+ax6.set_xlabel("Skin Temperature")
+#ax6.set_ylabel("No. of Feedback")
+ax6.hist(a_bit_cold[:,2],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='lightblue', label='a bit cold')
+ax6.legend()
+ax7 = fig.add_subplot(4,2,7)
+ax7.set_title("Distribution of Comfy Data")
+ax7.set_xlabel("Skin Temperature")
+ax7.set_ylabel("No. of Feedback")
+ax7.hist(comfy[:,2],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='lime', label='comfy')
+ax7.legend()
+plt.show()
+
+feedback_dict = {
+    'very_cold':np.around(np.mean(very_cold[:,2]), decimals=2),
+    'cold':np.around(np.mean(cold[:,2]), decimals=2),
+    'a_bit_cold':np.around(np.mean(a_bit_cold[:,2]), decimals=2),
+    'very_hot':np.around(np.mean(very_hot[:,2]), decimals=2),
+    'hot':np.around(np.mean(hot[:,2]), decimals=2),
+    'a_bit_hot':np.around(np.mean(a_bit_hot[:,2]), decimals=2),
+    'comfy':np.around(np.mean(comfy[:,2]), decimals=2)
+}
+
+print(feedback_dict)
+
+feedback_dict = {
+    'very_cold':np.around(np.std(very_cold[:,2]), decimals=2),
+    'cold':np.around(np.std(cold[:,2]), decimals=2),
+    'a_bit_cold':np.around(np.std(a_bit_cold[:,2]), decimals=2),
+    'very_hot':np.around(np.std(very_hot[:,2]), decimals=2),
+    'hot':np.around(np.std(hot[:,2]), decimals=2),
+    'a_bit_hot':np.around(np.std(a_bit_hot[:,2]), decimals=2),
+    'comfy':np.around(np.std(comfy[:,2]), decimals=2)
+}
+print(feedback_dict)
+
+print()
+
+BINS = 25
+SKIN_TEMP_RANGE = [16,30]
+
+fig = plt.figure()
+fig.subplots_adjust(hspace=0.7, wspace=0.08)
+ax1 = fig.add_subplot(4,2,1)
+ax1.set_title("Distribution of Very Hot Data")
+ax1.set_xlabel("Indoor Temperature")
+ax1.set_ylabel("No. of Feedback")
+ax1.hist(very_hot[:,0],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='darkred', label='very hot')
+ax1.legend()
+ax2 = fig.add_subplot(4,2,3)
+ax2.set_title("Distribution of Hot Data")
+ax2.set_xlabel("Indoor Temperature")
+ax2.set_ylabel("No. of Feedback")
+ax2.hist(hot[:,0],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='red', label='hot')
+ax2.legend()
+ax3 = fig.add_subplot(4,2,5)
+ax3.set_title("Distribution of A Bit Hot Data")
+ax3.set_xlabel("Indoor Temperature")
+ax3.set_ylabel("No. of Feedback")
+ax3.hist(a_bit_hot[:,0],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='lightcoral', label='a bit hot')
+ax3.legend()
+ax4 = fig.add_subplot(4,2,2)
+ax4.set_title("Distribution of Very Cold Data")
+ax4.set_xlabel("Indoor Temperature")
+#ax4.set_ylabel("No. of Feedback")
+ax4.hist(very_cold[:,0],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='darkblue', label='very cold')
+ax4.legend()
+ax5 = fig.add_subplot(4,2,4)
+ax5.set_title("Distribution of Cold Data")
+ax5.set_xlabel("Indoor Temperature")
+#ax5.set_ylabel("No. of Feedback")
+ax5.hist(cold[:,0],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='blue', label='cold')
+ax5.legend()
+ax6 = fig.add_subplot(4,2,6)
+ax6.set_title("Distribution of A Bit Cold Data")
+ax6.set_xlabel("Indoor Temperature")
+#ax6.set_ylabel("No. of Feedback")
+ax6.hist(a_bit_cold[:,0],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='lightblue', label='a bit cold')
+ax6.legend()
+ax7 = fig.add_subplot(4,2,7)
+ax7.set_title("Distribution of Comfy Data")
+ax7.set_xlabel("Indoor Temperature")
+ax7.set_ylabel("No. of Feedback")
+ax7.hist(comfy[:,0],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='lime', label='comfy')
+ax7.legend()
+plt.show()
+
+feedback_dict = {
+    'very_cold':np.around(np.mean(very_cold[:,0]), decimals=2),
+    'cold':np.around(np.mean(cold[:,0]), decimals=2),
+    'a_bit_cold':np.around(np.mean(a_bit_cold[:,0]), decimals=2),
+    'very_hot':np.around(np.mean(very_hot[:,0]), decimals=2),
+    'hot':np.around(np.mean(hot[:,0]), decimals=2),
+    'a_bit_hot':np.around(np.mean(a_bit_hot[:,0]), decimals=2),
+    'comfy':np.around(np.mean(comfy[:,0]), decimals=2)
+}
+print(feedback_dict)
+
+feedback_dict = {
+    'very_cold':np.around(np.std(very_cold[:,0]), decimals=2),
+    'cold':np.around(np.std(cold[:,0]), decimals=2),
+    'a_bit_cold':np.around(np.std(a_bit_cold[:,0]), decimals=2),
+    'very_hot':np.around(np.std(very_hot[:,0]), decimals=2),
+    'hot':np.around(np.std(hot[:,0]), decimals=2),
+    'a_bit_hot':np.around(np.std(a_bit_hot[:,0]), decimals=2),
+    'comfy':np.around(np.std(comfy[:,0]), decimals=2)
+}
+print(feedback_dict)
+
+print()
+
+BINS = 25
+SKIN_TEMP_RANGE = [40,100]
+
+fig = plt.figure()
+fig.subplots_adjust(hspace=0.7, wspace=0.08)
+ax1 = fig.add_subplot(4,2,1)
+ax1.set_title("Distribution of Very Hot Data")
+ax1.set_xlabel("Indoor Humidity")
+ax1.set_ylabel("No. of Feedback")
+ax1.hist(very_hot[:,1],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='darkred', label='very hot')
+ax1.legend()
+ax2 = fig.add_subplot(4,2,3)
+ax2.set_title("Distribution of Hot Data")
+ax2.set_xlabel("Indoor Humidity")
+ax2.set_ylabel("No. of Feedback")
+ax2.hist(hot[:,1],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='red', label='hot')
+ax2.legend()
+ax3 = fig.add_subplot(4,2,5)
+ax3.set_title("Distribution of A Bit Hot Data")
+ax3.set_xlabel("Indoor Humidity")
+ax3.set_ylabel("No. of Feedback")
+ax3.hist(a_bit_hot[:,1],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='lightcoral', label='a bit hot')
+ax3.legend()
+ax4 = fig.add_subplot(4,2,2)
+ax4.set_title("Distribution of Very Cold Data")
+ax4.set_xlabel("Indoor Humidity")
+#ax4.set_ylabel("No. of Feedback")
+ax4.hist(very_cold[:,1],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='darkblue', label='very cold')
+ax4.legend()
+ax5 = fig.add_subplot(4,2,4)
+ax5.set_title("Distribution of Cold Data")
+ax5.set_xlabel("Indoor Humidity")
+#ax5.set_ylabel("No. of Feedback")
+ax5.hist(cold[:,1],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='blue', label='cold')
+ax5.legend()
+ax6 = fig.add_subplot(4,2,6)
+ax6.set_title("Distribution of A Bit Cold Data")
+ax6.set_xlabel("Indoor Humidity")
+#ax6.set_ylabel("No. of Feedback")
+ax6.hist(a_bit_cold[:,1],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='lightblue', label='a bit cold')
+ax6.legend()
+ax7 = fig.add_subplot(4,2,7)
+ax7.set_title("Distribution of Comfy Data")
+ax7.set_xlabel("Indoor Humidity")
+ax7.set_ylabel("No. of Feedback")
+ax7.hist(comfy[:,1],bins=BINS,range=SKIN_TEMP_RANGE,density=False,edgecolor='black', color='lime', label='comfy')
+ax7.legend()
+plt.show()
+
+feedback_dict = {
+    'very_cold':np.around(np.mean(very_cold[:,1]),decimals=2),
+    'cold':np.around(np.mean(cold[:,1]),decimals=2),
+    'a_bit_cold':np.around(np.mean(a_bit_cold[:,1]),decimals=2),
+    'very_hot':np.around(np.mean(very_hot[:,1]),decimals=2),
+    'hot':np.around(np.mean(hot[:,1]),decimals=2),
+    'a_bit_hot':np.around(np.mean(a_bit_hot[:,1]),decimals=2),
+    'comfy':np.around(np.mean(comfy[:,1]),decimals=2)
+}
+
+print(feedback_dict)
+
+feedback_dict = {
+    'very_cold':np.around(np.std(very_cold[:,1]), decimals=2),
+    'cold':np.around(np.std(cold[:,1]), decimals=2),
+    'a_bit_cold':np.around(np.std(a_bit_cold[:,0]), decimals=2),
+    'very_hot':np.around(np.std(very_hot[:,1]), decimals=2),
+    'hot':np.around(np.std(hot[:,1]), decimals=2),
+    'a_bit_hot':np.around(np.std(a_bit_hot[:,1]), decimals=2),
+    'comfy':np.around(np.std(comfy[:,1]), decimals=2)
+}
+print(feedback_dict)
+
+print()
+
+# HEAT MAP
+data_dict = {
+        'indoor_temp':indoor_temp,
+        'indoor_hum':indoor_hum,
+        'indoor_press':indoor_press,
+        'outdoor_temp':outdoor_temp,
+        'outdoor_hum':outdoor_hum,
+        'outdoor_press':outdoor_press,
+        'skin_temp':body_temp,
+        'move type':move,
+        'set_temp':set_temp,
+        'set_fanspeed':set_fanspeed
+        }
+
+
+df = pd.DataFrame(data_dict, columns=['indoor_temp','indoor_hum','indoor_press','outdoor_temp','outdoor_hum','outdoor_press','skin_temp','move type','set_temp','set_fanspeed'])
+
+corrMatrix = df.corr(method="spearman")
+print(corrMatrix)
+
+plt.title("Correlation Heatmap")
+sn.heatmap(corrMatrix, annot=True, )
+plt.show()
+
+
+'''
 # Load default style:
 custom_style = {
     "figure": {
@@ -651,6 +951,7 @@ for point in points:
     chart.plot_points_dbt_rh(point)
 
 plt.show()
+'''
 
 ##########################################
 #
