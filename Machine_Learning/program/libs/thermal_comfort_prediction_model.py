@@ -128,26 +128,30 @@ class Thermal_Comfort_Predict_Model:
     # initiate the keras model for supervised learning
     def initiate_model(self):
         self.model = Sequential(name=self.model_name)
+        '''
         self.model.add(Dense(48, input_shape=(self.input_shape,), kernel_initializer='random_uniform',
                 bias_initializer='zeros', activation='linear'))
         self.model.add(LeakyReLU(alpha=0.01))
         self.model.add(Dropout(0.2))
+        '''
+        self.model.add(Dense(64, input_shape=(self.input_shape,), kernel_initializer='random_uniform',
+                bias_initializer='zeros', activation='linear'))
+        self.model.add(LeakyReLU(alpha=0.05))
+        #self.model.add(Dropout(0.1))
+
         self.model.add(Dense(128, input_shape=(self.input_shape,), kernel_initializer='random_uniform',
                 bias_initializer='zeros', activation='linear'))
         self.model.add(LeakyReLU(alpha=0.05))
-        self.model.add(Dropout(0.1))
-        self.model.add(Dense(128, input_shape=(self.input_shape,), kernel_initializer='random_uniform',
-                bias_initializer='zeros', activation='linear'))
-        self.model.add(LeakyReLU(alpha=0.05))
-        self.model.add(Dropout(0.1))
-        self.model.add(Dense(48, kernel_initializer='random_uniform',
+        #self.model.add(Dropout(0.1))
+        self.model.add(Dense(64, kernel_initializer='random_uniform',
                 bias_initializer='zeros',  activation='linear'))
         self.model.add(LeakyReLU(alpha=0.01))
-        self.model.add(Dropout(0.2))
+        #self.model.add(Dropout(0.1))
+
 
         self.model.add(Dense(self.output_shape, activation='softmax'))
-        optimizer = optimizers.Adam(lr=0.0004, decay=1e-6)
-        self.tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
+        optimizer = optimizers.Adam(lr=0.0001, decay=1e-6)
+        #self.tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
         self.model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
 
 
@@ -165,7 +169,7 @@ class Thermal_Comfort_Predict_Model:
         print("_________________________________________________________________")
         print('{:<10} has {} data'.format("Total",y.shape[0]))
 
-        history = self.model.fit(x, y, batch_size=32, epochs=100, verbose=1, validation_split = 0.2, shuffle=True, callbacks=[self.tensorboard])
+        history = self.model.fit(x, y, batch_size=24, epochs=100, verbose=1, validation_split = 0.2, shuffle=True)#, callbacks=[self.tensorboard])
         pyplot.subplot(211)
         pyplot.title('Loss')
         pyplot.plot(history.history['loss'], label='train')
@@ -428,7 +432,8 @@ def create_model():
 if (__name__ == '__main__'):
     model = create_model()
     model.show_model()
-    #model.train()
+    model.train()
+    '''
     model.load_model(path="../thermal_comfort_predict_models/prediction_model_1.h5")
     pkg =  {
            "body": 31.0625,
@@ -448,3 +453,4 @@ if (__name__ == '__main__'):
            "time": "2020-04-13 18:37:45.586257"
           }
     print(model.predict(pkg))
+    '''

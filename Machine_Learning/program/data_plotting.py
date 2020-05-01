@@ -162,6 +162,12 @@ total_indoor = np.array([indoor_temp,indoor_hum,body_temp,set_fanspeed,set_temp,
 indoor = np.copy(total_indoor)
 feedback = np.copy(total_feedback)
 
+test = np.copy(indoor[np.where(indoor[:,6] >= 25.6)])
+test = np.copy(test[np.where(test[:,6] < 25.7)])
+test = np.copy(test[np.where(test[:,7] < 80)])
+test = np.copy(test[np.where(test[:,7] >= 70)])
+print(test)
+
 #for i in range(0, 3):
 #    indoor[:,i] = normalize_data(indoor[:,i], method="mean_std")
 
@@ -231,6 +237,7 @@ plt.show()
 '''
 
 fig = plt.figure()
+fig.subplots_adjust(wspace=0.15)
 plt.subplot(1, 3, 1)
 plt.title("Skin Temperature vs Indoor Temperature")
 plt.xlabel("Skin Temperature")
