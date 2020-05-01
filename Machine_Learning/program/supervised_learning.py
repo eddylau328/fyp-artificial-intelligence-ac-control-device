@@ -104,12 +104,12 @@ class Feedback(Enum):
 # set_fanspeed = 3
 
 parameters = {
-    'input_shape':17,
+    'input_shape':16,
     'data_name':['temp','hum','outdoor_temp','outdoor_hum','body','move_type','outdoor_des','set_temp','set_fanspeed','feedback'],
     'one_hot_encode_required':['move_type','outdoor_des','set_temp','set_fanspeed','feedback'],
-    'x':['temp','hum','outdoor_temp','outdoor_hum','body','set_temp','set_fanspeed'],
+    'x':['temp','hum','outdoor_temp','outdoor_hum','set_temp','set_fanspeed'],
     'y':['feedback'],
-    'normalize':['temp','hum','outdoor_temp','outdoor_hum','body'],
+    'normalize':['temp','hum','outdoor_temp','outdoor_hum'],
     'output_shape': len(Feedback),
     'feedback_amplifier': 7,
     'replace_acceptable': True,
