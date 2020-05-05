@@ -104,12 +104,12 @@ class Feedback(Enum):
 # set_fanspeed = 3
 
 parameters = {
-    'input_shape':16,
+    'input_shape':17,
     'data_name':['temp','hum','outdoor_temp','outdoor_hum','body','move_type','outdoor_des','set_temp','set_fanspeed','feedback'],
     'one_hot_encode_required':['move_type','outdoor_des','set_temp','set_fanspeed','feedback'],
-    'x':['temp','hum','outdoor_temp','outdoor_hum','set_temp','set_fanspeed'],
+    'x':['temp','hum','outdoor_temp','outdoor_hum','body','set_temp','set_fanspeed'],
     'y':['feedback'],
-    'normalize':['temp','hum','outdoor_temp','outdoor_hum'],
+    'normalize':['temp','hum','outdoor_temp','outdoor_hum','body'],
     'output_shape': len(Feedback),
     'feedback_amplifier': 7,
     'replace_acceptable': True,
@@ -208,53 +208,65 @@ class SupervisedLearning:
         self.model = load_model(save_path)
 
     # predict the feedback the user will give
-    def predict(self, input):
+    def predict(self, input, control_pairs = None):
         x_list = []
         # input should be a dictionary object
         for key in self.x_field:
             if (key in input and key != "set_temp" and key != "set_fanspeed"):
                 x_list.append(input[key])
-
-        size = len(ac_remote.Actions_Temp)*len(ac_remote.Actions_Fanspeed)
-        X = np.zeros((size,self.input_shape))
-        X[:,0:len(x_list)]= np.asarray(x_list, np.float32)
-        temp_action_list, fan_action_list = [], []
-        action_combination = np.zeros((size,len(ac_remote.Actions_Temp)+len(ac_remote.Actions_Fanspeed)))
-        for temp_action in ac_remote.Actions_Temp:
-            for fan_action in ac_remote.Actions_Fanspeed:
-                temp_action_list.append(temp_action.value)
-                fan_action_list.append(fan_action.value)
-        action_pair = np.zeros((size,2))
-        action_pair[:,0] = np.asarray(temp_action_list)
-        action_pair[:,1] = np.asarray(fan_action_list)
-        temp_action_list = self.one_hot_encoder(temp_action_list)
-        fan_action_list = self.one_hot_encoder(fan_action_list)
-        action_combination[:, 0:len(ac_remote.Actions_Temp)] = temp_action_list
-        action_combination[:, len(ac_remote.Actions_Temp):len(ac_remote.Actions_Temp)+len(ac_remote.Actions_Fanspeed)] = fan_action_list
-        X[:,len(x_list):] = action_combination[:,:]
-        X = self.normalize_data(X,MAX_MIN_TABLE)
-        #print(X)
-        predict_feedback = self.model.predict(X)
-        '''
-        prediction = np.around((predict_feedback*100),decimals=1)
-        print()
-        print("Current Environment Reading")
-        print("Temperature          = {:0.2f}".format(input['temp']))
-        print("Humidity             = {:0.2f}".format(input['hum']))
-        print("Outdoor Temperature  = {:0.2f}".format(input['outdoor_temp']))
-        print("Outdoor Humidity     = {:0.2f}".format(input['outdoor_hum']))
-        print("Skin Temperature     = {:0.2f}".format(input['body']))
-        print()
-        for i in range(size):
-            print('(Temp, fanspeed) {} probability get {:0.2f}%'.format(((action_pair[i,0]+17,action_pair[i,1]+1)), prediction[i,1]))
-        '''
-        comfy_feedback = predict_feedback[:, 3]
-        #print(predict_feedback)
-        translated_feedback = np.argmax(predict_feedback, axis=1)
-        sorted_index = (-comfy_feedback).argsort()
-        sorted_comfy_feedback = comfy_feedback[sorted_index]
-        sorted_action_pair = action_pair[sorted_index]
-        return sorted_action_pair.tolist(), sorted_comfy_feedback.tolist()
+        if (control_pairs == None):
+            size = len(ac_remote.Actions_Temp)*len(ac_remote.Actions_Fanspeed)
+            X = np.zeros((size,self.input_shape))
+            X[:,0:len(x_list)]= np.asarray(x_list, np.float32)
+            temp_action_list, fan_action_list = [], []
+            action_combination = np.zeros((size,len(ac_remote.Actions_Temp)+len(ac_remote.Actions_Fanspeed)))
+            for temp_action in ac_remote.Actions_Temp:
+                for fan_action in ac_remote.Actions_Fanspeed:
+                    temp_action_list.append(temp_action.value)
+                    fan_action_list.append(fan_action.value)
+            action_pair = np.zeros((size,2))
+            action_pair[:,0] = np.asarray(temp_action_list)
+            action_pair[:,1] = np.asarray(fan_action_list)
+            temp_action_list = self.one_hot_encoder(temp_action_list)
+            fan_action_list = self.one_hot_encoder(fan_action_list)
+            action_combination[:, 0:len(ac_remote.Actions_Temp)] = temp_action_list
+            action_combination[:, len(ac_remote.Actions_Temp):len(ac_remote.Actions_Temp)+len(ac_remote.Actions_Fanspeed)] = fan_action_list
+            X[:,len(x_list):] = action_combination[:,:]
+            X = self.normalize_data(X,MAX_MIN_TABLE)
+            #print(X)
+            predict_feedback = self.model.predict(X)
+            '''
+            prediction = np.around((predict_feedback*100),decimals=1)
+            print()
+            print("Current Environment Reading")
+            print("Temperature          = {:0.2f}".format(input['temp']))
+            print("Humidity             = {:0.2f}".format(input['hum']))
+            print("Outdoor Temperature  = {:0.2f}".format(input['outdoor_temp']))
+            print("Outdoor Humidity     = {:0.2f}".format(input['outdoor_hum']))
+            print("Skin Temperature     = {:0.2f}".format(input['body']))
+            print()
+            for i in range(size):
+                print('(Temp, fanspeed) {} probability get {:0.2f}%'.format(((action_pair[i,0]+17,action_pair[i,1]+1)), prediction[i,1]))
+            '''
+            comfy_feedback = predict_feedback[:, 3]
+            #print(predict_feedback)
+            translated_feedback = np.argmax(predict_feedback, axis=1)
+            sorted_index = (-comfy_feedback).argsort()
+            sorted_comfy_feedback = comfy_feedback[sorted_index]
+            sorted_action_pair = action_pair[sorted_index]
+            return sorted_action_pair.tolist(), sorted_comfy_feedback.tolist()
+        else:
+            # input should be a dictionary object
+            X = np.zeros((1,17))
+            control_pairs[0], control_pairs[1] = int(control_pairs[0]-17), int(control_pairs[1]-1)
+            one_hot_set_temp = np.eye(9)[control_pairs[0]]
+            one_hot_set_fanspeed = np.eye(3)[control_pairs[1]]
+            X[:,0:len(x_list)] = np.array(x_list)
+            X[:,len(x_list):len(x_list)+9] = one_hot_set_temp
+            X[:,len(x_list)+9:len(x_list)+9+3] = one_hot_set_fanspeed
+            X = self.normalize_data(X,MAX_MIN_TABLE)
+            predict_feedback = self.model.predict(X)
+            return predict_feedback[:, 3]
 
 
     def get_data(self):

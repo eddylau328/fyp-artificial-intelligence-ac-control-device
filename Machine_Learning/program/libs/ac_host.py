@@ -32,14 +32,28 @@ class AC_host:
         self.base_watch_path = "Devices/" + watch_serial_num
         self.weather_api_address = "http://api.openweathermap.org/data/2.5/weather?q=HongKong,hk&appid=2012d486d411dabe6c1e94eeec8eedb6"
         self.period = 10
-        self.data_request_period = 30
+        self.data_request_seconds = 30
+        self.steps_caculation_period = 10
         self.reset()
+
 
     def reset(self):
         self.current_step = 0
         self.override_control = False
         self.update_ac_status()
         self.db.set(self.base_ac_path,"receive_action", {'is_new_action': False, 'current_step':0})
+
+
+    def check_start_ac(self):
+        return self.db.get(self.base_ac_path+"/receive_action", is_dict=True)['start_ac']
+
+
+    def check_terminate_program(self):
+        return self.db.get(self.base_ac_path+"/receive_action", is_dict=True)['terminate_program']
+
+
+    def check_start_control(self):
+        return self.db.get(self.base_ac_path+"/receive_action", is_dict=True)['start_control']
 
 
     def generate_control_pair(self, input_temp=None, input_fanspeed=None):
@@ -57,7 +71,7 @@ class AC_host:
             else:
                 done = True
                 temp_func, temp, fan_func, fanspeed = self.remote.get_value_pair(input_temp, input_fanspeed)
-                self.period = self.current_step + 10
+                self.period = self.current_step + self.steps_caculation_period
                 print("The Next action will be after {} steps".format(self.period))
 
         return {temp_func:temp, fan_func:fanspeed}
@@ -114,8 +128,16 @@ class AC_host:
 
 
     def collect_data(self):
-        env_data = self.db.get(self.base_ac_path+"/sensors").pop()
-        body_data = self.db.get(self.base_watch_path+"/datapack").pop()
+        env_data = self.db.get(self.base_ac_path+"/sensors")
+        if (env_data == None):
+            env_data = {}
+        else:
+            env_data = env_data.pop()
+        body_data = self.db.get(self.base_watch_path+"/datapack")
+        if (body_data == None):
+            body_data = {}
+        else:
+            body_data = env_data.pop()
         feedback_data = self.get_feedback()
 
         action_data = {'set_temp':self.set_temperature, 'set_fanspeed':self.set_fanspeed, 'stepNo':self.current_step, 'time':str(datetime.datetime.now())}
@@ -152,6 +174,12 @@ class AC_host:
             return True
         else:
             return False
+
+
+    def check_devices_data_state(self):
+        ac_send = self.db.get(self.base_ac_path+"/receive_action", is_dict=True)['is_send']
+        watch_send = self.db.get(self.base_watch_path+"/receive_action", is_dict=True)['is_send']
+        return {'ac_is_send':ac_send,'watch_is_send':watch_send}
 
 
     def update_step_no(self):

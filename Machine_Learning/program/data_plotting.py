@@ -174,6 +174,39 @@ print(test)
 print(indoor.shape)
 print(feedback.shape)
 
+count_episode = 0
+for i in range(len(stepNo)):
+    if (stepNo[i] == 0):
+        count_episode += 1
+        if (count_episode == 1):
+            break
+
+count_episode = i
+episode_temp, episode_skin, episode_time = [], [], []
+previous_time = datetime.strptime(time[i], '%Y-%m-%d %H:%M:%S.%f')
+for i in range(count_episode, len(stepNo)):
+    if (stepNo[i] == 0 and i != count_episode):
+        break
+    episode_temp.append(indoor_temp[i])
+    episode_skin.append(body_temp[i])
+    if (i == count_episode):
+        episode_time.append(0.0)
+    else:
+        current = datetime.strptime(time[i], '%Y-%m-%d %H:%M:%S.%f')
+        episode_time.append((current-previous_time).seconds)
+
+
+episode_data = np.array([episode_temp,episode_skin,episode_time]).T
+print(episode_data[0])
+plt.title("Skin Temperature, Indoor Temperature vs Time")
+plt.xlabel("Time")
+plt.ylabel("Degree Celcius")
+plt.plot(episode_data[:,2], episode_data[:,0], label="Indoor Temperature")
+plt.plot(episode_data[:,2], episode_data[:,1], label="Skin Temperature")
+plt.legend()
+plt.show()
+
+
 very_hot = np.where(feedback == "Very Hot")
 very_hot = indoor[very_hot]
 print(very_hot.shape)
