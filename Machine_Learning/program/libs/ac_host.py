@@ -25,23 +25,34 @@ class Power_Level_Fanspeed(enum.Enum):
 
 class AC_host:
 
-    def __init__(self, ac_serial_num, watch_serial_num):
+    def __init__(self, ac_serial_num, watch_serial_num, data_request_seconds=None, steps_calculation_period=None):
         self.db = rt.Realtime_firebase()
         self.remote = ac_remote.AC_remote()
         self.base_ac_path = "Devices/" + ac_serial_num
         self.base_watch_path = "Devices/" + watch_serial_num
         self.weather_api_address = "http://api.openweathermap.org/data/2.5/weather?q=HongKong,hk&appid=2012d486d411dabe6c1e94eeec8eedb6"
         self.period = 10
-        self.data_request_seconds = 30
-        self.steps_caculation_period = 10
+        if (data_request_seconds == None):
+            self.data_request_seconds = 30
+        else:
+            self.data_request_seconds = data_request_seconds
+        if (steps_calculation_period == None):
+            self.steps_calculation_period = 10
+        else:
+            self.steps_calculation_period = steps_calculation_period
         self.reset()
 
 
     def reset(self):
+        self.period = self.steps_calculation_period
         self.current_step = 0
         self.override_control = False
         self.update_ac_status()
-        self.db.set(self.base_ac_path,"receive_action", {'is_new_action': False, 'current_step':0})
+        self.db.set(self.base_ac_path,"receive_action",
+            {'is_new_action': False,
+             'current_step':0,
+             'override_control':False,
+             'is_send':False})
 
 
     def check_start_ac(self):
@@ -71,7 +82,7 @@ class AC_host:
             else:
                 done = True
                 temp_func, temp, fan_func, fanspeed = self.remote.get_value_pair(input_temp, input_fanspeed)
-                self.period = self.current_step + self.steps_caculation_period
+                self.period = self.current_step + self.steps_calculation_period
                 print("The Next action will be after {} steps".format(self.period))
 
         return {temp_func:temp, fan_func:fanspeed}
@@ -96,7 +107,7 @@ class AC_host:
 
     def get_override_control_setting(self):
         pack = self.db.get(self.base_ac_path+"/receive_action", is_dict=True)
-        return {'temp':pack['override_set_temp'], 'fanspeed':pack['override_set_fanspeed']}
+        return {'temp':pack['override_set_temp'], 'fanspeed':pack['override_set_fanspeed'], 'power':pack['override_power']}
 
 
     def send_control_command(self, command):
@@ -174,6 +185,11 @@ class AC_host:
             return True
         else:
             return False
+
+
+    def reset_data_request(self):
+        self.db.set(self.base_ac_path, "receive_action", {'is_send' : False})
+        self.db.set(self.base_watch_path, "receive_action", {'is_send' : False})
 
 
     def check_devices_data_state(self):
