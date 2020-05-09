@@ -2,7 +2,6 @@ package com.example.fyp_ac_monitor;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
@@ -13,15 +12,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import com.example.fyp_ac_monitor.R;
-import com.example.fyp_ac_monitor.MyFirebase;
 import com.example.fyp_ac_monitor.activity.MenuActivity;
 
 import com.example.fyp_ac_monitor.utils.PreferenceUtils;
 
 public class ControlFragment extends Fragment {
 
-    MyFirebase db;
     String username;
 
     Switch _powerSwitch;
@@ -38,7 +34,6 @@ public class ControlFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        db = new MyFirebase();
         activity = (MenuActivity) getActivity();
         username = PreferenceUtils.loadUsername(activity);
         fragment_id = R.id.nav_control;
@@ -55,10 +50,14 @@ public class ControlFragment extends Fragment {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (!isDefaultCheck) {
                     if (isChecked == true) {
-                        sendControlCommand(username, "power", "on");
+                        activity.send_control_count_down_timer.cancel();
+                        activity.send_control_count_down_timer.start();
+                        activity.ac_power_state = true;
                         Toast.makeText(getActivity(), "ON", Toast.LENGTH_SHORT).show();
                     } else {
-                        sendControlCommand(username, "power", "off");
+                        activity.send_control_count_down_timer.cancel();
+                        activity.send_control_count_down_timer.start();
+                        activity.ac_power_state = false;
                         Toast.makeText(getActivity(), "OFF", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -79,9 +78,11 @@ public class ControlFragment extends Fragment {
             public void onScrollStateChange(NumberPicker view, int scrollState) {
                 if (scrollState == SCROLL_STATE_IDLE){
                     if (previous_temp != _tempPicker.getValue()){
-                        sendControlCommand(username, "temp", String.valueOf(_tempPicker.getValue()));
+                        activity.send_control_count_down_timer.cancel();
+                        activity.send_control_count_down_timer.start();
                         Toast.makeText(getActivity(), String.valueOf(_tempPicker.getValue()), Toast.LENGTH_SHORT).show();
                         previous_temp = _tempPicker.getValue();
+                        activity.ac_set_temp = _tempPicker.getValue();
                     }
                 }
             }
@@ -101,9 +102,11 @@ public class ControlFragment extends Fragment {
             public void onScrollStateChange(NumberPicker view, int scrollState) {
                 if (scrollState == SCROLL_STATE_IDLE){
                     if (previous_fanspeed != _fanspeedPicker.getValue()){
-                        sendControlCommand(username, "fanspeed", String.valueOf(_fanspeedPicker.getValue()));
+                        activity.send_control_count_down_timer.cancel();
+                        activity.send_control_count_down_timer.start();
                         Toast.makeText(getActivity(), String.valueOf(_fanspeedPicker.getValue()), Toast.LENGTH_SHORT).show();
                         previous_fanspeed = _fanspeedPicker.getValue();
+                        activity.ac_set_fanspeed = _fanspeedPicker.getValue();
                     }
                 }
             }
@@ -112,13 +115,8 @@ public class ControlFragment extends Fragment {
         return show_view;
     }
 
-    public void sendControlCommand(final String username, final String function, final String value){
-        String send_command = "ir " + function + " " + value;
-        db.sendControlCommand(username, send_command);
-    }
-
     public void updateToACstatus(final String username){
-        db.getACstatus(username, new MyFirebase.ac_status_callback() {
+        activity.db.getACstatus(username, new MyFirebase.ac_status_callback() {
             @Override
             public void onCallback_getACstatus(boolean power_state, int set_temp, int set_fanspeed) {
                 if (power_state != _powerSwitch.isChecked()) {
@@ -134,14 +132,17 @@ public class ControlFragment extends Fragment {
                 if (_powerSwitch.isEnabled() == false) {
                     _powerSwitch.setEnabled(true);
                     _powerSwitch.setChecked(previous_power_state);
+                    activity.ac_power_state = previous_power_state;
                 }
                 if (_tempPicker.isEnabled() == false) {
                     _tempPicker.setEnabled(true);
                     _tempPicker.setValue(previous_temp);
+                    activity.ac_set_temp = previous_temp;
                 }
                 if (_fanspeedPicker.isEnabled() == false) {
                     _fanspeedPicker.setEnabled(true);
                     _fanspeedPicker.setValue(previous_fanspeed);
+                    activity.ac_set_fanspeed = previous_fanspeed;
                 }
 
                 isDefaultCheck = false;

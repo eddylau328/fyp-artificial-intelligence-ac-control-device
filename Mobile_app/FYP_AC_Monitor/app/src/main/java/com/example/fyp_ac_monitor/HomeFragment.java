@@ -42,14 +42,12 @@ public class HomeFragment extends Fragment {
     Button _feedback_popup_button;
     LineChart chart;
 
-    MyFirebase db;
     String username;
     final ArrayList<Entry> entries = new ArrayList<>();
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        db = new MyFirebase();
         activity = (MenuActivity) getActivity();
         username = PreferenceUtils.loadUsername(activity);
 
@@ -68,7 +66,7 @@ public class HomeFragment extends Fragment {
                         _feedback_popup_button.setText(activity.feed_back_button_title);
                         Toast.makeText(activity, "You Clicked " + activity.feed_back_button_title, Toast.LENGTH_SHORT).show();
 
-                        db.sendFeedback(username, activity.feed_back_button_title);
+                        activity.db.sendFeedback(username, activity.feed_back_button_title);
 
                         return true;
                     }
@@ -83,7 +81,7 @@ public class HomeFragment extends Fragment {
         chart.setScaleEnabled(true);
         chart.getDescription().setEnabled(false);
         chart.setNoDataText("Air Conditioner is not turn on. No data available");
-        db.getEnvData(username, new MyFirebase.envData_callBack() {
+        activity.db.getEnvData(username, new MyFirebase.envData_callBack() {
             @Override
             public void onCallBack_dataIsLoaded(List<EnvDataPack> dataPacks, List<String> keys, Boolean success) {
                 if (success) {

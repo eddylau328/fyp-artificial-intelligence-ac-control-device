@@ -142,15 +142,18 @@ public class MyFirebase {
     }
 
 
-    public void sendControlCommand(final String username, final String send_command) {
+    public void sendControlCommand(final String username, final boolean input_set_power, final int input_set_temp, final int input_set_fanspeed) {
         getUserConnectDeviceSerialNum(username, "ACmonitor", new serial_num_callback() {
             @Override
             public void onCallback_getSerialNum(boolean getSerial, String serial_num) {
                 if (getSerial){
                     DatabaseReference commandRef = rt_db.getReference();
-                    commandRef.child("Devices").child(serial_num).child("receive_action").child("command").setValue(send_command);
-                    DatabaseReference is_new_actionRef = rt_db.getReference();
-                    is_new_actionRef.child("Devices").child(serial_num).child("receive_action").child("is_new_action").setValue(true);
+                    long set_temp = input_set_temp;
+                    long set_fanspeed = input_set_fanspeed;
+                    commandRef.child("Devices").child(serial_num).child("receive_action").child("override_power").setValue(input_set_power);
+                    commandRef.child("Devices").child(serial_num).child("receive_action").child("override_set_temp").setValue(set_temp);
+                    commandRef.child("Devices").child(serial_num).child("receive_action").child("override_set_fanspeed").setValue(set_fanspeed);
+                    commandRef.child("Devices").child(serial_num).child("receive_action").child("override_control").setValue(true);
                 }
             }
         });
@@ -199,14 +202,11 @@ public class MyFirebase {
                     ac_statusRef.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            boolean is_learning = (boolean) dataSnapshot.child("is_learning").getValue();
                             long current_step = (long) dataSnapshot.child("current_step").getValue();
-                            if (is_learning) {
-                                int step_num = (int) current_step;
-                                DatabaseReference feedbackRef = rt_db.getReference();
-                                feedbackRef = feedbackRef.child("Devices").child(serial_num).child("feedback");
-                                feedbackRef.push().setValue(new FeedbackPack(current_step, feedback_level));
-                            }
+                            int step_num = (int) current_step;
+                            DatabaseReference feedbackRef = rt_db.getReference();
+                            feedbackRef = feedbackRef.child("Devices").child(serial_num).child("feedback");
+                            feedbackRef.push().setValue(new FeedbackPack(current_step, feedback_level));
                         }
 
                         @Override

@@ -35,6 +35,11 @@ Maybe useful for speeding the learning process for the agent.
 
 #### [Divide and Conquer-Based 1D CNN Human Activity Recognition Using Test Data Sharpening](./references/sensors-18-01055-v3.pdf)
 
+### Basic Learning
+####[categorical cross-entropy equation](https://www.machinecurve.com/index.php/2019/10/22/how-to-use-binary-categorical-crossentropy-with-keras/#)
+
+####[one hot encoder]()
+
 
 ## Arduino
 ### Coding
