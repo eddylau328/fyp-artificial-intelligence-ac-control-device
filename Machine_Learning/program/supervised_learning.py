@@ -139,17 +139,17 @@ class SupervisedLearning:
         self.model.add(Dense(128, input_shape=(self.input_shape,), kernel_initializer='random_uniform',
                 bias_initializer='zeros', activation='linear'))
         self.model.add(LeakyReLU(alpha=0.1))
-        #self.model.add(Dropout(0.2))
+        self.model.add(Dropout(0.2))
 
         self.model.add(Dense(512, kernel_initializer='random_uniform',
                 bias_initializer='zeros',  activation='linear'))
         self.model.add(LeakyReLU(alpha=0.05))
-        #self.model.add(Dropout(0.2))
+        self.model.add(Dropout(0.5))
 
         self.model.add(Dense(128, kernel_initializer='random_uniform',
                 bias_initializer='zeros',  activation='linear'))
         self.model.add(LeakyReLU(alpha=0.05))
-        #self.model.add(Dropout(0.2))
+        self.model.add(Dropout(0.2))
 
         self.model.add(Dense(self.output_shape, activation='softmax'))
         optimizer = optimizers.Adam(lr=0.00003, decay=1e-6)
@@ -405,6 +405,16 @@ class SupervisedLearning:
             for key in self.data_name:
                 value[key] = pack[key]
             extract_data.append(value)
+
+        delete_record = []
+        for i in range(len(extract_data)):
+            if (extract_data[i]['move_type'] == "sleep"):
+                delete_record.append(i)
+
+        delete_record.reverse()
+
+        for i in delete_record:
+            extract_data.pop(i)
 
         return extract_data
 

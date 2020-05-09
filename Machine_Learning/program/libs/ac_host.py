@@ -46,17 +46,12 @@ class AC_host:
     def reset(self):
         self.period = self.steps_calculation_period
         self.current_step = 0
-        self.override_control = False
         self.update_ac_status()
         self.db.set(self.base_ac_path,"receive_action",
             {'is_new_action': False,
              'current_step':0,
              'override_control':False,
              'is_send':False})
-
-
-    def check_start_ac(self):
-        return self.db.get(self.base_ac_path+"/receive_action", is_dict=True)['start_ac']
 
 
     def check_terminate_program(self):
@@ -82,10 +77,13 @@ class AC_host:
             else:
                 done = True
                 temp_func, temp, fan_func, fanspeed = self.remote.get_value_pair(input_temp, input_fanspeed)
-                self.period = self.current_step + self.steps_calculation_period
-                print("The Next action will be after {} steps".format(self.period))
 
         return {temp_func:temp, fan_func:fanspeed}
+
+
+    def update_period(self):
+        self.period = self.current_step + self.steps_calculation_period
+        print("The Next action will be taken on steps {}".format(self.period))
 
 
     def generate_command(self, name, value):
@@ -102,7 +100,14 @@ class AC_host:
 
 
     def set_override_control(self, value):
-        self.db.set(self.base_ac_path, "receive_action", {'override_control': False})
+        self.db.set(self.base_ac_path, "receive_action", {'override_control': value})
+
+
+    def set_override_control_setting(self, **kwargs):
+        self.db.set(self.base_ac_path, "receive_action",
+            {'override_power': kwargs.get('override_power', False),
+             'override_set_temp': kwargs.get('override_set_temp', 24),
+             'override_set_fanspeed': kwargs.get('override_set_fanspeed', 1)})
 
 
     def get_override_control_setting(self):
@@ -148,7 +153,7 @@ class AC_host:
         if (body_data == None):
             body_data = {}
         else:
-            body_data = env_data.pop()
+            body_data = body_data.pop()
         feedback_data = self.get_feedback()
 
         action_data = {'set_temp':self.set_temperature, 'set_fanspeed':self.set_fanspeed, 'stepNo':self.current_step, 'time':str(datetime.datetime.now())}
@@ -216,3 +221,40 @@ class AC_host:
                         'outdoor_des':json_data['weather'][0]['description']
                         }
         return weather_pack
+
+
+    def download_data(self):
+        data = self.db.extract_data(self.base_ac_path+'/datapack', get=True)
+        pack = []
+        if (data != None):
+            for i in range(len(data)):
+                if (data[i]['stepNo'] == 0):
+                    pack.append(i)
+        file_count = 1
+        filepath = ""
+        while (True):
+            filepath = "env_training_data/env_data_"+str(file_count)
+            try:
+                with open(filepath +'.json', 'r') as file:
+                    file_count += 1
+                    # Do something with the file
+            except IOError:
+                file_count -= 1;
+
+                break
+        print("There are {} new data pack".format(len(pack)))
+        print("Data will be save to:")
+        for i in range(file_count+1, file_count+len(pack)+1):
+            print("<env_training_data/env_data_" +str(i) + ".json>")
+        for j in range(file_count+len(pack), file_count, -1):
+            new_data = []
+            start = pack.pop()
+            for i in range(start, len(data)):
+                new_data.append(data[i])
+            for i in range(start, len(data)):
+                data.pop()
+            filename = 'env_training_data/env_data_' + str(j)
+            self.db.export(data=new_data,dataname='datapack',filename=filename)
+        self.db.extract_data(self.base_ac_path+'/datapack', delete=True)
+        self.db.delete(self.base_ac_path+"/sensors")
+        self.db.delete(self.base_watch_path+"/datapack")
