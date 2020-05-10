@@ -9,15 +9,18 @@
 
     <string name="register_button">Register</string>
 
-    <string name="nav_home_titile">Home</string>
+    <string name="nav_home_title">Home</string>
     <string name="nav_chart_title">Analysis</string>
     <string name="nav_control_title">Control</string>
+
+    <string name="chart_fragment_title">Analysis</string>
 
     <string name="control_fragment_title">Control</string>
     <string name="control_fragment_power_switch_title">Power</string>
     <string name="control_fragment_temp_title">Temperature</string>
     <string name="control_fragment_fanspeed_title">Fanspeed</string>
 
+    <string name="home_fragment_title">Home</string>
     <string name="home_fragment_feedback_very_cold">Very Cold</string>
     <string name="home_fragment_feedback_cold">Cold</string>
     <string name="home_fragment_feedback_a_bit_cold">A Bit Cold</string>

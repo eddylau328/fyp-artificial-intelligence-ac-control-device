@@ -8,21 +8,21 @@ import pandas as pd
 import copy
 
 # similarity accept top 5 choices, With larger numbers the accuracy of the future points will decrease
-SIMILARITY_ACCEPT = 100
+SIMILARITY_ACCEPT_SD = 2.5
 # exploration epsilon that it will select an unknown future action or a known future action
 # with more data this number should decrease, and if all the actions are known, it will automatically go to do known action
-EXPLORATION_EPSILON = 0.8
+EXPLORATION_EPSILON = 0.0
 # with unknown actions, it could choose to do the action
 # whether it could get maximum value of first probability or random choose an action
-UNKNOWN_EXPLORATION_EPSILON = 0.7
+UNKNOWN_EXPLORATION_EPSILON = 0.3
 # with exploration action, it could choose to do the action
 # whether it could get maximum value from the weight equation or random choose an action to explore the future feedback
 # as the delta time is also counted in the future caculation
-KNOWN_EXPLORATION_EPSILON = 0.7
+KNOWN_EXPLORATION_EPSILON = 0.0
 # this is used in the overall probability equation, P = P_i * (1-w_f) + P_f * w_f
-FUTURE_WEIGHTS = 0.4
+FUTURE_WEIGHTS = 0.5
 # this is used in checking the
-#MAX_DELTA_TIME = 60 * 10
+MAX_DELTA_TIME = 60 * 15
 
 DATA_REQUEST_SECONDS = 60
 STEP_CALCULATION_PERIOD = 15
@@ -101,15 +101,19 @@ def cosine_similarity(a, b, norms):
 
 
 def get_future_point(environment_data, history, history_normalize, norms, action_list):
-    input_vector = np.array([environment_data['temp'],environment_data['hum'],environment_data['outdoor_temp'],environment_data['outdoor_hum'],environment_data['body']])
+    input_vector = np.array([environment_data['temp'],environment_data['hum'],environment_data['outdoor_temp'],environment_data['outdoor_hum']])
     normalize_input_vector = np.copy(input_vector)
     for i in range(4):
-        normalize_input_vector[i] = normalize_data(normalize_input_vector[i], method="max_min", given_constants=DATA_NORM_PARA[i])
+        normalize_input_vector[i] = normalize_data(normalize_input_vector[i], method="mean_std", given_constants=DATA_NORM_PARA[i])
     similarity_list = cosine_similarity(history_normalize[:,0:4],normalize_input_vector[0:4], norms)
-    sorted_index = similarity_list.argsort()[::-1]
-    extract_data = np.zeros((SIMILARITY_ACCEPT,9))
-    extract_data[:,0:8] = np.copy(history[sorted_index][:SIMILARITY_ACCEPT])
-    extract_data[:,8] = np.copy(sorted_index[:SIMILARITY_ACCEPT])
+    similarity_mean, similarity_standard_deviation = np.mean(similarity_list), np.std(similarity_list)
+    similarity_z_score = (similarity_list - similarity_mean)/similarity_standard_deviation
+    sorted_index = similarity_z_score.argsort()[::-1]
+    extract_size = similarity_z_score[similarity_z_score >= (similarity_mean+SIMILARITY_ACCEPT_SD*similarity_standard_deviation)].shape[0]
+
+    extract_data = np.zeros((extract_size,9))
+    extract_data[:,0:8] = np.copy(history[sorted_index][:extract_size])
+    extract_data[:,8] = np.copy(sorted_index[:extract_size])
 
     future_point_list = []
 
@@ -123,7 +127,7 @@ def get_future_point(environment_data, history, history_normalize, norms, action
         else:
             normalize_filter_data = np.copy(filter_data)
             for i in range(4):
-                normalize_filter_data[:,i] = normalize_data(normalize_filter_data[:,i], method="max_min", given_constants=DATA_NORM_PARA[i])
+                normalize_filter_data[:,i] = normalize_data(normalize_filter_data[:,i], method="mean_std", given_constants=DATA_NORM_PARA[i])
             similarity_list = cosine_similarity(normalize_filter_data[:,0:4], normalize_input_vector[0:4], np.linalg.norm(normalize_filter_data[:,0:5], axis=1))
             sorted_index = similarity_list.argsort()[::-1]
             filter_data = np.copy(filter_data[sorted_index])
@@ -140,6 +144,8 @@ def get_future_point(environment_data, history, history_normalize, norms, action
                     temp_hum_pair[4] += (history[i][7]-start_time)
                     start_time = history[i][7]
                     #print(history[i])
+                    if (temp_hum_pair[4] > MAX_DELTA_TIME):
+                        break
                 else:
                     break
             #print(temp_hum_pair)
@@ -172,21 +178,22 @@ def control_algorithm(thermal_comfort_model, data_pkg, history, history_normaliz
         else:
             future_feedback[i] = -1.0
     #print(future_feedback)
-    record_table = np.zeros((27,11))
+    record_table = np.zeros((27,12))
     record_table[:,0:2] = sorted_list
     record_table[:,2:4] = current_state_list[:,0:2]
-    record_table[:,4:9] = future_points
-    record_table[:,9] = first_prob_comfy
-    record_table[:,10] = future_feedback
+    record_table[:,4] = current_state_list[:,4]
+    record_table[:,5:10] = future_points
+    record_table[:,10] = first_prob_comfy
+    record_table[:,11] = future_feedback
 
-    record_table_df = pd.DataFrame(record_table, columns=['Set_Temp','Set_Fanspeed','Intial_Temp','Intial Hum','Similar_Initial_Temp','Similar_Intial Hum','Final_Temp','Final_Hum','Delta_Time','First_Step_Prob','Second_Step_Prob'])
+    record_table_df = pd.DataFrame(record_table, columns=['Set_Temp','Set_Fanspeed','Intial_Temp','Intial Hum','skin Temp','Similar_Initial_Temp','Similar_Intial Hum','Final_Temp','Final_Hum','Delta_Time','First_Step_Prob','Second_Step_Prob'])
     print()
     print(record_table_df)
     print()
-    unknown_action = np.copy(record_table[record_table[:,10] == -1.0])
-    known_action = np.copy(record_table[record_table[:,10] != -1.0])
+    unknown_action = np.copy(record_table[record_table[:,11] == -1.0])
+    known_action = np.copy(record_table[record_table[:,11] != -1.0])
     # first check whether it needs to explore or not
-    if (unknown_action.shape[0] != 0 and np.random.uniform(0.0,1.0) < EXPLORATION_EPSILON):
+    if ((unknown_action.shape[0] != 0 and np.random.uniform(0.0,1.0) < EXPLORATION_EPSILON) or known_action.shape[0] == 0):
         if (np.random.uniform(0.0,1.0) < UNKNOWN_EXPLORATION_EPSILON):
             # random choose from the unknown action list
             unknown_action_index = np.random.randint(low=0, high=unknown_action.shape[0])
@@ -194,7 +201,7 @@ def control_algorithm(thermal_comfort_model, data_pkg, history, history_normaliz
             selected_action = np.copy(unknown_action[unknown_action_index][0:2])
         else:
             # select the best action from the unknown action list according to their first action probability
-            unknown_action_index = np.argmax(unknown_action[:,9])
+            unknown_action_index = np.argmax(unknown_action[:,10])
             selected_action = np.copy(unknown_action[unknown_action_index][0:2])
     else:
         if (np.random.uniform(0.0,1.0) < KNOWN_EXPLORATION_EPSILON):
@@ -202,9 +209,16 @@ def control_algorithm(thermal_comfort_model, data_pkg, history, history_normaliz
             selected_action = np.copy(known_action[known_action_index][0:2])
         else:
             # according to the weight equation, P_i * w_i + P_f * w_f = P
-            final_probability = known_action[:,9] * (1-FUTURE_WEIGHTS) + known_action[:,10] * FUTURE_WEIGHTS
+            time_check = MAX_DELTA_TIME - 60
+            selected_action = np.copy(known_action[known_action[:,9] > time_check])
+            while (selected_action.shape[0] == 0):
+                time_check -= 60
+                selected_action = np.copy(known_action[known_action[:,9] > time_check])
+            print(selected_action)
+            final_probability = selected_action[:,10] * (1-FUTURE_WEIGHTS) + selected_action[:,11] * FUTURE_WEIGHTS
+            print(final_probability)
             known_action_index = np.argmax(final_probability)
-            selected_action = np.copy(known_action[known_action_index][0:2])
+            selected_action = np.copy(selected_action[known_action_index][0:2])
     print("selected_action = {}".format(selected_action))
     # return a python list [set_temp, set_fanspeed]
     return selected_action.astype(int).tolist()
@@ -226,7 +240,7 @@ def main():
         history_norm = np.copy(np.linalg.norm(history_data[:,0:4], axis=1))
         history_data_normalize = np.copy(history_data)
         for i in range(4):
-            history_data_normalize[:,i], norm_1, norm_2 = normalize_data(history_data_normalize[:,i], method="max_min")
+            history_data_normalize[:,i], norm_1, norm_2 = normalize_data(history_data_normalize[:,i], method="mean_std")
             DATA_NORM_PARA.append([norm_1,norm_2])
         history_norm = np.copy(np.linalg.norm(history_data_normalize[:,0:4], axis=1))
         # reset the host program
@@ -237,7 +251,7 @@ def main():
         if (need_start_restart == True):
             restart_timer = Timer()
             restart_timer.start()
-            while (restart_timer.check() < 15):
+            while (restart_timer.check() < 60*10):
                 pass
             restart_timer.stop()
             need_start_restart = False
@@ -295,7 +309,7 @@ def main():
 
 
                 # later delete
-                if (host.current_step == 180):
+                if (host.current_step == 120):
                     host.push_data(data_pkg)
                     print(f'Step: {host.current_step+1} {data_pkg}')
                     host.current_step += 1
@@ -419,25 +433,25 @@ def main():
         host.download_data()
 
 if (__name__ == "__main__"):
-
+    '''
     main()
     '''
-    data_pkg = {
-   "body": 35.306251526,
+    data_pkg =   {
+   "body": 33.125,
    "feedback": "acceptable",
-   "hum": 57.400001526,
-   "light": 0,
-   "move_type": "sleep",
-   "outdoor_des": "scattered clouds",
-   "outdoor_hum": 78,
-   "outdoor_press": 100.8,
-   "outdoor_temp": 27.430000000000007,
-   "press": 100.700004578,
-   "set_fanspeed": 1,
-   "set_temp": 19,
-   "stepNo": 53,
-   "temp": 22.899999619,
-   "time": "2020-05-06 01:38:13.797437"
+   "hum": 85.400001526,
+   "light": 23.333328247,
+   "move_type": "work",
+   "outdoor_des": "light rain",
+   "outdoor_hum": 75,
+   "outdoor_press": 101.0,
+   "outdoor_temp": 27.610000000000014,
+   "press": 101,
+   "set_fanspeed": 2,
+   "set_temp": 25,
+   "stepNo": 30,
+   "temp": 25.100000381,
+   "time": "2020-05-10 19:16:45.428166"
   }
 
     model = supervised_model.create_model()
@@ -446,9 +460,9 @@ if (__name__ == "__main__"):
     history_data = get_all_data()
     history_data_normalize = np.copy(history_data)
     for i in range(4):
-        history_data_normalize[:,i], norm_1, norm_2 = normalize_data(history_data_normalize[:,i], method="max_min")
+        history_data_normalize[:,i], norm_1, norm_2 = normalize_data(history_data_normalize[:,i], method="mean_std")
         DATA_NORM_PARA.append([norm_1,norm_2])
     history_norm = np.copy(np.linalg.norm(history_data_normalize[:,0:4], axis=1))
     control_algorithm(model, data_pkg, history_data, history_data_normalize, history_norm)
-    '''
+    #'''
 
