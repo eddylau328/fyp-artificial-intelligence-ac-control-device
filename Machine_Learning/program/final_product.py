@@ -178,6 +178,7 @@ def control_algorithm(thermal_comfort_model, data_pkg, history, history_normaliz
         else:
             future_feedback[i] = -1.0
     #print(future_feedback)
+
     record_table = np.zeros((27,12))
     record_table[:,0:2] = sorted_list
     record_table[:,2:4] = current_state_list[:,0:2]
@@ -185,11 +186,11 @@ def control_algorithm(thermal_comfort_model, data_pkg, history, history_normaliz
     record_table[:,5:10] = future_points
     record_table[:,10] = first_prob_comfy
     record_table[:,11] = future_feedback
-
     record_table_df = pd.DataFrame(record_table, columns=['Set_Temp','Set_Fanspeed','Intial_Temp','Intial Hum','skin Temp','Similar_Initial_Temp','Similar_Intial Hum','Final_Temp','Final_Hum','Delta_Time','First_Step_Prob','Second_Step_Prob'])
     print()
     print(record_table_df)
     print()
+
     unknown_action = np.copy(record_table[record_table[:,11] == -1.0])
     known_action = np.copy(record_table[record_table[:,11] != -1.0])
     # first check whether it needs to explore or not
@@ -209,14 +210,27 @@ def control_algorithm(thermal_comfort_model, data_pkg, history, history_normaliz
             selected_action = np.copy(known_action[known_action_index][0:2])
         else:
             # according to the weight equation, P_i * w_i + P_f * w_f = P
+            #time_check = MAX_DELTA_TIME - 60
             time_check = MAX_DELTA_TIME - 60
             selected_action = np.copy(known_action[known_action[:,9] > time_check])
             while (selected_action.shape[0] == 0):
                 time_check -= 60
                 selected_action = np.copy(known_action[known_action[:,9] > time_check])
-            print(selected_action)
+            #print(selected_action)
             final_probability = selected_action[:,10] * (1-FUTURE_WEIGHTS) + selected_action[:,11] * FUTURE_WEIGHTS
-            print(final_probability)
+            #print(final_probability)
+            table = np.zeros((27,13))
+            table[:,0:2] = sorted_list
+            table[:,2:4] = current_state_list[:,0:2]
+            table[:,4] = current_state_list[:,4]
+            table[:,5:10] = future_points
+            table[:,10] = first_prob_comfy
+            table[:,11] = future_feedback
+            table[:,12] = final_probability
+            table_df = pd.DataFrame(table, columns=['Set_Temp','Set_Fanspeed','Intial_Temp','Intial Hum','skin Temp','Similar_Initial_Temp','Similar_Intial Hum','Final_Temp','Final_Hum','Delta_Time','First_Step_Prob','Second_Step_Prob','Final_Prob'])
+            print()
+            print(table_df)
+            print()
             known_action_index = np.argmax(final_probability)
             selected_action = np.copy(selected_action[known_action_index][0:2])
     print("selected_action = {}".format(selected_action))
@@ -437,10 +451,10 @@ if (__name__ == "__main__"):
     main()
     '''
     data_pkg =   {
-   "body": 33.125,
+   "body": 33.118751526,
    "feedback": "acceptable",
-   "hum": 85.400001526,
-   "light": 23.333328247,
+   "hum": 87.900001526,
+   "light": 24.166669846,
    "move_type": "work",
    "outdoor_des": "light rain",
    "outdoor_hum": 75,
@@ -449,9 +463,9 @@ if (__name__ == "__main__"):
    "press": 101,
    "set_fanspeed": 2,
    "set_temp": 25,
-   "stepNo": 30,
-   "temp": 25.100000381,
-   "time": "2020-05-10 19:16:45.428166"
+   "stepNo": 33,
+   "temp": 25.5,
+   "time": "2020-05-10 19:20:09.085857"
   }
 
     model = supervised_model.create_model()
